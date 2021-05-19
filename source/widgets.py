@@ -22,12 +22,45 @@ class OptionsWidget(pg.LayoutWidget):
     def __init__ (self, parent=None):
         super(OptionsWidget, self).__init__(parent)
 
-        # GroupBox Sample
-        gb1 = QtGui.QGroupBox("Plotting Options")
-        gb2 = QtGui.QGroupBox("Image Files")
+        self.options_gb = QtGui.QGroupBox("Plotting Options")
+        self.files_gb = QtGui.QGroupBox("Image Files")
 
-        self.addWidget(gb1, row=0, col=0)
-        self.addWidget(gb2, row=1, col=0)
+        self.addWidget(self.options_gb, row=0, col=0)
+        self.addWidget(self.files_gb, row=1, col=0)
+
+        # Create/add layouts
+        self.options_layout = QtGui.QGridLayout()
+        self.files_layout = QtGui.QGridLayout()
+        self.options_gb.setLayout(self.options_layout)
+        self.files_gb.setLayout(self.files_layout)
+
+
+    def setupComponents(self):
+
+        # Create options widgets
+        ...
+
+        # Create file widgets
+        self.open_file_btn = QtGui.QPushButton("Open File")
+        self.clear_btn = QtGui.QPushButton("Clear")
+        self.file_list = QtGui.QListWidget()
+
+        # Add widgets to GroupBoxes
+        self.files_layout.addWidget(self.open_file_btn, 0, 0)
+        self.files_layout.addWidget(self.clear_btn, 0, 1)
+        self.files_layout.addWidget(self.file_list, 1, 0, 4, 2)
+
+        # Link widgets to actions
+        self.open_file_btn.clicked.connect(self.openFile)
+        self.clear_btn.clicked.connect(self.clearFileList)
+
+
+    def openFile(self):
+        ...
+
+
+    def clearFileList(self):
+        ...
 
 
 # ==============================================================================
