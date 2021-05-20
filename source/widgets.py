@@ -91,10 +91,12 @@ class ImageWidget(pg.ImageView):
     def __init__ (self, parent=None):
         super(ImageWidget, self).__init__(parent)
 
-        image = plt.imread("S012/sio6smo6_1_S012_00001.tif")
+        #image = plt.imread("S012/sio6smo6_1_S012_00001.tif")
+        #self.setImage(image)
 
-        self.setImage(image)
-
+    def loadImage(self):
+        ...
+        
 
 # ==============================================================================
 
