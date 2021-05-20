@@ -115,15 +115,31 @@ class ImageWidget(pg.ImageView):
 
 
     def displayImage(self, file_path):
+        # Read and set image
         self.image = plt.imread(file_path, format="RGB")
         self.setImage(self.image)
 
+        # Link view with profile plots
         view = self.getView()
         view.setXLink(self.main_window.x_plot_widget)
         view.setYLink(self.main_window.y_plot_widget)
 
-        cols = self.image.mean(axis=0)
-        rows = self.image.mean(axis=1)
+        self.displayProfiles()
+
+
+    def displayProfiles(self):
+        # Mean of column
+        cols = self.image.mean(axis=1)
+        rows = self.image.mean(axis=0)
+
+        # RGBA to grayscale conversion
+        # Contain avg intensity (0-255) of each row/column
+        col_avgs = 0.299 * cols[:,0] + 0.587 * cols[:,1] + 0.114 * cols[:,2]
+        row_avgs = 0.299 * rows[:,0] + 0.587 * rows[:,1] + 0.114 * rows[:,2]
+
+        # Display profile plots
+        self.main_window.x_plot_widget.plot(col_avgs)
+        self.main_window.y_plot_widget.plot(row_avgs, range(len(row_avgs)))
 
 
 # ==============================================================================
@@ -165,3 +181,6 @@ class XYZPlotWidget(pg.PlotWidget):
     def __init__ (self, parent):
         super(XYZPlotWidget, self).__init__(parent)
         self.main_window = parent
+        
+
+# ==============================================================================
