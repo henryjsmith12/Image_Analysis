@@ -8,6 +8,7 @@ See LICENSE file.
 import pyqtgraph as pg
 import matplotlib.pyplot as plt
 from pyqtgraph.Qt import QtGui
+import os
 
 # ==============================================================================
 
@@ -19,12 +20,15 @@ class OptionsWidget(pg.LayoutWidget):
     - Plotting options
     """
 
-    def __init__ (self, parent=None):
+    def __init__ (self, parent):
         super(OptionsWidget, self).__init__(parent)
+        self.main_window = parent
 
+        # Create GroupBoxes
         self.options_gbox = QtGui.QGroupBox("Plotting Options")
         self.files_gbox = QtGui.QGroupBox("Image Files")
 
+        # Add GroupBoxes to widget
         self.addWidget(self.options_gbox, row=0, col=0)
         self.addWidget(self.files_gbox, row=1, col=0)
 
@@ -40,26 +44,45 @@ class OptionsWidget(pg.LayoutWidget):
         ...
 
         # Create file widgets
-        self.open_file_btn = QtGui.QPushButton("Open File")
+        self.browse_btn = QtGui.QPushButton("Browse")
         self.clear_btn = QtGui.QPushButton("Clear")
         self.file_list = QtGui.QListWidget()
 
         # Add widgets to GroupBoxes
-        self.files_layout.addWidget(self.open_file_btn, 0, 0)
+        self.files_layout.addWidget(self.browse_btn, 0, 0)
         self.files_layout.addWidget(self.clear_btn, 0, 1)
         self.files_layout.addWidget(self.file_list, 1, 0, 4, 2)
 
         # Link widgets to actions
-        self.open_file_btn.clicked.connect(self.openFile)
+        self.browse_btn.clicked.connect(self.openDirectory)
         self.clear_btn.clicked.connect(self.clearFileList)
+        self.file_list.itemDoubleClicked.connect(self.loadFile)
 
 
-    def openFile(self):
-        ...
+    def openDirectory(self):
+        # Find directory with image files
+        self.directory = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder")
+
+        # List of files in directory
+        files = os.listdir(self.directory)
+
+        # Display file names in list
+        self.file_list.clear()
+        self.file_list.addItems(files)
 
 
     def clearFileList(self):
-        ...
+        self.file_list.clear()
+
+
+    def loadFile(self, file):
+        #Concatenate directory and file names
+        file_path = f"{self.directory}/{file.text()}"
+
+        # Read and display image
+        image = plt.imread(file_path)
+        self.main_window.image_widget.setImage(image)
+
 
 
 # ==============================================================================
@@ -70,8 +93,9 @@ class AnalysisWidget(pg.LayoutWidget):
     ROI values, peak values, etc.
     """
 
-    def __init__ (self, parent=None):
+    def __init__ (self, parent):
         super(AnalysisWidget, self).__init__(parent)
+        self.main_window = parent
 
 
     def setupComponents(self):
@@ -87,8 +111,9 @@ class ImageWidget(pg.ImageView):
     - Interactive intensity control
     """
 
-    def __init__ (self, parent=None):
+    def __init__ (self, parent):
         super(ImageWidget, self).__init__(parent)
+        self.main_window = parent
 
         #image = plt.imread("S012/sio6smo6_1_S012_00001.tif")
         #self.setImage(image)
@@ -106,8 +131,9 @@ class XPlotWidget(pg.PlotWidget):
     - Axes linked to ImageWidget and YPlotWidget
     """
 
-    def __init__ (self, parent=None):
+    def __init__ (self, parent):
         super(XPlotWidget, self).__init__(parent)
+        self.main_window = parent
 
 
     def updateROI(self):
@@ -123,8 +149,9 @@ class YPlotWidget(pg.PlotWidget):
     - Axes linked to ImageWidget and XPlotWidget
     """
 
-    def __init__ (self, parent=None):
+    def __init__ (self, parent):
         super(YPlotWidget, self).__init__(parent)
+        self.main_window = parent
 
 
     def updateROI(self):
@@ -139,5 +166,6 @@ class XYZPlotWidget(pg.PlotWidget):
     3D view of x vs y vs intensity
     """
 
-    def __init__ (self, parent=None):
+    def __init__ (self, parent):
         super(XYZPlotWidget, self).__init__(parent)
+        self.main_window = parent
