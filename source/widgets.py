@@ -8,7 +8,9 @@ See LICENSE file.
 import pyqtgraph as pg
 import matplotlib.pyplot as plt
 from pyqtgraph.Qt import QtGui
+import numpy as np
 import os
+import sys
 
 # ==============================================================================
 
@@ -78,7 +80,6 @@ class OptionsWidget(pg.LayoutWidget):
     def loadFile(self, file):
         #Concatenate directory and file names
         file_path = f"{self.directory}/{file.text()}"
-
         self.main_window.image_widget.displayImage(file_path)
 
 
@@ -114,16 +115,15 @@ class ImageWidget(pg.ImageView):
 
 
     def displayImage(self, file_path):
-        self.image = plt.imread(file_path)
+        self.image = plt.imread(file_path, format="RGB")
         self.setImage(self.image)
 
         view = self.getView()
         view.setXLink(self.main_window.x_plot_widget)
         view.setYLink(self.main_window.y_plot_widget)
 
-
-    def plotProfiles(self):
-        ...
+        cols = self.image.mean(axis=0)
+        rows = self.image.mean(axis=1)
 
 
 # ==============================================================================
