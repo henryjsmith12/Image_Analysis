@@ -22,21 +22,20 @@ class OptionsWidget(pg.LayoutWidget):
     def __init__ (self, parent=None):
         super(OptionsWidget, self).__init__(parent)
 
-        self.options_gb = QtGui.QGroupBox("Plotting Options")
-        self.files_gb = QtGui.QGroupBox("Image Files")
+        self.options_gbox = QtGui.QGroupBox("Plotting Options")
+        self.files_gbox = QtGui.QGroupBox("Image Files")
 
-        self.addWidget(self.options_gb, row=0, col=0)
-        self.addWidget(self.files_gb, row=1, col=0)
+        self.addWidget(self.options_gbox, row=0, col=0)
+        self.addWidget(self.files_gbox, row=1, col=0)
 
         # Create/add layouts
         self.options_layout = QtGui.QGridLayout()
         self.files_layout = QtGui.QGridLayout()
-        self.options_gb.setLayout(self.options_layout)
-        self.files_gb.setLayout(self.files_layout)
+        self.options_gbox.setLayout(self.options_layout)
+        self.files_gbox.setLayout(self.files_layout)
 
 
     def setupComponents(self):
-
         # Create options widgets
         ...
 
@@ -96,7 +95,7 @@ class ImageWidget(pg.ImageView):
 
     def loadImage(self):
         ...
-        
+
 
 # ==============================================================================
 
@@ -111,6 +110,10 @@ class XPlotWidget(pg.PlotWidget):
         super(XPlotWidget, self).__init__(parent)
 
 
+    def updateROI(self):
+        ...
+
+
 # ==============================================================================
 
 class YPlotWidget(pg.PlotWidget):
@@ -122,6 +125,10 @@ class YPlotWidget(pg.PlotWidget):
 
     def __init__ (self, parent=None):
         super(YPlotWidget, self).__init__(parent)
+
+
+    def updateROI(self):
+        ...
 
 
 # ==============================================================================

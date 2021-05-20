@@ -51,18 +51,14 @@ class MainWindow(QtGui.QMainWindow):
         self.dock_area.moveDock(self.xyz_plot_dock, "right", self.x_plot_dock)
         self.dock_area.moveDock(self.y_plot_dock, "right", self.image_dock)
 
+        # Create widgets and setup widget components
         self.options_widget = OptionsWidget() # File options widget
         self.options_widget.setupComponents()
-
         self.analysis_widget = AnalysisWidget() # Image analysis/info widget
         self.analysis_widget.setupComponents()
-
         self.image_widget = ImageWidget() # Image widget with sample image
-
         self.x_plot_widget = XPlotWidget() # Plot x-value vs average intensity
-
         self.y_plot_widget = YPlotWidget() # Plot y-value vs average intensity
-
         self.xyz_plot_widget = XYZPlotWidget() # Plots 3D model
 
         # Add widgets to docks
