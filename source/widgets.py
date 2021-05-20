@@ -115,7 +115,7 @@ class ImageWidget(pg.ImageView):
 
     def displayImage(self, file_path):
         self.image = plt.imread(file_path)
-        self.setImage(image)
+        self.setImage(self.image)
 
         view = self.getView()
         view.setXLink(self.main_window.x_plot_widget)
