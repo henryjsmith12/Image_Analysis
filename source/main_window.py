@@ -54,7 +54,8 @@ class MainWindow(QtGui.QMainWindow):
         options_widget = OptionsWidget() # File options widget
         options_widget.setupComponents()
 
-        analysis_dock_widget = AnalysisWidget() # Image analysis/info widget
+        analysis_widget = AnalysisWidget() # Image analysis/info widget
+        analysis_widget.setupComponents()
 
         image_widget = ImageWidget() # Image widget with sample image
 
@@ -66,7 +67,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Add widgets to docks
         options_dock.addWidget(options_widget)
-        analysis_dock.addWidget(analysis_dock_widget)
+        analysis_dock.addWidget(analysis_widget)
         image_dock.addWidget(image_widget)
         x_plot_dock.addWidget(x_plot_widget)
         y_plot_dock.addWidget(y_plot_widget)

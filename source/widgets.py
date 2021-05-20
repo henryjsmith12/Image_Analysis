@@ -75,6 +75,10 @@ class AnalysisWidget(pg.LayoutWidget):
         super(AnalysisWidget, self).__init__(parent)
 
 
+    def setupComponents(self):
+        ...
+
+
 # ==============================================================================
 
 class ImageWidget(pg.ImageView):
