@@ -79,10 +79,7 @@ class OptionsWidget(pg.LayoutWidget):
         #Concatenate directory and file names
         file_path = f"{self.directory}/{file.text()}"
 
-        # Read and display image
-        image = plt.imread(file_path)
-        self.main_window.image_widget.setImage(image)
-
+        self.main_window.image_widget.displayImage(file_path)
 
 
 # ==============================================================================
@@ -115,10 +112,17 @@ class ImageWidget(pg.ImageView):
         super(ImageWidget, self).__init__(parent)
         self.main_window = parent
 
-        #image = plt.imread("S012/sio6smo6_1_S012_00001.tif")
-        #self.setImage(image)
 
-    def loadImage(self):
+    def displayImage(self, file_path):
+        self.image = plt.imread(file_path)
+        self.setImage(image)
+
+        view = self.getView()
+        view.setXLink(self.main_window.x_plot_widget)
+        view.setYLink(self.main_window.y_plot_widget)
+
+
+    def plotProfiles(self):
         ...
 
 
@@ -136,10 +140,6 @@ class XPlotWidget(pg.PlotWidget):
         self.main_window = parent
 
 
-    def updateROI(self):
-        ...
-
-
 # ==============================================================================
 
 class YPlotWidget(pg.PlotWidget):
@@ -152,10 +152,6 @@ class YPlotWidget(pg.PlotWidget):
     def __init__ (self, parent):
         super(YPlotWidget, self).__init__(parent)
         self.main_window = parent
-
-
-    def updateROI(self):
-        ...
 
 
 # ==============================================================================
