@@ -128,6 +128,10 @@ class ImageWidget(pg.ImageView):
 
 
     def displayProfiles(self):
+        # Clear plots
+        self.main_window.x_plot_widget.clear()
+        self.main_window.y_plot_widget.clear()
+
         # Mean of column
         cols = self.image.mean(axis=1)
         rows = self.image.mean(axis=0)
@@ -155,6 +159,9 @@ class XPlotWidget(pg.PlotWidget):
         super(XPlotWidget, self).__init__(parent)
         self.main_window = parent
 
+        self.setLabel("left", "Average Intensity")
+        self.setLabel("bottom", "x")
+
 
 # ==============================================================================
 
@@ -169,6 +176,9 @@ class YPlotWidget(pg.PlotWidget):
         super(YPlotWidget, self).__init__(parent)
         self.main_window = parent
 
+        self.setLabel("left", "y")
+        self.setLabel("bottom", "Average Intensity")
+
 
 # ==============================================================================
 
@@ -181,6 +191,6 @@ class XYZPlotWidget(pg.PlotWidget):
     def __init__ (self, parent):
         super(XYZPlotWidget, self).__init__(parent)
         self.main_window = parent
-        
+
 
 # ==============================================================================

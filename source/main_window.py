@@ -33,6 +33,11 @@ class MainWindow(QtGui.QMainWindow):
         self.setGeometry(100, 100, 1200, 800)
         self.setWindowTitle("Image Analysis")
 
+        self.createDocks()
+        self.createWidgets()
+
+
+    def createDocks(self):
         # Docked widgets for main window
         self.options_dock = Dock("Options", size=(200, 200))
         self.analysis_dock = Dock("Analysis", size=(200, 200))
@@ -51,6 +56,8 @@ class MainWindow(QtGui.QMainWindow):
         self.dock_area.moveDock(self.xyz_plot_dock, "right", self.x_plot_dock)
         self.dock_area.moveDock(self.y_plot_dock, "right", self.image_dock)
 
+
+    def createWidgets(self):
         # Create widgets and setup widget components
         self.options_widget = OptionsWidget(self) # File options widget
         self.options_widget.setupComponents()
@@ -68,3 +75,5 @@ class MainWindow(QtGui.QMainWindow):
         self.x_plot_dock.addWidget(self.x_plot_widget)
         self.y_plot_dock.addWidget(self.y_plot_widget)
         self.xyz_plot_dock.addWidget(self.xyz_plot_widget)
+
+# ==============================================================================
