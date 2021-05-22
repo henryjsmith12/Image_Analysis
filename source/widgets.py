@@ -43,23 +43,25 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def setupComponents(self):
-        # Create options widgets
-        ...
-
         # Create file widgets
         self.browse_btn = QtGui.QPushButton("Browse")
         self.clear_btn = QtGui.QPushButton("Clear")
         self.file_list = QtGui.QListWidget()
 
+        # Create options widgets
+        self.hist_chkbox = QtGui.QCheckBox("Histogram")
+
         # Add widgets to GroupBoxes
         self.files_layout.addWidget(self.browse_btn, 0, 0)
         self.files_layout.addWidget(self.clear_btn, 0, 1)
         self.files_layout.addWidget(self.file_list, 1, 0, 4, 2)
+        self.options_layout.addWidget(self.hist_chkbox, 0, 0, 1, 2)
 
         # Link widgets to actions
         self.browse_btn.clicked.connect(self.openDirectory)
         self.clear_btn.clicked.connect(self.clearFileList)
         self.file_list.itemClicked.connect(self.loadFile)
+        self.hist_chkbox.stateChanged.connect(self.toggleHistogram)
 
     # --------------------------------------------------------------------------
 
@@ -86,6 +88,14 @@ class OptionsWidget(pg.LayoutWidget):
         file_path = f"{self.directory}/{file.text()}"
         self.main_window.image_widget.displayImage(file_path)
 
+    # --------------------------------------------------------------------------
+
+    def toggleHistogram(self, state):
+        # Turn histogram on/off
+        if state == 2:
+            self.main_window.image_widget.ui.histogram.show()
+        else:
+            self.main_window.image_widget.ui.histogram.hide()
 
 # ==============================================================================
 
@@ -121,6 +131,7 @@ class ImageWidget(pg.ImageView):
         # Delete unnecessary features
         self.ui.roiBtn.hide()
         self.ui.menuBtn.hide()
+        self.ui.histogram.hide()
 
     # --------------------------------------------------------------------------
 
