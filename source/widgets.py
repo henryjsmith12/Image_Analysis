@@ -67,10 +67,10 @@ class OptionsWidget(pg.LayoutWidget):
         # Find directory with image files
         self.directory = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder")
 
-        # List of files in directory
-        files = os.listdir(self.directory)
+        # List of files
+        files = sorted(os.listdir(self.directory))
 
-        # Display file names in list
+        # Display files
         self.file_list.clear()
         self.file_list.addItems(files)
 
@@ -118,13 +118,14 @@ class ImageWidget(pg.ImageView):
         super(ImageWidget, self).__init__(parent)
         self.main_window = parent
 
-        # Delete unnecessary buttons
+        # Delete unnecessary features
         self.ui.roiBtn.hide()
         self.ui.menuBtn.hide()
 
     # --------------------------------------------------------------------------
 
     def displayImage(self, file_path):
+
         # Read and set image file
         self.image = plt.imread(file_path)
         self.setImage(self.image)
@@ -201,6 +202,9 @@ class XPlotWidget(pg.PlotWidget):
         self.setLabel("left", "Average Intensity")
         self.setLabel("bottom", "x")
 
+        self.showGrid(x=True, y=True)
+        self.setMouseEnabled(x=False, y=False)
+
 
 # ==============================================================================
 
@@ -217,6 +221,8 @@ class YPlotWidget(pg.PlotWidget):
 
         self.setLabel("left", "y")
         self.setLabel("bottom", "Average Intensity")
+        self.showGrid(x=True, y=True)
+        self.setMouseEnabled(x=False, y=False)
 
 
 # ==============================================================================
