@@ -7,7 +7,7 @@ See LICENSE file.
 
 import pyqtgraph as pg
 import matplotlib.pyplot as plt
-from pyqtgraph.Qt import QtGui
+from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
 import os
 import sys
@@ -52,7 +52,7 @@ class OptionsWidget(pg.LayoutWidget):
         # Create options widgets
         self.hist_chkbox = QtGui.QCheckBox("Histogram")
         self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
-        self.live_plot_btn.hide()
+        #self.live_plot_btn.hide()
 
         # Add widgets to GroupBoxes
         self.files_layout.addWidget(self.browse_btn, 0, 0)
@@ -107,11 +107,22 @@ class OptionsWidget(pg.LayoutWidget):
     def simLivePlotting(self):
         if len(self.file_list) == 0:
             return
-        for i in range(self.file_list.count()):
-            self.loadFile(self.file_list.item(i))
-            print(self.file_list.item(i).text())
-            pg.QtGui.QApplication.processEvents()
-            time.sleep(0.25)
+
+        self.file_index = 0
+
+        timer = QtCore.QTimer()
+        timer.timeout.connect(self.updateLivePlots)
+        #print("HERE")
+        timer.start()
+
+
+    # --------------------------------------------------------------------------
+
+    def updateLivePlots(self):
+        if self.file_index < self.file_list.count():
+            print("HERE")
+            self.loadFile(self.file_list.item(self.file_index))
+            self.file_index += 1
 
 
 # ==============================================================================
@@ -174,14 +185,9 @@ class ImageWidget(pg.ImageView):
         # Dynamically update plots when viewing window changes
         self.view.sigRangeChanged.connect(self.updatePlots)
 
-        # First plot
-        self.updatePlots()
-
-    # --------------------------------------------------------------------------
-
-    def updatePlots(self):
         col_avgs, row_avgs = self.calculateAvgIntensity()
 
+        # Clear plots
         self.main_window.x_plot_widget.clear()
         self.main_window.y_plot_widget.clear()
 
