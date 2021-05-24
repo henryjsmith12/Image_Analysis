@@ -36,6 +36,7 @@ class MainWindow(QtGui.QMainWindow):
         self.createDocks()
         self.createWidgets()
 
+    # --------------------------------------------------------------------------
 
     def createDocks(self):
         # Docked widgets for main window
@@ -56,6 +57,7 @@ class MainWindow(QtGui.QMainWindow):
         self.dock_area.moveDock(self.xyz_plot_dock, "right", self.x_plot_dock)
         self.dock_area.moveDock(self.y_plot_dock, "right", self.image_dock)
 
+    # --------------------------------------------------------------------------
 
     def createWidgets(self):
         # Create widgets and setup widget components
@@ -75,5 +77,6 @@ class MainWindow(QtGui.QMainWindow):
         self.x_plot_dock.addWidget(self.x_plot_widget)
         self.y_plot_dock.addWidget(self.y_plot_widget)
         self.xyz_plot_dock.addWidget(self.xyz_plot_widget)
+
 
 # ==============================================================================

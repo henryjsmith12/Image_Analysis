@@ -11,6 +11,7 @@ from pyqtgraph.Qt import QtGui
 import numpy as np
 import os
 import sys
+import time
 
 # ==============================================================================
 
@@ -50,18 +51,22 @@ class OptionsWidget(pg.LayoutWidget):
 
         # Create options widgets
         self.hist_chkbox = QtGui.QCheckBox("Histogram")
+        self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
+        self.live_plot_btn.hide()
 
         # Add widgets to GroupBoxes
         self.files_layout.addWidget(self.browse_btn, 0, 0)
         self.files_layout.addWidget(self.clear_btn, 0, 1)
         self.files_layout.addWidget(self.file_list, 1, 0, 4, 2)
         self.options_layout.addWidget(self.hist_chkbox, 0, 0, 1, 2)
+        self.options_layout.addWidget(self.live_plot_btn, 1, 0, 1, 2)
 
         # Link widgets to actions
         self.browse_btn.clicked.connect(self.openDirectory)
         self.clear_btn.clicked.connect(self.clearFileList)
         self.file_list.itemClicked.connect(self.loadFile)
         self.hist_chkbox.stateChanged.connect(self.toggleHistogram)
+        self.live_plot_btn.clicked.connect(self.simLivePlotting)
 
     # --------------------------------------------------------------------------
 
@@ -96,6 +101,18 @@ class OptionsWidget(pg.LayoutWidget):
             self.main_window.image_widget.ui.histogram.show()
         else:
             self.main_window.image_widget.ui.histogram.hide()
+
+    # --------------------------------------------------------------------------
+
+    def simLivePlotting(self):
+        if len(self.file_list) == 0:
+            return
+        for i in range(self.file_list.count()):
+            self.loadFile(self.file_list.item(i))
+            print(self.file_list.item(i).text())
+            pg.QtGui.QApplication.processEvents()
+            time.sleep(0.25)
+
 
 # ==============================================================================
 
@@ -136,7 +153,6 @@ class ImageWidget(pg.ImageView):
     # --------------------------------------------------------------------------
 
     def displayImage(self, file_path):
-
         # Read and set image file
         self.image = plt.imread(file_path)
         self.setImage(self.image)
@@ -164,6 +180,18 @@ class ImageWidget(pg.ImageView):
     # --------------------------------------------------------------------------
 
     def updatePlots(self):
+        col_avgs, row_avgs = self.calculateAvgIntensity()
+
+        self.main_window.x_plot_widget.clear()
+        self.main_window.y_plot_widget.clear()
+
+        # Display new plots
+        self.main_window.x_plot_widget.plot(col_avgs)
+        self.main_window.y_plot_widget.plot(x=row_avgs, y=range(len(row_avgs)))
+
+    # --------------------------------------------------------------------------
+
+    def calculateAvgIntensity(self):
         # Coords visible in viewing window
         self.view_range = self.view.viewRange()
 
@@ -188,14 +216,7 @@ class ImageWidget(pg.ImageView):
         col_avgs = 0.299 * cols[:,0] + 0.587 * cols[:,1] + 0.114 * cols[:,2]
         row_avgs = 0.299 * rows[:,0] + 0.587 * rows[:,1] + 0.114 * rows[:,2]
 
-        # Clear previous plots
-        self.main_window.x_plot_widget.clear()
-        self.main_window.y_plot_widget.clear()
-
-        # Display new plots
-        self.main_window.x_plot_widget.plot(col_avgs)
-        self.main_window.y_plot_widget.plot(row_avgs, range(len(row_avgs)))
-
+        return col_avgs, row_avgs
 
 # ==============================================================================
 
@@ -212,7 +233,6 @@ class XPlotWidget(pg.PlotWidget):
 
         self.setLabel("left", "Average Intensity")
         self.setLabel("bottom", "x")
-
         self.showGrid(x=True, y=True)
         self.setMouseEnabled(x=False, y=False)
 
