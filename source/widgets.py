@@ -13,6 +13,8 @@ import numpy as np
 import os
 import sys
 from scipy import ndimage
+import threading
+import _thread
 
 # ==============================================================================
 
@@ -56,6 +58,7 @@ class OptionsWidget(pg.LayoutWidget):
         # Create options widgets
         self.hist_chkbox = QtGui.QCheckBox("Histogram")
         self.reset_btn = QtGui.QPushButton("Reset View")
+        self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
 
         # Add widgets to GroupBoxes
         self.files_layout.addWidget(self.browse_btn, 0, 0)
@@ -63,13 +66,15 @@ class OptionsWidget(pg.LayoutWidget):
         self.files_layout.addWidget(self.file_list, 1, 0, 4, 2)
         self.options_layout.addWidget(self.hist_chkbox, 0, 0)
         self.options_layout.addWidget(self.reset_btn, 0, 1)
+        self.options_layout.addWidget(self.live_plot_btn, 1, 0, 1, 2)
 
         # Link widgets to actions
         self.browse_btn.clicked.connect(self.openDirectory)
-        self.clear_btn.clicked.connect(self.clearFileList)
+        self.clear_btn.clicked.connect(self.clear)
         self.file_list.itemClicked.connect(self.loadFile)
         self.hist_chkbox.stateChanged.connect(self.toggleHistogram)
         self.reset_btn.clicked.connect(self.resetView)
+        self.live_plot_btn.clicked.connect(self.simLivePlotting)
 
     # --------------------------------------------------------------------------
 
@@ -86,8 +91,11 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def clearFileList(self):
+    def clear(self):
         self.file_list.clear()
+        self.main_window.image_widget.clear()
+        self.main_window.x_plot_widget.clear()
+        self.main_window.y_plot_widget.clear()
 
     # --------------------------------------------------------------------------
 
@@ -110,6 +118,13 @@ class OptionsWidget(pg.LayoutWidget):
 
     def resetView(self, state):
         self.main_window.image_widget.displayImage(self.file_path)
+
+    # --------------------------------------------------------------------------
+
+    def simLivePlotting(self):
+        for i in range(self.file_list.count()):
+            self.loadFile(self.file_list.item(i))
+            QtGui.QApplication.processEvents()
 
 
 # ==============================================================================
@@ -195,6 +210,9 @@ class ImageWidget(pg.ImageView):
     # --------------------------------------------------------------------------
 
     def calculateAvgIntensity(self):
+        """
+        ** Avg intensity for viewing window (worse performance)
+
         # Coords visible in viewing window
         self.view_range = self.view.viewRange()
 
@@ -209,6 +227,10 @@ class ImageWidget(pg.ImageView):
         if 0 in im_part.shape:
             return
         view_image[x_min:x_min + im_part.shape[0], y_min:y_min + im_part.shape[1]] = im_part
+        """
+
+        # Plotting for better performance
+        view_image = self.image
 
         # Mean of columns/rows
         cols = view_image.mean(axis=1)
@@ -275,9 +297,11 @@ class XYZPlotWidget(gl.GLViewWidget):
         #g = gl.GLGridItem()
         #self.addItem(g)
 
+    # --------------------------------------------------------------------------
 
     def plot(self, image):
         plot_item = gl.GLSurfacePlotItem(z=image, shader='shaded', color=(0.5, 0.5, 1, 1))
         self.addItem(plot_item)
+
 
 # ==============================================================================
