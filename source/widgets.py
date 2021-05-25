@@ -6,12 +6,13 @@ See LICENSE file.
 # ==============================================================================
 
 import pyqtgraph as pg
+import pyqtgraph.opengl as gl
 import matplotlib.pyplot as plt
 from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
 import os
 import sys
-import time
+from scipy import ndimage
 
 # ==============================================================================
 
@@ -31,13 +32,16 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_gbox = QtGui.QGroupBox("Plotting Options")
         self.files_gbox = QtGui.QGroupBox("Image Files")
 
+        # Disable Options GroupBox until file selected
+        self.options_gbox.setEnabled(False)
+
         # Add GroupBoxes to widget
-        self.addWidget(self.options_gbox, row=0, col=0)
-        self.addWidget(self.files_gbox, row=1, col=0)
+        self.addWidget(self.files_gbox, row=0, col=0)
+        self.addWidget(self.options_gbox, row=1, col=0)
 
         # Create/add layouts
-        self.options_layout = QtGui.QGridLayout()
         self.files_layout = QtGui.QGridLayout()
+        self.options_layout = QtGui.QGridLayout()
         self.options_gbox.setLayout(self.options_layout)
         self.files_gbox.setLayout(self.files_layout)
 
@@ -51,22 +55,21 @@ class OptionsWidget(pg.LayoutWidget):
 
         # Create options widgets
         self.hist_chkbox = QtGui.QCheckBox("Histogram")
-        self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
-        #self.live_plot_btn.hide()
+        self.reset_btn = QtGui.QPushButton("Reset View")
 
         # Add widgets to GroupBoxes
         self.files_layout.addWidget(self.browse_btn, 0, 0)
         self.files_layout.addWidget(self.clear_btn, 0, 1)
         self.files_layout.addWidget(self.file_list, 1, 0, 4, 2)
-        self.options_layout.addWidget(self.hist_chkbox, 0, 0, 1, 2)
-        self.options_layout.addWidget(self.live_plot_btn, 1, 0, 1, 2)
+        self.options_layout.addWidget(self.hist_chkbox, 0, 0)
+        self.options_layout.addWidget(self.reset_btn, 0, 1)
 
         # Link widgets to actions
         self.browse_btn.clicked.connect(self.openDirectory)
         self.clear_btn.clicked.connect(self.clearFileList)
         self.file_list.itemClicked.connect(self.loadFile)
         self.hist_chkbox.stateChanged.connect(self.toggleHistogram)
-        self.live_plot_btn.clicked.connect(self.simLivePlotting)
+        self.reset_btn.clicked.connect(self.resetView)
 
     # --------------------------------------------------------------------------
 
@@ -90,8 +93,9 @@ class OptionsWidget(pg.LayoutWidget):
 
     def loadFile(self, file):
         #Concatenate directory and file names
-        file_path = f"{self.directory}/{file.text()}"
-        self.main_window.image_widget.displayImage(file_path)
+        self.file_path = f"{self.directory}/{file.text()}"
+        self.main_window.image_widget.displayImage(self.file_path)
+        self.options_gbox.setEnabled(True)
 
     # --------------------------------------------------------------------------
 
@@ -104,25 +108,8 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def simLivePlotting(self):
-        if len(self.file_list) == 0:
-            return
-
-        self.file_index = 0
-
-        timer = QtCore.QTimer()
-        timer.timeout.connect(self.updateLivePlots)
-        #print("HERE")
-        timer.start()
-
-
-    # --------------------------------------------------------------------------
-
-    def updateLivePlots(self):
-        if self.file_index < self.file_list.count():
-            print("HERE")
-            self.loadFile(self.file_list.item(self.file_index))
-            self.file_index += 1
+    def resetView(self, state):
+        self.main_window.image_widget.displayImage(self.file_path)
 
 
 # ==============================================================================
@@ -166,7 +153,10 @@ class ImageWidget(pg.ImageView):
     def displayImage(self, file_path):
         # Read and set image file
         self.image = plt.imread(file_path)
-        self.setImage(self.image)
+        self.setImage(ndimage.rotate(self.image, 90))
+
+        # For 3D plotting
+        self.mean_image = self.image[:,:,:-1].mean(axis=2)
 
         # Get viewing window
         self.view = self.getView()
@@ -185,15 +175,22 @@ class ImageWidget(pg.ImageView):
         # Dynamically update plots when viewing window changes
         self.view.sigRangeChanged.connect(self.updatePlots)
 
+        self.updatePlots()
+
+    # --------------------------------------------------------------------------
+
+    def updatePlots(self):
         col_avgs, row_avgs = self.calculateAvgIntensity()
 
         # Clear plots
         self.main_window.x_plot_widget.clear()
         self.main_window.y_plot_widget.clear()
+        #self.main_window.xyz_plot_widget.clear()
 
         # Display new plots
         self.main_window.x_plot_widget.plot(col_avgs)
         self.main_window.y_plot_widget.plot(x=row_avgs, y=range(len(row_avgs)))
+        #self.main_window.xyz_plot_widget.plot(self.mean_image)
 
     # --------------------------------------------------------------------------
 
@@ -264,7 +261,7 @@ class YPlotWidget(pg.PlotWidget):
 
 # ==============================================================================
 
-class XYZPlotWidget(pg.PlotWidget):
+class XYZPlotWidget(gl.GLViewWidget):
 
     """
     3D view of x vs y vs intensity
@@ -274,5 +271,13 @@ class XYZPlotWidget(pg.PlotWidget):
         super(XYZPlotWidget, self).__init__(parent)
         self.main_window = parent
 
+        #self.show()
+        #g = gl.GLGridItem()
+        #self.addItem(g)
+
+
+    def plot(self, image):
+        plot_item = gl.GLSurfacePlotItem(z=image, shader='shaded', color=(0.5, 0.5, 1, 1))
+        self.addItem(plot_item)
 
 # ==============================================================================
