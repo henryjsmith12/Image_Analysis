@@ -8,13 +8,14 @@ See LICENSE file.
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 import matplotlib.pyplot as plt
+from matplotlib import cm
+from PIL import Image
 from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
 import os
 import sys
 from scipy import ndimage
-import threading
-import _thread
+import tifffile as tiff
 
 # ==============================================================================
 
@@ -189,11 +190,18 @@ class ImageWidget(pg.ImageView):
 
     def displayImage(self, file_path):
         # Read and set image file
-        self.image = plt.imread(file_path)
-        self.setImage(ndimage.rotate(self.image, 90))
+        self.image = ndimage.rotate(tiff.imread(file_path), 90)
+        color_image = plt.cm.jet(self.image) * 2**16
+        #print(colors.shape)
+        #print(colors.max())
+        #self.setImage(self.image)
+        self.setImage(color_image)
 
+
+        #print(self.image)
+        #sys.exit(0)
         # For 3D plotting
-        self.mean_image = self.image[:,:,:-1].mean(axis=2)
+        #self.mean_image = self.image[:,:,:-1].mean(axis=2)
 
         # Get viewing window
         self.view = self.getView()
@@ -259,11 +267,12 @@ class ImageWidget(pg.ImageView):
         rows = view_image.mean(axis=0)
 
         # RGBA to grayscale conversion
-        # Calculate avg intensity (0-255) of each row/column
+        # Calculate avg intensity of each row/column
         col_avgs = 0.299 * cols[:,0] + 0.587 * cols[:,1] + 0.114 * cols[:,2]
         row_avgs = 0.299 * rows[:,0] + 0.587 * rows[:,1] + 0.114 * rows[:,2]
 
         return col_avgs, row_avgs
+        #return cols, rows
 
 # ==============================================================================
 
