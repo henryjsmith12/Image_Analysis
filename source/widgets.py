@@ -58,15 +58,23 @@ class OptionsWidget(pg.LayoutWidget):
         # Create options widgets
         self.hist_chkbox = QtGui.QCheckBox("Histogram")
         self.reset_btn = QtGui.QPushButton("Reset View")
-        self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
+        #self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
+        self.scale_lbl = QtGui.QLabel("Scale:")
+        self.linear_scale_rbtn = QtGui.QRadioButton("Linear")
+        self.linear_scale_rbtn.setChecked(True)
+        self.log_scale_rbtn = QtGui.QRadioButton("Logarithmic")
+
 
         # Add widgets to GroupBoxes
         self.files_layout.addWidget(self.browse_btn, 0, 0)
         self.files_layout.addWidget(self.clear_btn, 0, 1)
         self.files_layout.addWidget(self.file_list, 1, 0, 4, 2)
-        self.options_layout.addWidget(self.hist_chkbox, 0, 0)
-        self.options_layout.addWidget(self.reset_btn, 0, 1)
-        self.options_layout.addWidget(self.live_plot_btn, 1, 0, 1, 2)
+        self.options_layout.addWidget(self.hist_chkbox, 0, 0, 1, 2)
+        self.options_layout.addWidget(self.reset_btn, 0, 2, 1, 3)
+        #self.options_layout.addWidget(self.live_plot_btn, 1, 0, 1, 2)
+        self.options_layout.addWidget(self.scale_lbl, 1, 0, 1, 1)
+        self.options_layout.addWidget(self.linear_scale_rbtn, 1, 1, 1, 2)
+        self.options_layout.addWidget(self.log_scale_rbtn, 1, 3, 1, 2)
 
         # Link widgets to actions
         self.browse_btn.clicked.connect(self.openDirectory)
@@ -74,7 +82,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.file_list.itemClicked.connect(self.loadFile)
         self.hist_chkbox.stateChanged.connect(self.toggleHistogram)
         self.reset_btn.clicked.connect(self.resetView)
-        self.live_plot_btn.clicked.connect(self.simLivePlotting)
+        #self.live_plot_btn.clicked.connect(self.simLivePlotting)
+        self.linear_scale_rbtn.toggled.connect(self.toggleScale)
+        self.log_scale_rbtn.toggled.connect(self.toggleScale)
 
     # --------------------------------------------------------------------------
 
@@ -116,8 +126,20 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def resetView(self, state):
+    def resetView(self):
         self.main_window.image_widget.displayImage(self.file_path)
+
+    # --------------------------------------------------------------------------
+
+    def toggleScale(self):
+        button = self.sender()
+        # Toggles between log and linear scaling
+        if button.text() == "Logarithmic":
+            self.main_window.x_plot_widget.setLogMode(False, True)
+            self.main_window.y_plot_widget.setLogMode(True, False)
+        else:
+            self.main_window.x_plot_widget.setLogMode(False, False)
+            self.main_window.y_plot_widget.setLogMode(False, False)
 
     # --------------------------------------------------------------------------
 
@@ -279,7 +301,6 @@ class YPlotWidget(pg.PlotWidget):
         self.setLabel("bottom", "Average Intensity")
         self.showGrid(x=True, y=True)
         self.setMouseEnabled(x=False, y=False)
-
 
 # ==============================================================================
 
