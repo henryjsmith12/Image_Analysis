@@ -228,7 +228,7 @@ class ImageWidget(pg.ImageView):
         self.setColorMap(color_map)
 
         self.view = self.getView()
-        self.view.setZValue(-5)
+
 
     # --------------------------------------------------------------------------
 
@@ -249,6 +249,8 @@ class ImageWidget(pg.ImageView):
             yMax=(self.image.shape[1])
         )
 
+        self.view.enableAutoRange()
+
         # Link view to profile plots
         self.view.setXLink(self.main_window.x_plot_widget)
         self.view.setYLink(self.main_window.y_plot_widget)
@@ -262,54 +264,45 @@ class ImageWidget(pg.ImageView):
     # --------------------------------------------------------------------------
 
     def updatePlots(self):
-        col_avgs, row_avgs = self.calculateAvgIntensity()
 
-        # Clear plots
-        self.main_window.x_plot_widget.clear()
-        self.main_window.y_plot_widget.clear()
-        #self.main_window.xyz_plot_widget.clear()
+        try:
+            col_avgs, row_avgs = self.calculateAvgIntensity()
 
-        # Display new plots
-        self.main_window.x_plot_widget.plot(col_avgs)
-        self.main_window.y_plot_widget.plot(x=row_avgs, y=range(len(row_avgs)))
-        #self.main_window.xyz_plot_widget.plot(self.mean_image)
+            # Clear plots
+            self.main_window.x_plot_widget.clear()
+            self.main_window.y_plot_widget.clear()
+            #self.main_window.xyz_plot_widget.clear()
+
+            # Display new plots
+            self.main_window.x_plot_widget.plot(col_avgs)
+            self.main_window.y_plot_widget.plot(x=row_avgs, y=range(len(row_avgs)))
+            #self.main_window.xyz_plot_widget.plot(self.mean_image)
+        except TypeError:
+            return
 
     # --------------------------------------------------------------------------
 
     def calculateAvgIntensity(self):
-        """
-        ** Avg intensity for viewing window (worse performance)
-
-        # Coords visible in viewing window
         self.view_range = self.view.viewRange()
 
-        # Limits of viewing window
-        x_min, x_max = max(int(self.view_range[0][0]), 0), int(self.view_range[0][1])
-        y_min, y_max = max(int(self.view_range[1][0]), 0), int(self.view_range[1][1])
+        x_min, x_max = int(self.view_range[0][0]), int(self.view_range[0][1])
+        y_min, y_max = int(self.view_range[1][0]), int(self.view_range[1][1])
 
-        # Embed block of image into array of zeros
-        # Able to take avg intensity of that part
-        view_image = np.zeros(self.image.shape, dtype=np.int)
-        im_part = self.image[x_min:x_max, y_min:y_max]
-        if 0 in im_part.shape:
+        image_in_view = self.image[x_min:x_max, y_min:y_max]
+
+        if 0 in image_in_view.shape:
             return
-        view_image[x_min:x_min + im_part.shape[0], y_min:y_min + im_part.shape[1]] = im_part
-        """
-
-        # Plotting for better performance
-        view_image = self.image
-
-        # Mean of columns/rows
-        cols = view_image.mean(axis=1)
-        rows = view_image.mean(axis=0)
-
-        # RGBA to grayscale conversion
-        # Calculate avg intensity of each row/column
+        cols = image_in_view.mean(axis=1)
+        rows = image_in_view.mean(axis=0)
         col_avgs = 0.299 * cols[:,0] + 0.587 * cols[:,1] + 0.114 * cols[:,2]
         row_avgs = 0.299 * rows[:,0] + 0.587 * rows[:,1] + 0.114 * rows[:,2]
+        x_curve = np.zeros((self.image.shape[0]))
+        y_curve = np.zeros((self.image.shape[1]))
+        x_curve[x_min:x_min + image_in_view.shape[0]] = col_avgs
+        y_curve[y_min:y_min + image_in_view.shape[1]] = row_avgs
 
-        return col_avgs, row_avgs
-        #return cols, rows
+        return x_curve, y_curve
+
 
 # ==============================================================================
 
