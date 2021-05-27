@@ -72,15 +72,13 @@ class OptionsWidget(pg.LayoutWidget):
         self.scale_group.addButton(self.linear_scale_rbtn)
         self.scale_group.addButton(self.log_scale_rbtn)
 
-        self.image_quality_lbl = QtGui.QLabel("Quality:")
-        self.image_quality_group = QtGui.QButtonGroup()
-        self.image_8bit_rbtn = QtGui.QRadioButton("8bit")
-        self.image_8bit_rbtn.setChecked(True)
-        self.image_16bit_rbtn = QtGui.QRadioButton("16bit")
-        self.image_32bit_rbtn = QtGui.QRadioButton("32bit")
-        self.image_quality_group.addButton(self.image_8bit_rbtn)
-        self.image_quality_group.addButton(self.image_16bit_rbtn)
-        self.image_quality_group.addButton(self.image_32bit_rbtn)
+        self.mouse_mode_lbl = QtGui.QLabel("Mouse Mode:")
+        self.mouse_mode_group = QtGui.QButtonGroup()
+        self.pan_mode_rbtn = QtGui.QRadioButton("Pan")
+        self.pan_mode_rbtn.setChecked(True)
+        self.rect_mode_rbtn = QtGui.QRadioButton("Rectangle")
+        self.mouse_mode_group.addButton(self.pan_mode_rbtn)
+        self.mouse_mode_group.addButton(self.rect_mode_rbtn)
 
         # Add widgets to GroupBoxes
         self.files_layout.addWidget(self.browse_btn, 0, 0, 1, 2)
@@ -91,14 +89,13 @@ class OptionsWidget(pg.LayoutWidget):
 
         self.options_layout.addWidget(self.hist_chkbox, 0, 0, 1, 2)
         self.options_layout.addWidget(self.reset_btn, 0, 2, 1, 3)
-        self.options_layout.addWidget(self.live_plot_btn, 3, 0, 1, 2)
+        self.options_layout.addWidget(self.live_plot_btn, 4, 0, 1, 2)
         self.options_layout.addWidget(self.scale_lbl, 1, 0, 1, 1)
         self.options_layout.addWidget(self.linear_scale_rbtn, 1, 1)
         self.options_layout.addWidget(self.log_scale_rbtn, 1, 2)
-        self.options_layout.addWidget(self.image_quality_lbl, 2, 0)
-        self.options_layout.addWidget(self.image_8bit_rbtn, 2, 1)
-        self.options_layout.addWidget(self.image_16bit_rbtn, 2, 2)
-        self.options_layout.addWidget(self.image_32bit_rbtn, 2, 3)
+        self.options_layout.addWidget(self.mouse_mode_lbl, 2, 0)
+        self.options_layout.addWidget(self.pan_mode_rbtn, 2, 1)
+        self.options_layout.addWidget(self.rect_mode_rbtn, 2, 2)
 
         # Link widgets to actions
         self.browse_btn.clicked.connect(self.openDirectory)
@@ -109,9 +106,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_plot_btn.clicked.connect(self.simLivePlotting)
         self.linear_scale_rbtn.toggled.connect(self.toggleScale)
         self.log_scale_rbtn.toggled.connect(self.toggleScale)
-        self.image_8bit_rbtn.toggled.connect(self.toggleImageQuality)
-        self.image_16bit_rbtn.toggled.connect(self.toggleImageQuality)
-        self.image_32bit_rbtn.toggled.connect(self.toggleImageQuality)
+        self.pan_mode_rbtn.toggled.connect(self.toggleMouseMode)
+        self.rect_mode_rbtn.toggled.connect(self.toggleMouseMode)
 
     # --------------------------------------------------------------------------
 
@@ -172,15 +168,13 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def toggleImageQuality(self):
+    def toggleMouseMode(self):
         button = self.sender()
 
-        if button.text() == "8bit":
-            self.main_window.image_widget.image_quality = 2**8
-        elif button.text() == "16bit":
-            self.main_window.image_widget.image_quality = 2**16
+        if button.text() == "Pan":
+            self.main_window.image_widget.view.setMouseMode(pg.ViewBox.PanMode)
         else:
-            self.main_window.image_widget.image_quality = 2**32
+            self.main_window.image_widget.view.setMouseMode(pg.ViewBox.RectMode)
 
     # --------------------------------------------------------------------------
 
@@ -221,34 +215,33 @@ class ImageWidget(pg.ImageView):
         super(ImageWidget, self).__init__(parent)
         self.main_window = parent
 
-        # Delete unnecessary features
+        # Hide unnecessary features
         self.ui.roiBtn.hide()
         self.ui.menuBtn.hide()
         self.ui.histogram.hide()
 
+        # Set 8bit as initial quality
         self.image_quality = 2**8
 
+        # For histogram colorbar
         color_map = pg.colormap.getFromMatplotlib("jet")
         self.setColorMap(color_map)
+
+        self.view = self.getView()
+        self.view.setZValue(-5)
 
     # --------------------------------------------------------------------------
 
     def displayImage(self, file_path):
         # Read and set image file
         self.image = ndimage.rotate(tiff.imread(file_path), 90)
-        color_image = (plt.cm.jet(self.image) * self.image_quality).astype(int)
-        #print(colors.shape)
-        #print(colors.max())
-        #self.setImage(self.image)
+        color_image = (plt.cm.jet(self.image) * 2**32).astype(int)
         self.setImage(color_image)
 
-        #print(self.image)
-        #sys.exit(0)
         # For 3D plotting
         #self.mean_image = self.image[:,:,:-1].mean(axis=2)
 
-        # Get viewing window
-        self.view = self.getView()
+        # Limit viewing window to only show image
         self.view.setLimits(
             xMin=0,
             xMax=(self.image.shape[0]),
