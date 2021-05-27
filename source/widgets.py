@@ -55,6 +55,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.browse_btn = QtGui.QPushButton("Browse")
         self.clear_btn = QtGui.QPushButton("Clear")
         self.file_list = QtGui.QListWidget()
+        self.current_file_lbl = QtGui.QLabel("Current Image:")
+        self.current_file_txtbox = QtGui.QLineEdit()
+        self.current_file_txtbox.setReadOnly(True)
 
         # Create options widgets
         self.hist_chkbox = QtGui.QCheckBox("Histogram")
@@ -80,9 +83,12 @@ class OptionsWidget(pg.LayoutWidget):
         self.image_quality_group.addButton(self.image_32bit_rbtn)
 
         # Add widgets to GroupBoxes
-        self.files_layout.addWidget(self.browse_btn, 0, 0)
-        self.files_layout.addWidget(self.clear_btn, 0, 1)
-        self.files_layout.addWidget(self.file_list, 1, 0, 4, 2)
+        self.files_layout.addWidget(self.browse_btn, 0, 0, 1, 2)
+        self.files_layout.addWidget(self.clear_btn, 0, 2, 1, 2)
+        self.files_layout.addWidget(self.file_list, 1, 0, 4, 4)
+        self.files_layout.addWidget(self.current_file_lbl, 5, 0)
+        self.files_layout.addWidget(self.current_file_txtbox, 5, 1, 1, 3)
+
         self.options_layout.addWidget(self.hist_chkbox, 0, 0, 1, 2)
         self.options_layout.addWidget(self.reset_btn, 0, 2, 1, 3)
         self.options_layout.addWidget(self.live_plot_btn, 3, 0, 1, 2)
@@ -127,6 +133,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.main_window.image_widget.clear()
         self.main_window.x_plot_widget.clear()
         self.main_window.y_plot_widget.clear()
+        self.current_file_txtbox.setText("")
 
     # --------------------------------------------------------------------------
 
@@ -134,6 +141,7 @@ class OptionsWidget(pg.LayoutWidget):
         #Concatenate directory and file names
         self.file_path = f"{self.directory}/{file.text()}"
         self.main_window.image_widget.displayImage(self.file_path)
+        self.current_file_txtbox.setText(file.text())
         self.options_gbox.setEnabled(True)
 
     # --------------------------------------------------------------------------
@@ -228,7 +236,7 @@ class ImageWidget(pg.ImageView):
     def displayImage(self, file_path):
         # Read and set image file
         self.image = ndimage.rotate(tiff.imread(file_path), 90)
-        color_image = plt.cm.jet(self.image) * self.image_quality
+        color_image = (plt.cm.jet(self.image) * self.image_quality).astype(int)
         #print(colors.shape)
         #print(colors.max())
         #self.setImage(self.image)
