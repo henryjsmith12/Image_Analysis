@@ -204,7 +204,7 @@ class AnalysisWidget(pg.LayoutWidget):
 
 # ==============================================================================
 
-class ImageWidget(pg.ImageView):
+class ImageWidget(pg.PlotWidget):
 
     """
     - Image display
@@ -215,22 +215,13 @@ class ImageWidget(pg.ImageView):
         super(ImageWidget, self).__init__(parent)
         self.main_window = parent
 
-        # Hide unnecessary features
-        self.ui.roiBtn.hide()
-        self.ui.menuBtn.hide()
-        self.ui.histogram.hide()
+        self.hideAxis("left")
+        self.hideAxis("bottom")
+        self.setAspectLocked(True)
+        self.view = self.getViewBox()
+        self.image_item = pg.ImageItem()
+        self.addItem(self.image_item)
 
-        # For histogram colorbar
-        color_map = pg.colormap.getFromMatplotlib("jet")
-        self.setColorMap(color_map)
-
-        self.view = self.getView()
-
-        self.horiz_line = pg.InfiniteLine(angle=90, movable=True)
-        self.vert_line = pg.InfiniteLine(angle=0, movable=True)
-        self.view.addItem(self.horiz_line)
-
-        self.view.setZValue(1e3)
 
 
     # --------------------------------------------------------------------------
@@ -239,12 +230,8 @@ class ImageWidget(pg.ImageView):
         # Read and set image file
         self.image = ndimage.rotate(tiff.imread(file_path), 90)
         color_image = (plt.cm.jet(self.image) * 2**32).astype(int)
-        self.setImage(color_image)
-
-        self.getImageItem().setZValue(1e-6)
+        self.image_item.setImage(color_image)
         #self.addItem(self.vert_line)
-
-        print(dir(self.image))
 
         # For 3D plotting
         #self.mean_image = self.image[:,:,:-1].mean(axis=2)
@@ -303,12 +290,11 @@ class ImageWidget(pg.ImageView):
             return
         cols = image_in_view.mean(axis=1)
         rows = image_in_view.mean(axis=0)
-        col_avgs = 0.299 * cols[:,0] + 0.587 * cols[:,1] + 0.114 * cols[:,2]
-        row_avgs = 0.299 * rows[:,0] + 0.587 * rows[:,1] + 0.114 * rows[:,2]
+
         x_curve = np.zeros((self.image.shape[0]))
         y_curve = np.zeros((self.image.shape[1]))
-        x_curve[x_min:x_min + image_in_view.shape[0]] = col_avgs
-        y_curve[y_min:y_min + image_in_view.shape[1]] = row_avgs
+        x_curve[x_min:x_min + image_in_view.shape[0]] = cols
+        y_curve[y_min:y_min + image_in_view.shape[1]] = rows
 
         return x_curve, y_curve
 
