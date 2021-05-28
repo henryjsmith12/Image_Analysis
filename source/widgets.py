@@ -220,14 +220,17 @@ class ImageWidget(pg.ImageView):
         self.ui.menuBtn.hide()
         self.ui.histogram.hide()
 
-        # Set 8bit as initial quality
-        self.image_quality = 2**8
-
         # For histogram colorbar
         color_map = pg.colormap.getFromMatplotlib("jet")
         self.setColorMap(color_map)
 
         self.view = self.getView()
+
+        self.horiz_line = pg.InfiniteLine(angle=90, movable=True)
+        self.vert_line = pg.InfiniteLine(angle=0, movable=True)
+        self.view.addItem(self.horiz_line)
+
+        self.view.setZValue(1e3)
 
 
     # --------------------------------------------------------------------------
@@ -237,6 +240,11 @@ class ImageWidget(pg.ImageView):
         self.image = ndimage.rotate(tiff.imread(file_path), 90)
         color_image = (plt.cm.jet(self.image) * 2**32).astype(int)
         self.setImage(color_image)
+
+        self.getImageItem().setZValue(1e-6)
+        #self.addItem(self.vert_line)
+
+        print(dir(self.image))
 
         # For 3D plotting
         #self.mean_image = self.image[:,:,:-1].mean(axis=2)
@@ -248,7 +256,7 @@ class ImageWidget(pg.ImageView):
             yMin=0,
             yMax=(self.image.shape[1])
         )
-
+        # Autofocuses on figure
         self.view.enableAutoRange()
 
         # Link view to profile plots
@@ -259,12 +267,13 @@ class ImageWidget(pg.ImageView):
         # Dynamically update plots when viewing window changes
         self.view.sigRangeChanged.connect(self.updatePlots)
 
+        self.view.scene().sigMouseMoved.connect(self.updateCrosshair)
+
         self.updatePlots()
 
     # --------------------------------------------------------------------------
 
     def updatePlots(self):
-
         try:
             col_avgs, row_avgs = self.calculateAvgIntensity()
 
@@ -303,6 +312,14 @@ class ImageWidget(pg.ImageView):
 
         return x_curve, y_curve
 
+    # --------------------------------------------------------------------------
+
+    def updateCrosshair(self, scene_point):
+        #mouse_point = self.view.
+        view_point = self.view.mapSceneToView(scene_point)
+
+
+        print(view_point)
 
 # ==============================================================================
 
