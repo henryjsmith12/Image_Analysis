@@ -7,12 +7,11 @@ See LICENSE file.
 
 import pyqtgraph as pg
 
-# Local
-from source.main_window import MainWindow
+from source.main_window import MainWindow # Local
 
 # ==============================================================================
 
 app = pg.mkQApp("Image Analysis")
-window = MainWindow()
+window = MainWindow() # Inherits from pg.QtGui.QMainWindow
 window.show()
 pg.mkQApp().exec_()

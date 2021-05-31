@@ -5,14 +5,10 @@ See LICENSE file.
 
 # ==============================================================================
 
-import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui
 from pyqtgraph.dockarea import *
-import numpy as np
-import matplotlib.pyplot as plt
 
-# Local
-from source.widgets import *
+from source.widgets import * # Local
 
 # ==============================================================================
 
@@ -26,9 +22,11 @@ class MainWindow(QtGui.QMainWindow):
     def __init__ (self, parent=None):
         super(MainWindow, self).__init__(parent)
 
+        # Customizable dock area
         self.dock_area = DockArea()
         self.setCentralWidget(self.dock_area)
 
+        # Window attributes
         self.setMinimumSize(900, 600)
         self.setGeometry(100, 100, 1200, 800)
         self.setWindowTitle("Image Analysis")
@@ -62,15 +60,15 @@ class MainWindow(QtGui.QMainWindow):
     def createWidgets(self):
         # Create widgets and setup widget components
         self.options_widget = OptionsWidget(self) # File options widget
-        self.options_widget.setupComponents()
+        self.options_widget.setupComponents() # Options (sub)widgets
         self.analysis_widget = AnalysisWidget(self) # Image analysis/info widget
-        self.analysis_widget.setupComponents()
+        self.analysis_widget.setupComponents() # Analysis (sub)widgets
         self.image_widget = ImageWidget(self) # Image widget with sample image
         self.x_plot_widget = XPlotWidget(self) # Plot x-value vs average intensity
         self.y_plot_widget = YPlotWidget(self) # Plot y-value vs average intensity
         self.xyz_plot_widget = XYZPlotWidget(self) # Plots 3D model
 
-        # Add widgets to docks
+        # Add widgets to dock objects
         self.options_dock.addWidget(self.options_widget)
         self.analysis_dock.addWidget(self.analysis_widget)
         self.image_dock.addWidget(self.image_widget)

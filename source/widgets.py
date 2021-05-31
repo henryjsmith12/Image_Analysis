@@ -8,12 +8,9 @@ See LICENSE file.
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from PIL import Image
-from pyqtgraph.Qt import QtGui, QtCore
+from pyqtgraph.Qt import QtGui
 import numpy as np
 import os
-import sys
 from scipy import ndimage
 import tifffile as tiff
 
@@ -115,7 +112,7 @@ class OptionsWidget(pg.LayoutWidget):
         # Find directory with image files
         self.directory = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder")
 
-        # List of files
+        # Sorted list of files
         files = sorted(os.listdir(self.directory))
 
         # Display files
@@ -126,18 +123,27 @@ class OptionsWidget(pg.LayoutWidget):
 
     def clear(self):
         self.file_list.clear()
+
+        # Clear plots
         self.main_window.image_widget.clear()
         self.main_window.x_plot_widget.clear()
         self.main_window.y_plot_widget.clear()
+
         self.current_file_txtbox.setText("")
+
+        # Disbale options
+        self.options_gbox.setEnabled(False)
 
     # --------------------------------------------------------------------------
 
     def loadFile(self, file):
         #Concatenate directory and file names
         self.file_path = f"{self.directory}/{file.text()}"
+
         self.main_window.image_widget.displayImage(self.file_path)
         self.current_file_txtbox.setText(file.text())
+
+        # Enable options
         self.options_gbox.setEnabled(True)
 
     # --------------------------------------------------------------------------
@@ -172,7 +178,7 @@ class OptionsWidget(pg.LayoutWidget):
 
     def toggleMouseMode(self):
         button = self.sender()
-
+        # Toggles between pan and rectangle mouse controls
         if button.text() == "Pan":
             self.main_window.image_widget.view.setMouseMode(pg.ViewBox.PanMode)
         else:
@@ -181,6 +187,7 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def simLivePlotting(self):
+        # Loops through files in list
         for i in range(self.file_list.count()):
             self.loadFile(self.file_list.item(i))
             QtGui.QApplication.processEvents()
@@ -191,7 +198,9 @@ class OptionsWidget(pg.LayoutWidget):
 class AnalysisWidget(pg.LayoutWidget):
 
     """
-    ROI values, peak values, etc.
+    - ROI values
+    - peak values
+    - Mouse (Crosshair) values
     """
 
     def __init__ (self, parent):
@@ -210,7 +219,7 @@ class ImageWidget(pg.PlotWidget):
 
     """
     - Image display
-    - Interactive intensity control
+    - Avg intensity calculation
     """
 
     def __init__ (self, parent):
@@ -263,14 +272,18 @@ class ImageWidget(pg.PlotWidget):
         # Dynamically update plots when viewing window changes
         self.view.sigRangeChanged.connect(self.updatePlots)
 
+        # Update crosshair information when mouse moves
         self.view.scene().sigMouseMoved.connect(self.updateCrosshair)
 
+        # Initial update of x & y intensity plots
         self.updatePlots()
 
     # --------------------------------------------------------------------------
 
     def updatePlots(self):
+        # calculateAvgIntensity() will return nothing if viewing range is wrong
         try:
+            # Average intensity of pixels in viewing window
             col_avgs, row_avgs = self.calculateAvgIntensity()
 
             # Clear plots
@@ -290,30 +303,42 @@ class ImageWidget(pg.PlotWidget):
     def calculateAvgIntensity(self):
         self.view_range = self.view.viewRange()
 
+        # Max/min values of viewing window
         x_min, x_max = int(self.view_range[0][0]), int(self.view_range[0][1])
         y_min, y_max = int(self.view_range[1][0]), int(self.view_range[1][1])
 
+        # Subarray of pixels within viewing window
         image_in_view = self.image[x_min:x_max, y_min:y_max]
 
+        # Error that occurs during first plot
+        # Not really sure why image_in_view would contain 0, but it does
         if 0 in image_in_view.shape:
             return
+
+        # Mean of values in x & y directions
+        # Each yield a 1-D array
         cols = image_in_view.mean(axis=1)
         rows = image_in_view.mean(axis=0)
 
+        # 1-D arrays of zeros to embed mean arrays into
         x_curve = np.zeros((self.image.shape[0]))
         y_curve = np.zeros((self.image.shape[1]))
+
+        # Embed mean arrays
         x_curve[x_min:x_min + image_in_view.shape[0]] = cols
         y_curve[y_min:y_min + image_in_view.shape[1]] = rows
 
+        # 1-D arrays with lengths corresponding to original image
         return x_curve, y_curve
 
     # --------------------------------------------------------------------------
 
     def updateCrosshair(self, scene_point):
-        #mouse_point = self.view.
+        # View coordinates to plot coordinates
         view_point = self.view.mapSceneToView(scene_point)
         print(view_point)
 
+        # Changes position of crosshair
         self.v_line.setPos(view_point.x())
         self.h_line.setPos(view_point.y())
 
@@ -357,11 +382,11 @@ class YPlotWidget(pg.PlotWidget):
 
 # ==============================================================================
 
-class XYZPlotWidget(gl.GLViewWidget):
+"""
+Placeholder class for undecided dock in top-right corner of window
+"""
 
-    """
-    3D view of x vs y vs intensity
-    """
+class XYZPlotWidget(gl.GLViewWidget):
 
     def __init__ (self, parent):
         super(XYZPlotWidget, self).__init__(parent)
