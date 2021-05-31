@@ -207,10 +207,103 @@ class AnalysisWidget(pg.LayoutWidget):
         super(AnalysisWidget, self).__init__(parent)
         self.main_window = parent
 
+        # Create GroupBoxes
+        self.mouse_gbox = QtGui.QGroupBox("Mouse")
+        self.image_gbox = QtGui.QGroupBox("Image")
+        self.roi_gbox = QtGui.QGroupBox("ROI")
+        self.peak_gbox = QtGui.QGroupBox("Peak")
+
+        # Add GroupBoxes to widget
+        self.addWidget(self.mouse_gbox, row=0, col=0, rowspan=1)
+        self.addWidget(self.image_gbox, row=1, col=0, rowspan=1)
+        self.addWidget(self.roi_gbox, row=0, col=1, rowspan=2)
+        self.addWidget(self.peak_gbox, row=0, col=2, rowspan=2)
+
+        # Create/add layouts
+        self.mouse_layout = QtGui.QGridLayout()
+        self.image_layout = QtGui.QGridLayout()
+        self.roi_layout = QtGui.QGridLayout()
+        self.peak_layout = QtGui.QGridLayout()
+        self.mouse_gbox.setLayout(self.mouse_layout)
+        self.image_gbox.setLayout(self.image_layout)
+        self.roi_gbox.setLayout(self.roi_layout)
+        self.peak_gbox.setLayout(self.peak_layout)
+
     # --------------------------------------------------------------------------
 
     def setupComponents(self):
-        ...
+        # Create mouse widgets
+        self.mouse_x_lbl = QtGui.QLabel("x Position:")
+        self.mouse_x_txtbox = QtGui.QLineEdit()
+        self.mouse_x_txtbox.setReadOnly(True)
+        self.mouse_y_lbl = QtGui.QLabel("y Position:")
+        self.mouse_y_txtbox = QtGui.QLineEdit()
+        self.mouse_y_txtbox.setReadOnly(True)
+
+        # Create image widgets
+        self.image_width_lbl = QtGui.QLabel("Width:")
+        self.image_width_txtbox = QtGui.QLineEdit()
+        self.image_width_txtbox.setReadOnly(True)
+        self.image_height_lbl = QtGui.QLabel("Height:")
+        self.image_height_txtbox = QtGui.QLineEdit()
+        self.image_height_txtbox.setReadOnly(True)
+
+        # Create roi widgets
+        self.roi_center_x_lbl = QtGui.QLabel("Center x:")
+        self.roi_center_x_txtbox = QtGui.QLineEdit()
+        self.roi_center_x_txtbox.setReadOnly(True)
+        self.roi_center_y_lbl = QtGui.QLabel("Center y:")
+        self.roi_center_y_txtbox = QtGui.QLineEdit()
+        self.roi_center_y_txtbox.setReadOnly(True)
+        self.roi_width_lbl = QtGui.QLabel("Width:")
+        self.roi_width_txtbox = QtGui.QLineEdit()
+        self.roi_width_txtbox.setReadOnly(True)
+        self.roi_height_lbl = QtGui.QLabel("Height:")
+        self.roi_height_txtbox = QtGui.QLineEdit()
+        self.roi_height_txtbox.setReadOnly(True)
+
+        # Create peak widgets
+        self.peak_center_x_lbl = QtGui.QLabel("Center x:")
+        self.peak_center_x_txtbox = QtGui.QLineEdit()
+        self.peak_center_x_txtbox.setReadOnly(True)
+        self.peak_center_y_lbl = QtGui.QLabel("Center y:")
+        self.peak_center_y_txtbox = QtGui.QLineEdit()
+        self.peak_center_y_txtbox.setReadOnly(True)
+        self.peak_width_lbl = QtGui.QLabel("Width:")
+        self.peak_width_txtbox = QtGui.QLineEdit()
+        self.peak_width_txtbox.setReadOnly(True)
+        self.peak_height_lbl = QtGui.QLabel("Height:")
+        self.peak_height_txtbox = QtGui.QLineEdit()
+        self.peak_height_txtbox.setReadOnly(True)
+
+        # Add widgets to GroupBoxes
+        self.mouse_layout.addWidget(self.mouse_x_lbl, 0, 0)
+        self.mouse_layout.addWidget(self.mouse_x_txtbox, 0, 1)
+        self.mouse_layout.addWidget(self.mouse_y_lbl, 1, 0)
+        self.mouse_layout.addWidget(self.mouse_y_txtbox, 1, 1)
+
+        self.image_layout.addWidget(self.image_width_lbl, 0, 0)
+        self.image_layout.addWidget(self.image_width_txtbox, 0, 1)
+        self.image_layout.addWidget(self.image_height_lbl, 1, 0)
+        self.image_layout.addWidget(self.image_height_txtbox, 1, 1)
+
+        self.roi_layout.addWidget(self.roi_center_x_lbl, 0, 0)
+        self.roi_layout.addWidget(self.roi_center_x_txtbox, 0, 1)
+        self.roi_layout.addWidget(self.roi_center_y_lbl, 1, 0)
+        self.roi_layout.addWidget(self.roi_center_y_txtbox, 1, 1)
+        self.roi_layout.addWidget(self.roi_width_lbl, 2, 0)
+        self.roi_layout.addWidget(self.roi_width_txtbox, 2, 1)
+        self.roi_layout.addWidget(self.roi_height_lbl, 3, 0)
+        self.roi_layout.addWidget(self.roi_height_txtbox, 3, 1)
+
+        self.peak_layout.addWidget(self.peak_center_x_lbl, 0, 0)
+        self.peak_layout.addWidget(self.peak_center_x_txtbox, 0, 1)
+        self.peak_layout.addWidget(self.peak_center_y_lbl, 1, 0)
+        self.peak_layout.addWidget(self.peak_center_y_txtbox, 1, 1)
+        self.peak_layout.addWidget(self.peak_width_lbl, 2, 0)
+        self.peak_layout.addWidget(self.peak_width_txtbox, 2, 1)
+        self.peak_layout.addWidget(self.peak_height_lbl, 3, 0)
+        self.peak_layout.addWidget(self.peak_height_txtbox, 3, 1)
 
 
 # ==============================================================================
@@ -245,12 +338,13 @@ class ImageWidget(pg.PlotWidget):
     # --------------------------------------------------------------------------
 
     def displayImage(self, file_path):
-
         # Read and set image file
         self.image = ndimage.rotate(tiff.imread(file_path), 90)
         color_image = (plt.cm.jet(self.image) * 2**32).astype(int)
         self.image_item.setImage(color_image)
 
+        self.main_window.analysis_widget.image_width_txtbox.setText(str(self.image.shape[0]))
+        self.main_window.analysis_widget.image_height_txtbox.setText(str(self.image.shape[1]))
         # For 3D plotting
         #self.mean_image = self.image[:,:,:-1].mean(axis=2)
 
@@ -295,6 +389,7 @@ class ImageWidget(pg.PlotWidget):
             self.main_window.x_plot_widget.plot(col_avgs)
             self.main_window.y_plot_widget.plot(x=row_avgs, y=range(len(row_avgs)))
             #self.main_window.xyz_plot_widget.plot(self.mean_image)
+
         except TypeError:
             return
 
@@ -306,6 +401,8 @@ class ImageWidget(pg.PlotWidget):
         # Max/min values of viewing window
         x_min, x_max = int(self.view_range[0][0]), int(self.view_range[0][1])
         y_min, y_max = int(self.view_range[1][0]), int(self.view_range[1][1])
+        x_center = x_min + ((x_max - x_min) / 2)
+        y_center = y_min + ((y_max - y_min) / 2)
 
         # Subarray of pixels within viewing window
         image_in_view = self.image[x_min:x_max, y_min:y_max]
@@ -314,6 +411,12 @@ class ImageWidget(pg.PlotWidget):
         # Not really sure why image_in_view would contain 0, but it does
         if 0 in image_in_view.shape:
             return
+
+        # Update analysis textboxes
+        self.main_window.analysis_widget.roi_center_x_txtbox.setText(str(x_center))
+        self.main_window.analysis_widget.roi_center_y_txtbox.setText(str(y_center))
+        self.main_window.analysis_widget.roi_width_txtbox.setText(str(image_in_view.shape[0]))
+        self.main_window.analysis_widget.roi_height_txtbox.setText(str(image_in_view.shape[1]))
 
         # Mean of values in x & y directions
         # Each yield a 1-D array
@@ -336,12 +439,14 @@ class ImageWidget(pg.PlotWidget):
     def updateCrosshair(self, scene_point):
         # View coordinates to plot coordinates
         view_point = self.view.mapSceneToView(scene_point)
-        print(view_point)
 
         # Changes position of crosshair
         self.v_line.setPos(view_point.x())
         self.h_line.setPos(view_point.y())
 
+        # Update analysis textboxes
+        self.main_window.analysis_widget.mouse_x_txtbox.setText(str(int(view_point.x())))
+        self.main_window.analysis_widget.mouse_y_txtbox.setText(str(int(view_point.y())))
 
 # ==============================================================================
 
