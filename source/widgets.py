@@ -57,9 +57,12 @@ class OptionsWidget(pg.LayoutWidget):
         self.current_file_txtbox.setReadOnly(True)
 
         # Create options widgets
-        self.crosshair_chkbox = QtGui.QCheckBox("Crosshair")
-        self.reset_btn = QtGui.QPushButton("Reset View")
         self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
+        self.reset_btn = QtGui.QPushButton("Reset View")
+
+        self.crosshair_lbl = QtGui.QLabel("Crosshair:")
+        self.crosshair_mouse_chkbox = QtGui.QCheckBox("Mouse")
+        self.crosshair_roi_chkbox = QtGui.QCheckBox("ROI")
 
         self.scale_lbl = QtGui.QLabel("Scale:")
         self.scale_group = QtGui.QButtonGroup()
@@ -84,22 +87,28 @@ class OptionsWidget(pg.LayoutWidget):
         self.files_layout.addWidget(self.current_file_lbl, 5, 0)
         self.files_layout.addWidget(self.current_file_txtbox, 5, 1, 1, 3)
 
-        self.options_layout.addWidget(self.crosshair_chkbox, 0, 0, 1, 2)
+        self.options_layout.addWidget(self.live_plot_btn, 0, 0, 1, 2)
         self.options_layout.addWidget(self.reset_btn, 0, 2, 1, 3)
-        self.options_layout.addWidget(self.live_plot_btn, 4, 0, 1, 2)
-        self.options_layout.addWidget(self.scale_lbl, 1, 0, 1, 1)
-        self.options_layout.addWidget(self.linear_scale_rbtn, 1, 1)
-        self.options_layout.addWidget(self.log_scale_rbtn, 1, 2)
-        self.options_layout.addWidget(self.mouse_mode_lbl, 2, 0)
-        self.options_layout.addWidget(self.pan_mode_rbtn, 2, 1)
-        self.options_layout.addWidget(self.rect_mode_rbtn, 2, 2)
+
+        self.options_layout.addWidget(self.crosshair_lbl, 1, 0, 1, 1)
+        self.options_layout.addWidget(self.crosshair_mouse_chkbox, 1, 1)
+        self.options_layout.addWidget(self.crosshair_roi_chkbox, 1, 2)
+
+        self.options_layout.addWidget(self.scale_lbl, 2, 0, 1, 1)
+        self.options_layout.addWidget(self.linear_scale_rbtn, 2, 1)
+        self.options_layout.addWidget(self.log_scale_rbtn, 2, 2)
+
+        self.options_layout.addWidget(self.mouse_mode_lbl, 3, 0)
+        self.options_layout.addWidget(self.pan_mode_rbtn, 3, 1)
+        self.options_layout.addWidget(self.rect_mode_rbtn, 3, 2)
 
         # Link widgets to actions
         self.browse_btn.clicked.connect(self.openDirectory)
         self.clear_btn.clicked.connect(self.clear)
         self.file_list.itemClicked.connect(self.loadFile)
-        self.crosshair_chkbox.stateChanged.connect(self.toggleCrosshair)
         self.reset_btn.clicked.connect(self.resetView)
+        self.crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
+        self.crosshair_roi_chkbox.stateChanged.connect(self.toggleROICrosshair)
         self.live_plot_btn.clicked.connect(self.simLivePlotting)
         self.linear_scale_rbtn.toggled.connect(self.toggleScale)
         self.log_scale_rbtn.toggled.connect(self.toggleScale)
@@ -148,14 +157,25 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def toggleCrosshair(self, state):
-        # Turn histogram on/off
+    def toggleMouseCrosshair(self, state):
+        # Turn mouse crosshair on/off
         if state == 2:
             self.main_window.image_widget.v_line.setVisible(True)
             self.main_window.image_widget.h_line.setVisible(True)
         else:
             self.main_window.image_widget.v_line.setVisible(False)
             self.main_window.image_widget.h_line.setVisible(False)
+
+    # --------------------------------------------------------------------------
+
+    def toggleROICrosshair(self, state):
+        # Turn roi (viewbox) crosshair on/off
+        if state == 2:
+            self.main_window.image_widget.roi_v_line.setVisible(True)
+            self.main_window.image_widget.roi_h_line.setVisible(True)
+        else:
+            self.main_window.image_widget.roi_v_line.setVisible(False)
+            self.main_window.image_widget.roi_h_line.setVisible(False)
 
     # --------------------------------------------------------------------------
 
@@ -327,13 +347,24 @@ class ImageWidget(pg.PlotWidget):
         self.image_item = pg.ImageItem()
         self.addItem(self.image_item)
 
-        # Create crosshair
+        # Create mouse crosshair
         self.v_line = pg.InfiniteLine(angle=90, movable=False)
         self.h_line = pg.InfiniteLine(angle=0, movable=False)
         self.v_line.setVisible(False)
         self.h_line.setVisible(False)
         self.addItem(self.v_line, ignoreBounds=True)
         self.addItem(self.h_line, ignoreBounds=True)
+
+        # Create roi crosshair
+        self.roi_v_line = pg.InfiniteLine(angle=90, movable=False)
+        self.roi_h_line = pg.InfiniteLine(angle=0, movable=False)
+        self.roi_v_line.setVisible(False)
+        self.roi_h_line.setVisible(False)
+        self.roi_v_line.setZValue(1000)
+        self.roi_h_line.setZValue(1000)
+        self.addItem(self.roi_v_line, ignoreBounds=True)
+        self.addItem(self.roi_h_line, ignoreBounds=True)
+
 
     # --------------------------------------------------------------------------
 
@@ -366,8 +397,8 @@ class ImageWidget(pg.PlotWidget):
         # Dynamically update plots when viewing window changes
         self.view.sigRangeChanged.connect(self.updatePlots)
 
-        # Update crosshair information when mouse moves
-        self.view.scene().sigMouseMoved.connect(self.updateCrosshair)
+        # Update crosshair information
+        self.view.scene().sigMouseMoved.connect(self.updateMouseCrosshair)
 
         # Initial update of x & y intensity plots
         self.updatePlots()
@@ -436,7 +467,7 @@ class ImageWidget(pg.PlotWidget):
 
     # --------------------------------------------------------------------------
 
-    def updateCrosshair(self, scene_point):
+    def updateMouseCrosshair(self, scene_point):
         # View coordinates to plot coordinates
         view_point = self.view.mapSceneToView(scene_point)
 
@@ -447,6 +478,7 @@ class ImageWidget(pg.PlotWidget):
         # Update analysis textboxes
         self.main_window.analysis_widget.mouse_x_txtbox.setText(str(int(view_point.x())))
         self.main_window.analysis_widget.mouse_y_txtbox.setText(str(int(view_point.y())))
+
 
 # ==============================================================================
 
@@ -484,6 +516,7 @@ class YPlotWidget(pg.PlotWidget):
         self.setLabel("bottom", "Average Intensity")
         self.showGrid(x=True, y=True)
         self.setMouseEnabled(x=False, y=False)
+
 
 # ==============================================================================
 
