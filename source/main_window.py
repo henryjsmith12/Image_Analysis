@@ -43,7 +43,7 @@ class MainWindow(QtGui.QMainWindow):
         self.image_dock = Dock("Image", size=(200, 200))
         self.x_plot_dock = Dock("x Plot", size=(200, 200))
         self.y_plot_dock = Dock("y Plot", size=(200, 200))
-        self.xyz_plot_dock = Dock("3D Plot", size=(200, 200))
+        self.xyz_plot_dock = Dock("", size=(200, 200))
 
         # Add/organize docks
         self.dock_area.addDock(self.options_dock, "left")

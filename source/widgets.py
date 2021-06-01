@@ -259,6 +259,9 @@ class AnalysisWidget(pg.LayoutWidget):
         self.mouse_y_lbl = QtGui.QLabel("y Position:")
         self.mouse_y_txtbox = QtGui.QLineEdit()
         self.mouse_y_txtbox.setReadOnly(True)
+        self.mouse_intensity_lbl = QtGui.QLabel("Intensity:")
+        self.mouse_intensity_txtbox = QtGui.QLineEdit()
+        self.mouse_intensity_txtbox.setReadOnly(True)
 
         # Create image widgets
         self.image_width_lbl = QtGui.QLabel("Width:")
@@ -301,6 +304,8 @@ class AnalysisWidget(pg.LayoutWidget):
         self.mouse_layout.addWidget(self.mouse_x_txtbox, 0, 1)
         self.mouse_layout.addWidget(self.mouse_y_lbl, 1, 0)
         self.mouse_layout.addWidget(self.mouse_y_txtbox, 1, 1)
+        self.mouse_layout.addWidget(self.mouse_intensity_lbl, 2, 0)
+        self.mouse_layout.addWidget(self.mouse_intensity_txtbox, 2, 1)
 
         self.image_layout.addWidget(self.image_width_lbl, 0, 0)
         self.image_layout.addWidget(self.image_width_txtbox, 0, 1)
@@ -371,9 +376,9 @@ class ImageWidget(pg.PlotWidget):
     def displayImage(self, file_path):
         # Read and set image file
         self.image = ndimage.rotate(tiff.imread(file_path), 90)
-        color_image = (plt.cm.jet(self.image) * 2**32).astype(int)
+        color_image = (plt.cm.jet(self.image) * 2**16).astype(int)
         self.image_item.setImage(color_image)
-
+        
         self.main_window.analysis_widget.image_width_txtbox.setText(str(self.image.shape[0]))
         self.main_window.analysis_widget.image_height_txtbox.setText(str(self.image.shape[1]))
         # For 3D plotting
@@ -471,13 +476,17 @@ class ImageWidget(pg.PlotWidget):
         # View coordinates to plot coordinates
         view_point = self.view.mapSceneToView(scene_point)
 
+        x, y = view_point.x(), view_point.y()
+        intensity = self.image[int(x), int(y)]
+
         # Changes position of crosshair
-        self.v_line.setPos(view_point.x())
-        self.h_line.setPos(view_point.y())
+        self.v_line.setPos(x)
+        self.h_line.setPos(y)
 
         # Update analysis textboxes
-        self.main_window.analysis_widget.mouse_x_txtbox.setText(str(int(view_point.x())))
-        self.main_window.analysis_widget.mouse_y_txtbox.setText(str(int(view_point.y())))
+        self.main_window.analysis_widget.mouse_x_txtbox.setText(str(int(x)))
+        self.main_window.analysis_widget.mouse_y_txtbox.setText(str(int(y)))
+        self.main_window.analysis_widget.mouse_intensity_txtbox.setText(str(intensity))
 
 
 # ==============================================================================
