@@ -7,6 +7,7 @@ See LICENSE file.
 
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
+import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 from pyqtgraph.Qt import QtGui
 import numpy as np
@@ -270,6 +271,7 @@ class AnalysisWidget(pg.LayoutWidget):
         self.image_height_lbl = QtGui.QLabel("Height:")
         self.image_height_txtbox = QtGui.QLineEdit()
         self.image_height_txtbox.setReadOnly(True)
+        self.image_type_lbl = QtGui.QLabel()
 
         # Create roi widgets
         self.roi_center_x_lbl = QtGui.QLabel("Center x:")
@@ -311,6 +313,7 @@ class AnalysisWidget(pg.LayoutWidget):
         self.image_layout.addWidget(self.image_width_txtbox, 0, 1)
         self.image_layout.addWidget(self.image_height_lbl, 1, 0)
         self.image_layout.addWidget(self.image_height_txtbox, 1, 1)
+        self.image_layout.addWidget(self.image_type_lbl, 2, 0)
 
         self.roi_layout.addWidget(self.roi_center_x_lbl, 0, 0)
         self.roi_layout.addWidget(self.roi_center_x_txtbox, 0, 1)
@@ -370,17 +373,19 @@ class ImageWidget(pg.PlotWidget):
         self.addItem(self.roi_v_line, ignoreBounds=True)
         self.addItem(self.roi_h_line, ignoreBounds=True)
 
-
     # --------------------------------------------------------------------------
 
     def displayImage(self, file_path):
         # Read and set image file
         self.image = ndimage.rotate(tiff.imread(file_path), 90)
-        color_image = (plt.cm.jet(self.image) * 2**16).astype(int)
+        norm = colors.Normalize(vmin=0.0, vmax=np.amax(self.image))
+        norm_image = norm(self.image)
+        color_image = plt.cm.jet(norm_image)
         self.image_item.setImage(color_image)
-        
+
         self.main_window.analysis_widget.image_width_txtbox.setText(str(self.image.shape[0]))
         self.main_window.analysis_widget.image_height_txtbox.setText(str(self.image.shape[1]))
+        self.main_window.analysis_widget.image_type_lbl.setText(str(self.image.dtype))
         # For 3D plotting
         #self.mean_image = self.image[:,:,:-1].mean(axis=2)
 
