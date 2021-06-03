@@ -9,7 +9,7 @@ import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
-from pyqtgraph.Qt import QtGui
+from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
 import os
 from scipy import ndimage
@@ -89,6 +89,15 @@ class OptionsWidget(pg.LayoutWidget):
         self.cmap_scale_group.addButton(self.cmap_linear_rbtn)
         self.cmap_scale_group.addButton(self.cmap_log_rbtn)
 
+        self.cmap_linear_pctl_lbl = QtGui.QLabel("CMap Pctl:")
+        self.cmap_linear_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.cmap_linear_slider.setMinimum(1)
+        self.cmap_linear_slider.setMaximum(100)
+        self.cmap_linear_slider.setSingleStep(10)
+        self.cmap_linear_slider.setTickInterval(10)
+        self.cmap_linear_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.cmap_linear_slider.setValue(100)
+
         # Add widgets to GroupBoxes
         self.files_layout.addWidget(self.browse_btn, 0, 0, 1, 2)
         self.files_layout.addWidget(self.clear_btn, 0, 2, 1, 2)
@@ -114,6 +123,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_layout.addWidget(self.cmap_linear_rbtn, 4, 1)
         self.options_layout.addWidget(self.cmap_log_rbtn, 4, 2)
 
+        self.options_layout.addWidget(self.cmap_linear_pctl_lbl, 5, 0)
+        self.options_layout.addWidget(self.cmap_linear_slider, 5, 1, 1, 2)
+
         # Link widgets to actions
         self.browse_btn.clicked.connect(self.openDirectory)
         self.clear_btn.clicked.connect(self.clear)
@@ -132,6 +144,8 @@ class OptionsWidget(pg.LayoutWidget):
 
         self.cmap_linear_rbtn.toggled.connect(self.toggleCmapScale)
         self.cmap_log_rbtn.toggled.connect(self.toggleCmapScale)
+
+        self.cmap_linear_slider.valueChanged.connect(self.changeCmapLinearPctl)
 
     # --------------------------------------------------------------------------
 
@@ -225,9 +239,19 @@ class OptionsWidget(pg.LayoutWidget):
         if button.text() == "Logarithmic":
             self.main_window.image_widget.cmap_scale = "Log"
             self.main_window.image_widget.displayImage(self.file_path)
+            self.cmap_linear_slider.setEnabled(False)
         else:
             self.main_window.image_widget.cmap_scale = "Linear"
             self.main_window.image_widget.displayImage(self.file_path)
+            self.cmap_linear_slider.setEnabled(True)
+
+    # --------------------------------------------------------------------------
+
+    def changeCmapLinearPctl(self):
+        slider = self.sender()
+
+        self.main_window.image_widget.cmap_linear_norm_pctl = slider.value() / 100.0
+        self.main_window.image_widget.displayImage(self.file_path)
 
     # --------------------------------------------------------------------------
 
@@ -374,11 +398,13 @@ class ImageWidget(pg.PlotWidget):
         self.hideAxis("left")
         self.hideAxis("bottom")
         self.setAspectLocked(True)
-        self.cmap_scale = "Linear"
 
         self.view = self.getViewBox()
         self.image_item = pg.ImageItem()
         self.addItem(self.image_item)
+
+        self.cmap_scale = "Linear"
+        self.cmap_linear_norm_pctl = 1.0
 
         # Create mouse crosshair
         self.v_line = pg.InfiniteLine(angle=90, movable=False)
@@ -407,7 +433,7 @@ class ImageWidget(pg.PlotWidget):
         if self.cmap_scale == "Log":
             norm = colors.LogNorm()
         else:
-            norm = colors.Normalize()
+            norm = colors.Normalize(vmax=np.amax(self.image)*self.cmap_linear_norm_pctl)
 
         # vmax=np.amax(self.image)
         norm_image = norm(self.image)
