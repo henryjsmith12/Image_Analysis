@@ -319,7 +319,12 @@ class AnalysisWidget(pg.LayoutWidget):
         self.image_height_lbl = QtGui.QLabel("Height:")
         self.image_height_txtbox = QtGui.QLineEdit()
         self.image_height_txtbox.setReadOnly(True)
-        self.image_type_lbl = QtGui.QLabel()
+        self.image_max_intensity_lbl = QtGui.QLabel("Max Intensity:")
+        self.image_max_intensity_txtbox = QtGui.QLineEdit()
+        self.image_max_intensity_txtbox.setReadOnly(True)
+        self.image_cmap_pctl_lbl = QtGui.QLabel("Cmap Pctl:")
+        self.image_cmap_pctl_txtbox = QtGui.QLineEdit()
+        self.image_cmap_pctl_txtbox.setReadOnly(True)
 
         # Create roi widgets
         self.roi_center_x_lbl = QtGui.QLabel("Center x:")
@@ -361,7 +366,10 @@ class AnalysisWidget(pg.LayoutWidget):
         self.image_layout.addWidget(self.image_width_txtbox, 0, 1)
         self.image_layout.addWidget(self.image_height_lbl, 1, 0)
         self.image_layout.addWidget(self.image_height_txtbox, 1, 1)
-        self.image_layout.addWidget(self.image_type_lbl, 2, 0)
+        self.image_layout.addWidget(self.image_max_intensity_lbl, 2, 0)
+        self.image_layout.addWidget(self.image_max_intensity_txtbox, 2, 1)
+        self.image_layout.addWidget(self.image_cmap_pctl_lbl, 3, 0)
+        self.image_layout.addWidget(self.image_cmap_pctl_txtbox, 3, 1)
 
         self.roi_layout.addWidget(self.roi_center_x_lbl, 0, 0)
         self.roi_layout.addWidget(self.roi_center_x_txtbox, 0, 1)
@@ -440,9 +448,12 @@ class ImageWidget(pg.PlotWidget):
         color_image = plt.cm.jet(norm_image)
         self.image_item.setImage(color_image)
 
+        # Update analysis textboxes
         self.main_window.analysis_widget.image_width_txtbox.setText(str(self.image.shape[0]))
         self.main_window.analysis_widget.image_height_txtbox.setText(str(self.image.shape[1]))
-        self.main_window.analysis_widget.image_type_lbl.setText(str(self.image.dtype))
+        self.main_window.analysis_widget.image_max_intensity_txtbox.setText(str(np.amax(self.image)))
+        self.main_window.analysis_widget.image_cmap_pctl_txtbox.setText(str(self.cmap_linear_norm_pctl))
+
         # For 3D plotting
         #self.mean_image = self.image[:,:,:-1].mean(axis=2)
 
