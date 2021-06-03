@@ -65,14 +65,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.crosshair_mouse_chkbox = QtGui.QCheckBox("Mouse")
         self.crosshair_roi_chkbox = QtGui.QCheckBox("ROI")
 
-        self.scale_lbl = QtGui.QLabel("Scale:")
-        self.scale_group = QtGui.QButtonGroup()
-        self.linear_scale_rbtn = QtGui.QRadioButton("Linear")
-        self.linear_scale_rbtn.setChecked(True)
-        self.log_scale_rbtn = QtGui.QRadioButton("Logarithmic")
-        self.scale_group.addButton(self.linear_scale_rbtn)
-        self.scale_group.addButton(self.log_scale_rbtn)
-
         self.mouse_mode_lbl = QtGui.QLabel("Mouse Mode:")
         self.mouse_mode_group = QtGui.QButtonGroup()
         self.pan_mode_rbtn = QtGui.QRadioButton("Pan")
@@ -80,6 +72,22 @@ class OptionsWidget(pg.LayoutWidget):
         self.rect_mode_rbtn = QtGui.QRadioButton("Rectangle")
         self.mouse_mode_group.addButton(self.pan_mode_rbtn)
         self.mouse_mode_group.addButton(self.rect_mode_rbtn)
+
+        self.plot_scale_lbl = QtGui.QLabel("Plot Scale:")
+        self.plot_scale_group = QtGui.QButtonGroup()
+        self.plot_linear_rbtn = QtGui.QRadioButton("Linear")
+        self.plot_linear_rbtn.setChecked(True)
+        self.plot_log_rbtn = QtGui.QRadioButton("Logarithmic")
+        self.plot_scale_group.addButton(self.plot_linear_rbtn)
+        self.plot_scale_group.addButton(self.plot_log_rbtn)
+
+        self.cmap_scale_lbl = QtGui.QLabel("CMap Scale:")
+        self.cmap_scale_group = QtGui.QButtonGroup()
+        self.cmap_linear_rbtn = QtGui.QRadioButton("Linear")
+        self.cmap_linear_rbtn.setChecked(True)
+        self.cmap_log_rbtn = QtGui.QRadioButton("Logarithmic")
+        self.cmap_scale_group.addButton(self.cmap_linear_rbtn)
+        self.cmap_scale_group.addButton(self.cmap_log_rbtn)
 
         # Add widgets to GroupBoxes
         self.files_layout.addWidget(self.browse_btn, 0, 0, 1, 2)
@@ -89,32 +97,41 @@ class OptionsWidget(pg.LayoutWidget):
         self.files_layout.addWidget(self.current_file_txtbox, 5, 1, 1, 3)
 
         self.options_layout.addWidget(self.live_plot_btn, 0, 0, 1, 2)
-        self.options_layout.addWidget(self.reset_btn, 0, 2, 1, 3)
 
         self.options_layout.addWidget(self.crosshair_lbl, 1, 0, 1, 1)
         self.options_layout.addWidget(self.crosshair_mouse_chkbox, 1, 1)
         self.options_layout.addWidget(self.crosshair_roi_chkbox, 1, 2)
 
-        self.options_layout.addWidget(self.scale_lbl, 2, 0, 1, 1)
-        self.options_layout.addWidget(self.linear_scale_rbtn, 2, 1)
-        self.options_layout.addWidget(self.log_scale_rbtn, 2, 2)
+        self.options_layout.addWidget(self.mouse_mode_lbl, 2, 0)
+        self.options_layout.addWidget(self.pan_mode_rbtn, 2, 1)
+        self.options_layout.addWidget(self.rect_mode_rbtn, 2, 2)
 
-        self.options_layout.addWidget(self.mouse_mode_lbl, 3, 0)
-        self.options_layout.addWidget(self.pan_mode_rbtn, 3, 1)
-        self.options_layout.addWidget(self.rect_mode_rbtn, 3, 2)
+        self.options_layout.addWidget(self.plot_scale_lbl, 3, 0, 1, 1)
+        self.options_layout.addWidget(self.plot_linear_rbtn, 3, 1)
+        self.options_layout.addWidget(self.plot_log_rbtn, 3, 2)
+
+        self.options_layout.addWidget(self.cmap_scale_lbl, 4, 0, 1, 1)
+        self.options_layout.addWidget(self.cmap_linear_rbtn, 4, 1)
+        self.options_layout.addWidget(self.cmap_log_rbtn, 4, 2)
 
         # Link widgets to actions
         self.browse_btn.clicked.connect(self.openDirectory)
         self.clear_btn.clicked.connect(self.clear)
         self.file_list.itemClicked.connect(self.loadFile)
-        self.reset_btn.clicked.connect(self.resetView)
+
+        self.live_plot_btn.clicked.connect(self.simLivePlotting)
+
         self.crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
         self.crosshair_roi_chkbox.stateChanged.connect(self.toggleROICrosshair)
-        self.live_plot_btn.clicked.connect(self.simLivePlotting)
-        self.linear_scale_rbtn.toggled.connect(self.toggleScale)
-        self.log_scale_rbtn.toggled.connect(self.toggleScale)
+
         self.pan_mode_rbtn.toggled.connect(self.toggleMouseMode)
         self.rect_mode_rbtn.toggled.connect(self.toggleMouseMode)
+
+        self.plot_linear_rbtn.toggled.connect(self.togglePlotScale)
+        self.plot_log_rbtn.toggled.connect(self.togglePlotScale)
+
+        self.cmap_linear_rbtn.toggled.connect(self.toggleCmapScale)
+        self.cmap_log_rbtn.toggled.connect(self.toggleCmapScale)
 
     # --------------------------------------------------------------------------
 
@@ -180,12 +197,17 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def resetView(self):
-        self.main_window.image_widget.displayImage(self.file_path)
+    def toggleMouseMode(self):
+        button = self.sender()
+        # Toggles between pan and rectangle mouse controls
+        if button.text() == "Pan":
+            self.main_window.image_widget.view.setMouseMode(pg.ViewBox.PanMode)
+        else:
+            self.main_window.image_widget.view.setMouseMode(pg.ViewBox.RectMode)
 
     # --------------------------------------------------------------------------
 
-    def toggleScale(self):
+    def togglePlotScale(self):
         button = self.sender()
         # Toggles between log and linear scaling
         if button.text() == "Logarithmic":
@@ -197,13 +219,15 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def toggleMouseMode(self):
+    def toggleCmapScale(self):
         button = self.sender()
-        # Toggles between pan and rectangle mouse controls
-        if button.text() == "Pan":
-            self.main_window.image_widget.view.setMouseMode(pg.ViewBox.PanMode)
+        # Toggles between log and linear scaling
+        if button.text() == "Logarithmic":
+            self.main_window.image_widget.cmap_scale = "Log"
+            self.main_window.image_widget.displayImage(self.file_path)
         else:
-            self.main_window.image_widget.view.setMouseMode(pg.ViewBox.RectMode)
+            self.main_window.image_widget.cmap_scale = "Linear"
+            self.main_window.image_widget.displayImage(self.file_path)
 
     # --------------------------------------------------------------------------
 
@@ -350,6 +374,7 @@ class ImageWidget(pg.PlotWidget):
         self.hideAxis("left")
         self.hideAxis("bottom")
         self.setAspectLocked(True)
+        self.cmap_scale = "Linear"
 
         self.view = self.getViewBox()
         self.image_item = pg.ImageItem()
@@ -378,7 +403,13 @@ class ImageWidget(pg.PlotWidget):
     def displayImage(self, file_path):
         # Read and set image file
         self.image = ndimage.rotate(tiff.imread(file_path), 90)
-        norm = colors.Normalize(vmin=0.0, vmax=np.amax(self.image))
+
+        if self.cmap_scale == "Log":
+            norm = colors.LogNorm()
+        else:
+            norm = colors.Normalize()
+
+        # vmax=np.amax(self.image)
         norm_image = norm(self.image)
         color_image = plt.cm.jet(norm_image)
         self.image_item.setImage(color_image)
@@ -430,6 +461,7 @@ class ImageWidget(pg.PlotWidget):
             self.main_window.x_plot_widget.plot(col_avgs)
             self.main_window.y_plot_widget.plot(x=row_avgs, y=range(len(row_avgs)))
             #self.main_window.xyz_plot_widget.plot(self.mean_image)
+
 
         except TypeError:
             return
