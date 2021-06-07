@@ -41,19 +41,11 @@ class MainWindow(QtGui.QMainWindow):
         self.options_dock = Dock("Options", size=(200, 200))
         self.analysis_dock = Dock("Analysis", size=(200, 200))
         self.image_dock = Dock("Image", size=(200, 200))
-        self.x_plot_dock = Dock("x Plot", size=(200, 200))
-        self.y_plot_dock = Dock("y Plot", size=(200, 200))
-        self.xyz_plot_dock = Dock("", size=(200, 200))
 
         # Add/organize docks
         self.dock_area.addDock(self.options_dock, "left")
         self.dock_area.addDock(self.analysis_dock, "right", self.options_dock)
         self.dock_area.addDock(self.image_dock, "top", self.analysis_dock)
-        self.dock_area.addDock(self.x_plot_dock, "top", self.image_dock)
-        self.dock_area.addDock(self.y_plot_dock, "top", self.analysis_dock)
-        self.dock_area.addDock(self.xyz_plot_dock, "top", self.y_plot_dock)
-        self.dock_area.moveDock(self.xyz_plot_dock, "right", self.x_plot_dock)
-        self.dock_area.moveDock(self.y_plot_dock, "right", self.image_dock)
 
     # --------------------------------------------------------------------------
 
@@ -64,17 +56,11 @@ class MainWindow(QtGui.QMainWindow):
         self.analysis_widget = AnalysisWidget(self) # Image analysis/info widget
         self.analysis_widget.setupComponents() # Analysis (sub)widgets
         self.image_widget = ImageWidget(self) # Image widget with sample image
-        self.x_plot_widget = XPlotWidget(self) # Plot x-value vs average intensity
-        self.y_plot_widget = YPlotWidget(self) # Plot y-value vs average intensity
-        self.xyz_plot_widget = XYZPlotWidget(self) # Plots 3D model
 
         # Add widgets to dock objects
         self.options_dock.addWidget(self.options_widget)
         self.analysis_dock.addWidget(self.analysis_widget)
         self.image_dock.addWidget(self.image_widget)
-        self.x_plot_dock.addWidget(self.x_plot_widget)
-        self.y_plot_dock.addWidget(self.y_plot_widget)
-        self.xyz_plot_dock.addWidget(self.xyz_plot_widget)
 
 
 # ==============================================================================

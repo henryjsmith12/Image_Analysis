@@ -560,90 +560,11 @@ class ImageWidget(pg.PlotWidget):
         # For 3D plotting
         #self.mean_image = self.image[:,:,:-1].mean(axis=2)
 
-        # Limit viewing window to only show image
-        self.view.setLimits(
-            xMin=0,
-            xMax=(self.image.shape[0]),
-            yMin=0,
-            yMax=(self.image.shape[1])
-        )
         # Autofocuses on figure
         #self.view.enableAutoRange()
 
-        # Link view to profile plots
-        self.view.setXLink(self.main_window.x_plot_widget)
-        self.view.setYLink(self.main_window.y_plot_widget)
-        #self.main_window.y_plot_widget.invertY(True)
-
-        # Dynamically update plots when viewing window changes
-        self.view.sigRangeChanged.connect(self.updatePlots)
-
         # Update crosshair information
         self.view.scene().sigMouseMoved.connect(self.updateMouseCrosshair)
-
-        # Initial update of x & y intensity plots
-        self.updatePlots()
-
-    # --------------------------------------------------------------------------
-
-    def updatePlots(self):
-        # calculateAvgIntensity() will return nothing if viewing range is wrong
-        try:
-            # Average intensity of pixels in viewing window
-            col_avgs, row_avgs = self.calculateAvgIntensity()
-
-            # Clear plots
-            self.main_window.x_plot_widget.clear()
-            self.main_window.y_plot_widget.clear()
-            #self.main_window.xyz_plot_widget.clear()
-
-            # Display new plots
-            self.main_window.x_plot_widget.plot(col_avgs)
-            self.main_window.y_plot_widget.plot(x=row_avgs, y=range(len(row_avgs)))
-            #self.main_window.xyz_plot_widget.plot(self.mean_image)
-        except TypeError:
-            return
-
-    # --------------------------------------------------------------------------
-
-    def calculateAvgIntensity(self):
-        self.view_range = self.view.viewRange()
-
-        # Max/min values of viewing window
-        x_min, x_max = int(self.view_range[0][0]), int(self.view_range[0][1])
-        y_min, y_max = int(self.view_range[1][0]), int(self.view_range[1][1])
-        x_center = x_min + ((x_max - x_min) / 2)
-        y_center = y_min + ((y_max - y_min) / 2)
-
-        # Subarray of pixels within viewing window
-        image_in_view = self.image[x_min:x_max, y_min:y_max]
-
-        # Error that occurs during first plot
-        # Not really sure why image_in_view would contain 0, but it does
-        if 0 in image_in_view.shape:
-            return
-
-        # Update analysis textboxes
-        self.main_window.analysis_widget.roi_center_x_txtbox.setText(str(x_center))
-        self.main_window.analysis_widget.roi_center_y_txtbox.setText(str(y_center))
-        self.main_window.analysis_widget.roi_width_txtbox.setText(str(image_in_view.shape[0]))
-        self.main_window.analysis_widget.roi_height_txtbox.setText(str(image_in_view.shape[1]))
-
-        # Mean of values in x & y directions
-        # Each yield a 1-D array
-        cols = image_in_view.mean(axis=1)
-        rows = image_in_view.mean(axis=0)
-
-        # 1-D arrays of zeros to embed mean arrays into
-        x_curve = np.zeros((self.image.shape[0]))
-        y_curve = np.zeros((self.image.shape[1]))
-
-        # Embed mean arrays
-        x_curve[x_min:x_min + image_in_view.shape[0]] = cols
-        y_curve[y_min:y_min + image_in_view.shape[1]] = rows
-
-        # 1-D arrays with lengths corresponding to original image
-        return x_curve, y_curve
 
     # --------------------------------------------------------------------------
 
@@ -662,67 +583,5 @@ class ImageWidget(pg.PlotWidget):
         self.main_window.analysis_widget.mouse_x_txtbox.setText(str(int(x)))
         self.main_window.analysis_widget.mouse_y_txtbox.setText(str(int(y)))
         self.main_window.analysis_widget.mouse_intensity_txtbox.setText(str(intensity))
-
-
-# ==============================================================================
-
-class XPlotWidget(pg.PlotWidget):
-
-    """
-    - Plots x-values vs average intensity
-    - Axes linked to ImageWidget and YPlotWidget
-    """
-
-    def __init__ (self, parent):
-        super(XPlotWidget, self).__init__(parent)
-        self.main_window = parent
-
-        self.setLabel("left", "Average Intensity")
-        self.setLabel("bottom", "x")
-        self.showGrid(x=True, y=True)
-        self.setMouseEnabled(x=False, y=False)
-
-
-# ==============================================================================
-
-class YPlotWidget(pg.PlotWidget):
-
-    """
-    - Plots y-values vs average intensity
-    - Axes linked to ImageWidget and XPlotWidget
-    """
-
-    def __init__ (self, parent):
-        super(YPlotWidget, self).__init__(parent)
-        self.main_window = parent
-
-        self.setLabel("left", "y")
-        self.setLabel("bottom", "Average Intensity")
-        self.showGrid(x=True, y=True)
-        self.setMouseEnabled(x=False, y=False)
-
-
-# ==============================================================================
-
-"""
-Placeholder class for undecided dock in top-right corner of window
-"""
-
-class XYZPlotWidget(gl.GLViewWidget):
-
-    def __init__ (self, parent):
-        super(XYZPlotWidget, self).__init__(parent)
-        self.main_window = parent
-
-        #self.show()
-        #g = gl.GLGridItem()
-        #self.addItem(g)
-
-    # --------------------------------------------------------------------------
-
-    def plot(self, image):
-        plot_item = gl.GLSurfacePlotItem(z=image, shader='shaded', color=(0.5, 0.5, 1, 1))
-        self.addItem(plot_item)
-
 
 # ==============================================================================
