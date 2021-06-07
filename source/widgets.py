@@ -30,41 +30,71 @@ class OptionsWidget(pg.LayoutWidget):
         self.main_window = parent
 
         # Create GroupBoxes
+        self.image_selection_tabs = QtGui.QTabWidget()
+        self.live_image_gbox = QtGui.QGroupBox("Live")
+        self.remote_image_gbox = QtGui.QGroupBox("Remote")
+        self.image_selection_tabs.addTab(self.live_image_gbox, "Live")
+        self.image_selection_tabs.addTab(self.remote_image_gbox, "Remote")
         self.options_gbox = QtGui.QGroupBox("Plotting Options")
-        self.files_gbox = QtGui.QGroupBox("Image Files")
 
         # Disable Options GroupBox until file selected
         self.options_gbox.setEnabled(False)
 
         # Add GroupBoxes to widget
-        self.addWidget(self.files_gbox, row=0, col=0)
+        self.addWidget(self.image_selection_tabs, row=0, col=0)
         self.addWidget(self.options_gbox, row=1, col=0)
 
         # Create/add layouts
-        self.files_layout = QtGui.QGridLayout()
+        self.live_image_layout = QtGui.QGridLayout()
+        self.remote_image_layout = QtGui.QGridLayout()
         self.options_layout = QtGui.QGridLayout()
+        self.live_image_gbox.setLayout(self.live_image_layout)
+        self.remote_image_gbox.setLayout(self.remote_image_layout)
         self.options_gbox.setLayout(self.options_layout)
-        self.files_gbox.setLayout(self.files_layout)
 
     # --------------------------------------------------------------------------
 
     def setupComponents(self):
-        # Create file widgets
-        self.browse_btn = QtGui.QPushButton("Browse")
-        self.clear_btn = QtGui.QPushButton("Clear")
-        self.file_list = QtGui.QListWidget()
-        self.current_file_lbl = QtGui.QLabel("Current Image:")
-        self.current_file_txtbox = QtGui.QLineEdit()
-        self.current_file_txtbox.setReadOnly(True)
+        # Create live image widgets
+        self.live_browse_btn = QtGui.QPushButton("Browse")
+        self.live_clear_btn = QtGui.QPushButton("Clear")
+        self.live_file_list = QtGui.QListWidget()
+        self.live_current_file_lbl = QtGui.QLabel("Current Image:")
+        self.live_current_file_txtbox = QtGui.QLineEdit()
+        self.live_current_file_txtbox.setReadOnly(True)
+
+        # Create remote image widgets
+        self.remote_browse_btn = QtGui.QPushButton("Browse")
+        self.remote_current_directory_lbl = QtGui.QLabel("Current Directory:")
+        self.remote_current_directory_txtbox = QtGui.QLineEdit()
+        self.remote_current_directory_txtbox.setReadOnly(True)
+        self.remote_direction_lbl = QtGui.QLabel("Slice Direction:")
+        self.remote_direction_group = QtGui.QButtonGroup()
+        self.remote_x_direction_rbtn = QtGui.QRadioButton("x")
+        self.remote_x_direction_rbtn.setChecked(True)
+        self.remote_y_direction_rbtn = QtGui.QRadioButton("y")
+        self.remote_z_direction_rbtn = QtGui.QRadioButton("z")
+        self.remote_direction_group.addButton(self.remote_x_direction_rbtn)
+        self.remote_direction_group.addButton(self.remote_y_direction_rbtn)
+        self.remote_direction_group.addButton(self.remote_z_direction_rbtn)
+        self.remote_x_slider_lbl = QtGui.QLabel("x Slice:")
+        self.remote_x_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.remote_x_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.remote_y_slider_lbl = QtGui.QLabel("y Slice:")
+        self.remote_y_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.remote_y_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.remote_y_slider.setEnabled(False)
+        self.remote_z_slider_lbl = QtGui.QLabel("z Slice:")
+        self.remote_z_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.remote_z_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.remote_z_slider.setEnabled(False)
 
         # Create options widgets
         self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
         self.reset_btn = QtGui.QPushButton("Reset View")
-
         self.crosshair_lbl = QtGui.QLabel("Crosshair:")
         self.crosshair_mouse_chkbox = QtGui.QCheckBox("Mouse")
         self.crosshair_roi_chkbox = QtGui.QCheckBox("ROI")
-
         self.mouse_mode_lbl = QtGui.QLabel("Mouse Mode:")
         self.mouse_mode_group = QtGui.QButtonGroup()
         self.pan_mode_rbtn = QtGui.QRadioButton("Pan")
@@ -72,7 +102,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.rect_mode_rbtn = QtGui.QRadioButton("Rectangle")
         self.mouse_mode_group.addButton(self.pan_mode_rbtn)
         self.mouse_mode_group.addButton(self.rect_mode_rbtn)
-
         self.plot_scale_lbl = QtGui.QLabel("Plot Scale:")
         self.plot_scale_group = QtGui.QButtonGroup()
         self.plot_linear_rbtn = QtGui.QRadioButton("Linear")
@@ -80,7 +109,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.plot_log_rbtn = QtGui.QRadioButton("Logarithmic")
         self.plot_scale_group.addButton(self.plot_linear_rbtn)
         self.plot_scale_group.addButton(self.plot_log_rbtn)
-
         self.cmap_scale_lbl = QtGui.QLabel("CMap Scale:")
         self.cmap_scale_group = QtGui.QButtonGroup()
         self.cmap_linear_rbtn = QtGui.QRadioButton("Linear")
@@ -88,7 +116,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.cmap_log_rbtn = QtGui.QRadioButton("Logarithmic")
         self.cmap_scale_group.addButton(self.cmap_linear_rbtn)
         self.cmap_scale_group.addButton(self.cmap_log_rbtn)
-
         self.cmap_linear_pctl_lbl = QtGui.QLabel("CMap Pctl:")
         self.cmap_linear_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.cmap_linear_slider.setMinimum(1)
@@ -99,52 +126,64 @@ class OptionsWidget(pg.LayoutWidget):
         self.cmap_linear_slider.setValue(100)
 
         # Add widgets to GroupBoxes
-        self.files_layout.addWidget(self.browse_btn, 0, 0, 1, 2)
-        self.files_layout.addWidget(self.clear_btn, 0, 2, 1, 2)
-        self.files_layout.addWidget(self.file_list, 1, 0, 4, 4)
-        self.files_layout.addWidget(self.current_file_lbl, 5, 0)
-        self.files_layout.addWidget(self.current_file_txtbox, 5, 1, 1, 3)
+        self.live_image_layout.addWidget(self.live_browse_btn, 0, 0, 1, 2)
+        self.live_image_layout.addWidget(self.live_clear_btn, 0, 2, 1, 2)
+        self.live_image_layout.addWidget(self.live_file_list, 1, 0, 4, 4)
+        self.live_image_layout.addWidget(self.live_current_file_lbl, 5, 0)
+        self.live_image_layout.addWidget(self.live_current_file_txtbox, 5, 1, 1, 3)
+
+        self.remote_image_layout.addWidget(self.remote_browse_btn, 0, 0, 1, 4)
+        self.remote_image_layout.addWidget(self.remote_current_directory_lbl, 1, 0)
+        self.remote_image_layout.addWidget(self.remote_current_directory_txtbox, 1, 1, 1, 3)
+        self.remote_image_layout.addWidget(self.remote_direction_lbl, 2, 0)
+        self.remote_image_layout.addWidget(self.remote_x_direction_rbtn, 2, 1)
+        self.remote_image_layout.addWidget(self.remote_y_direction_rbtn, 2, 2)
+        self.remote_image_layout.addWidget(self.remote_z_direction_rbtn, 2, 3)
+        self.remote_image_layout.addWidget(self.remote_x_slider_lbl, 3, 0)
+        self.remote_image_layout.addWidget(self.remote_x_slider, 3, 1, 1, 3)
+        self.remote_image_layout.addWidget(self.remote_y_slider_lbl, 4, 0)
+        self.remote_image_layout.addWidget(self.remote_y_slider, 4, 1, 1, 3)
+        self.remote_image_layout.addWidget(self.remote_z_slider_lbl, 5, 0)
+        self.remote_image_layout.addWidget(self.remote_z_slider, 5, 1, 1, 3)
 
         self.options_layout.addWidget(self.live_plot_btn, 0, 0, 1, 2)
-
         self.options_layout.addWidget(self.crosshair_lbl, 1, 0, 1, 1)
         self.options_layout.addWidget(self.crosshair_mouse_chkbox, 1, 1)
         self.options_layout.addWidget(self.crosshair_roi_chkbox, 1, 2)
-
         self.options_layout.addWidget(self.mouse_mode_lbl, 2, 0)
         self.options_layout.addWidget(self.pan_mode_rbtn, 2, 1)
         self.options_layout.addWidget(self.rect_mode_rbtn, 2, 2)
-
         self.options_layout.addWidget(self.plot_scale_lbl, 3, 0, 1, 1)
         self.options_layout.addWidget(self.plot_linear_rbtn, 3, 1)
         self.options_layout.addWidget(self.plot_log_rbtn, 3, 2)
-
         self.options_layout.addWidget(self.cmap_scale_lbl, 4, 0, 1, 1)
         self.options_layout.addWidget(self.cmap_linear_rbtn, 4, 1)
         self.options_layout.addWidget(self.cmap_log_rbtn, 4, 2)
-
         self.options_layout.addWidget(self.cmap_linear_pctl_lbl, 5, 0)
         self.options_layout.addWidget(self.cmap_linear_slider, 5, 1, 1, 2)
 
         # Link widgets to actions
-        self.browse_btn.clicked.connect(self.openDirectory)
-        self.clear_btn.clicked.connect(self.clear)
-        self.file_list.itemClicked.connect(self.loadFile)
-
+        self.live_browse_btn.clicked.connect(self.openDirectory)
+        self.live_clear_btn.clicked.connect(self.clear)
+        self.live_file_list.itemClicked.connect(self.loadLiveImage)
         self.live_plot_btn.clicked.connect(self.simLivePlotting)
+
+        self.remote_browse_btn.clicked.connect(self.openDirectory)
+        self.remote_x_direction_rbtn.toggled.connect(self.toggleSliceDirection)
+        self.remote_y_direction_rbtn.toggled.connect(self.toggleSliceDirection)
+        self.remote_z_direction_rbtn.toggled.connect(self.toggleSliceDirection)
+        self.remote_x_slider.valueChanged.connect(self.loadRemoteImage)
+        self.remote_y_slider.valueChanged.connect(self.loadRemoteImage)
+        self.remote_z_slider.valueChanged.connect(self.loadRemoteImage)
 
         self.crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
         self.crosshair_roi_chkbox.stateChanged.connect(self.toggleROICrosshair)
-
         self.pan_mode_rbtn.toggled.connect(self.toggleMouseMode)
         self.rect_mode_rbtn.toggled.connect(self.toggleMouseMode)
-
         self.plot_linear_rbtn.toggled.connect(self.togglePlotScale)
         self.plot_log_rbtn.toggled.connect(self.togglePlotScale)
-
         self.cmap_linear_rbtn.toggled.connect(self.toggleCmapScale)
         self.cmap_log_rbtn.toggled.connect(self.toggleCmapScale)
-
         self.cmap_linear_slider.valueChanged.connect(self.changeCmapLinearPctl)
 
     # --------------------------------------------------------------------------
@@ -154,11 +193,29 @@ class OptionsWidget(pg.LayoutWidget):
         self.directory = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder")
 
         # Sorted list of files
-        files = sorted(os.listdir(self.directory))
+        self.image_files = sorted(os.listdir(self.directory))
 
-        # Display files
-        self.file_list.clear()
-        self.file_list.addItems(files)
+        # For remote plotting
+        self.image_data = []
+
+        # Live plotting
+        if self.live_image_gbox is self.image_selection_tabs.currentWidget():
+            # Display files
+            self.live_file_list.clear()
+            self.live_file_list.addItems(self.image_files)
+        # Remote plotting
+        else:
+            self.remote_current_directory_txtbox.setText(self.directory)
+            for i in range(len(self.image_files)):
+                if self.image_files[i] != "alignment.tif":
+                    file_path = f"{self.directory}/{self.image_files[i]}"
+                    image = ndimage.rotate(tiff.imread(file_path), 90)
+                    self.image_data.append(image)
+            self.image_data = np.stack(self.image_data)
+            self.remote_x_slider.setMaximum(self.image_data.shape[0] - 1)
+            self.remote_y_slider.setMaximum(self.image_data.shape[1] - 1)
+            self.remote_z_slider.setMaximum(self.image_data.shape[2] - 1)
+            self.loadRemoteImage()
 
     # --------------------------------------------------------------------------
 
@@ -177,15 +234,61 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def loadFile(self, file):
+    def loadLiveImage(self, file):
         #Concatenate directory and file names
         self.file_path = f"{self.directory}/{file.text()}"
 
-        self.main_window.image_widget.displayImage(self.file_path)
-        self.current_file_txtbox.setText(file.text())
+        # Read and set image file
+        self.image = ndimage.rotate(tiff.imread(self.file_path), 90)
+        self.main_window.image_widget.displayImage(self.image)
+
+        self.live_current_file_txtbox.setText(file.text())
 
         # Enable options
         self.options_gbox.setEnabled(True)
+
+    # --------------------------------------------------------------------------
+
+    def loadRemoteImage(self):
+
+        # Read and set image file
+        if self.remote_x_direction_rbtn.isChecked():
+            x_slice = int(self.remote_x_slider.value())
+            self.image = self.image_data[x_slice, :, :]
+
+        elif self.remote_y_direction_rbtn.isChecked():
+            y_slice = int(self.remote_y_slider.value())
+            self.image = self.image_data[:, y_slice, :]
+            self.image = ndimage.rotate(self.image, 90)
+        else:
+            z_slice = int(self.remote_z_slider.value())
+            self.image = self.image_data[:, :, z_slice]
+            self.image = ndimage.rotate(self.image, 90)
+
+        self.main_window.image_widget.displayImage(self.image)
+
+        # Enable options
+        self.options_gbox.setEnabled(True)
+
+    # --------------------------------------------------------------------------
+
+    def toggleSliceDirection(self):
+        button = self.sender()
+
+        if button.text() == "x":
+            self.remote_x_slider.setEnabled(True)
+            self.remote_y_slider.setEnabled(False)
+            self.remote_z_slider.setEnabled(False)
+        elif button.text() == "y":
+            self.remote_x_slider.setEnabled(False)
+            self.remote_y_slider.setEnabled(True)
+            self.remote_z_slider.setEnabled(False)
+        else:
+            self.remote_x_slider.setEnabled(False)
+            self.remote_y_slider.setEnabled(False)
+            self.remote_z_slider.setEnabled(True)
+
+        self.loadRemoteImage()
 
     # --------------------------------------------------------------------------
 
@@ -238,11 +341,11 @@ class OptionsWidget(pg.LayoutWidget):
         # Toggles between log and linear scaling
         if button.text() == "Logarithmic":
             self.main_window.image_widget.cmap_scale = "Log"
-            self.main_window.image_widget.displayImage(self.file_path)
+            self.main_window.image_widget.displayImage(self.image)
             self.cmap_linear_slider.setEnabled(False)
         else:
             self.main_window.image_widget.cmap_scale = "Linear"
-            self.main_window.image_widget.displayImage(self.file_path)
+            self.main_window.image_widget.displayImage(self.image)
             self.cmap_linear_slider.setEnabled(True)
 
     # --------------------------------------------------------------------------
@@ -251,14 +354,14 @@ class OptionsWidget(pg.LayoutWidget):
         slider = self.sender()
 
         self.main_window.image_widget.cmap_linear_norm_pctl = slider.value() / 100.0
-        self.main_window.image_widget.displayImage(self.file_path)
+        self.main_window.image_widget.displayImage(self.image)
 
     # --------------------------------------------------------------------------
 
     def simLivePlotting(self):
         # Loops through files in list
-        for i in range(self.file_list.count()):
-            self.loadFile(self.file_list.item(i))
+        for i in range(self.live_file_list.count()):
+            self.loadLiveImage(self.live_file_list.item(i))
             QtGui.QApplication.processEvents()
 
 
@@ -434,9 +537,9 @@ class ImageWidget(pg.PlotWidget):
 
     # --------------------------------------------------------------------------
 
-    def displayImage(self, file_path):
-        # Read and set image file
-        self.image = ndimage.rotate(tiff.imread(file_path), 90)
+    def displayImage(self, image):
+
+        self.image = image
 
         if self.cmap_scale == "Log":
             norm = colors.LogNorm()
@@ -498,8 +601,6 @@ class ImageWidget(pg.PlotWidget):
             self.main_window.x_plot_widget.plot(col_avgs)
             self.main_window.y_plot_widget.plot(x=row_avgs, y=range(len(row_avgs)))
             #self.main_window.xyz_plot_widget.plot(self.mean_image)
-
-
         except TypeError:
             return
 
