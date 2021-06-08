@@ -377,11 +377,9 @@ class OptionsWidget(pg.LayoutWidget):
         if button.text() == "Logarithmic":
             self.main_window.image_widget.cmap_scale = "Log"
             self.main_window.image_widget.displayImage(self.image)
-            self.cmap_linear_slider.setEnabled(False)
         else:
             self.main_window.image_widget.cmap_scale = "Linear"
             self.main_window.image_widget.displayImage(self.image)
-            self.cmap_linear_slider.setEnabled(True)
 
     # --------------------------------------------------------------------------
 
@@ -584,7 +582,7 @@ class ImageWidget(pg.PlotWidget):
         self.image = image
 
         if self.cmap_scale == "Log":
-            norm = colors.LogNorm()
+            norm = colors.LogNorm(vmax=np.amax(self.image)*self.cmap_linear_norm_pctl)
         else:
             norm = colors.Normalize(vmax=np.amax(self.image)*self.cmap_linear_norm_pctl)
 
