@@ -464,7 +464,7 @@ class AnalysisWidget(pg.LayoutWidget):
         self.image_max_intensity_lbl = QtGui.QLabel("Max Intensity:")
         self.image_max_intensity_txtbox = QtGui.QLineEdit()
         self.image_max_intensity_txtbox.setReadOnly(True)
-        self.image_cmap_pctl_lbl = QtGui.QLabel("Cmap Pctl:")
+        self.image_cmap_pctl_lbl = QtGui.QLabel("CMap Pctl:")
         self.image_cmap_pctl_txtbox = QtGui.QLineEdit()
         self.image_cmap_pctl_txtbox.setReadOnly(True)
 
