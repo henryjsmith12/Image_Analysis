@@ -113,6 +113,13 @@ class OptionsWidget(pg.LayoutWidget):
         self.rect_mode_rbtn = QtGui.QRadioButton("Rectangle")
         self.mouse_mode_group.addButton(self.pan_mode_rbtn)
         self.mouse_mode_group.addButton(self.rect_mode_rbtn)
+        self.background_color_lbl = QtGui.QLabel("Background Color:")
+        self.background_color_group = QtGui.QButtonGroup()
+        self.background_black_rbtn = QtGui.QRadioButton("Black")
+        self.background_black_rbtn.setChecked(True)
+        self.background_white_rbtn = QtGui.QRadioButton("White")
+        self.background_color_group.addButton(self.background_black_rbtn)
+        self.background_color_group.addButton(self.background_white_rbtn)
         self.cmap_scale_lbl = QtGui.QLabel("CMap Scale:")
         self.cmap_scale_group = QtGui.QButtonGroup()
         self.cmap_linear_rbtn = QtGui.QRadioButton("Linear")
@@ -162,11 +169,14 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_layout.addWidget(self.mouse_mode_lbl, 1, 0)
         self.options_layout.addWidget(self.pan_mode_rbtn, 1, 1)
         self.options_layout.addWidget(self.rect_mode_rbtn, 1, 2)
-        self.options_layout.addWidget(self.cmap_scale_lbl, 2, 0, 1, 1)
-        self.options_layout.addWidget(self.cmap_linear_rbtn, 2, 1)
-        self.options_layout.addWidget(self.cmap_log_rbtn, 2, 2)
-        self.options_layout.addWidget(self.cmap_linear_pctl_lbl, 3, 0)
-        self.options_layout.addWidget(self.cmap_linear_slider, 3, 1, 1, 2)
+        self.options_layout.addWidget(self.background_color_lbl, 2, 0)
+        self.options_layout.addWidget(self.background_black_rbtn, 2, 1)
+        self.options_layout.addWidget(self.background_white_rbtn, 2, 2)
+        self.options_layout.addWidget(self.cmap_scale_lbl, 3, 0)
+        self.options_layout.addWidget(self.cmap_linear_rbtn, 3, 1)
+        self.options_layout.addWidget(self.cmap_log_rbtn, 3, 2)
+        self.options_layout.addWidget(self.cmap_linear_pctl_lbl, 4, 0)
+        self.options_layout.addWidget(self.cmap_linear_slider, 4, 1, 1, 2)
 
         # Link widgets to actions
         self.live_browse_btn.clicked.connect(self.openDirectory)
@@ -190,6 +200,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.crosshair_roi_chkbox.stateChanged.connect(self.toggleROICrosshair)
         self.pan_mode_rbtn.toggled.connect(self.toggleMouseMode)
         self.rect_mode_rbtn.toggled.connect(self.toggleMouseMode)
+        self.background_black_rbtn.toggled.connect(self.toggleBackgroundColor)
+        self.background_white_rbtn.toggled.connect(self.toggleBackgroundColor)
         self.cmap_linear_rbtn.toggled.connect(self.toggleCmapScale)
         self.cmap_log_rbtn.toggled.connect(self.toggleCmapScale)
         self.cmap_linear_slider.valueChanged.connect(self.changeCmapLinearPctl)
@@ -346,6 +358,16 @@ class OptionsWidget(pg.LayoutWidget):
             self.main_window.image_widget.view.setMouseMode(pg.ViewBox.PanMode)
         else:
             self.main_window.image_widget.view.setMouseMode(pg.ViewBox.RectMode)
+
+    # --------------------------------------------------------------------------
+
+    def toggleBackgroundColor(self):
+        button = self.sender()
+        # Toggles between background colors for plot widget
+        if button.text() == "Black":
+            self.main_window.image_widget.setBackground("default")
+        else:
+            self.main_window.image_widget.setBackground("w")
 
     # --------------------------------------------------------------------------
 
@@ -528,6 +550,7 @@ class ImageWidget(pg.PlotWidget):
         self.hideAxis("left")
         self.hideAxis("bottom")
         self.setAspectLocked(True)
+        self.setBackground("default")
 
         self.view = self.getViewBox()
         self.image_item = pg.ImageItem()
