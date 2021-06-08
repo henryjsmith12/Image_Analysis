@@ -14,6 +14,7 @@ import numpy as np
 import os
 from scipy import ndimage
 import tifffile as tiff
+import time
 
 # ==============================================================================
 
@@ -78,13 +79,16 @@ class OptionsWidget(pg.LayoutWidget):
         self.remote_direction_group.addButton(self.remote_y_direction_rbtn)
         self.remote_direction_group.addButton(self.remote_z_direction_rbtn)
         self.remote_x_slider_lbl = QtGui.QLabel("x Slice:")
+        self.remote_x_spinbox = QtGui.QSpinBox()
         self.remote_x_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.remote_x_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
         self.remote_y_slider_lbl = QtGui.QLabel("y Slice:")
+        self.remote_y_spinbox = QtGui.QSpinBox()
         self.remote_y_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.remote_y_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
         self.remote_y_slider.setEnabled(False)
         self.remote_z_slider_lbl = QtGui.QLabel("z Slice:")
+        self.remote_z_spinbox = QtGui.QSpinBox()
         self.remote_z_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.remote_z_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
         self.remote_z_slider.setEnabled(False)
@@ -102,13 +106,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.rect_mode_rbtn = QtGui.QRadioButton("Rectangle")
         self.mouse_mode_group.addButton(self.pan_mode_rbtn)
         self.mouse_mode_group.addButton(self.rect_mode_rbtn)
-        self.plot_scale_lbl = QtGui.QLabel("Plot Scale:")
-        self.plot_scale_group = QtGui.QButtonGroup()
-        self.plot_linear_rbtn = QtGui.QRadioButton("Linear")
-        self.plot_linear_rbtn.setChecked(True)
-        self.plot_log_rbtn = QtGui.QRadioButton("Logarithmic")
-        self.plot_scale_group.addButton(self.plot_linear_rbtn)
-        self.plot_scale_group.addButton(self.plot_log_rbtn)
         self.cmap_scale_lbl = QtGui.QLabel("CMap Scale:")
         self.cmap_scale_group = QtGui.QButtonGroup()
         self.cmap_linear_rbtn = QtGui.QRadioButton("Linear")
@@ -128,9 +125,10 @@ class OptionsWidget(pg.LayoutWidget):
         # Add widgets to GroupBoxes
         self.live_image_layout.addWidget(self.live_browse_btn, 0, 0, 1, 2)
         self.live_image_layout.addWidget(self.live_clear_btn, 0, 2, 1, 2)
-        self.live_image_layout.addWidget(self.live_file_list, 1, 0, 4, 4)
-        self.live_image_layout.addWidget(self.live_current_file_lbl, 5, 0)
-        self.live_image_layout.addWidget(self.live_current_file_txtbox, 5, 1, 1, 3)
+        self.live_image_layout.addWidget(self.live_file_list, 1, 0, 3, 4)
+        self.live_image_layout.addWidget(self.live_current_file_lbl, 4, 0)
+        self.live_image_layout.addWidget(self.live_current_file_txtbox, 4, 1, 1, 3)
+        self.live_image_layout.addWidget(self.live_plot_btn, 5, 0, 1, 2)
 
         self.remote_image_layout.addWidget(self.remote_browse_btn, 0, 0, 1, 4)
         self.remote_image_layout.addWidget(self.remote_current_directory_lbl, 1, 0)
@@ -140,27 +138,26 @@ class OptionsWidget(pg.LayoutWidget):
         self.remote_image_layout.addWidget(self.remote_y_direction_rbtn, 2, 2)
         self.remote_image_layout.addWidget(self.remote_z_direction_rbtn, 2, 3)
         self.remote_image_layout.addWidget(self.remote_x_slider_lbl, 3, 0)
-        self.remote_image_layout.addWidget(self.remote_x_slider, 3, 1, 1, 3)
+        self.remote_image_layout.addWidget(self.remote_x_spinbox, 3, 1)
+        self.remote_image_layout.addWidget(self.remote_x_slider, 3, 2, 1, 3)
         self.remote_image_layout.addWidget(self.remote_y_slider_lbl, 4, 0)
-        self.remote_image_layout.addWidget(self.remote_y_slider, 4, 1, 1, 3)
+        self.remote_image_layout.addWidget(self.remote_y_spinbox, 4, 1)
+        self.remote_image_layout.addWidget(self.remote_y_slider, 4, 2, 1, 3)
         self.remote_image_layout.addWidget(self.remote_z_slider_lbl, 5, 0)
-        self.remote_image_layout.addWidget(self.remote_z_slider, 5, 1, 1, 3)
+        self.remote_image_layout.addWidget(self.remote_z_spinbox, 5, 1)
+        self.remote_image_layout.addWidget(self.remote_z_slider, 5, 2, 1, 3)
 
-        self.options_layout.addWidget(self.live_plot_btn, 0, 0, 1, 2)
-        self.options_layout.addWidget(self.crosshair_lbl, 1, 0, 1, 1)
-        self.options_layout.addWidget(self.crosshair_mouse_chkbox, 1, 1)
-        self.options_layout.addWidget(self.crosshair_roi_chkbox, 1, 2)
-        self.options_layout.addWidget(self.mouse_mode_lbl, 2, 0)
-        self.options_layout.addWidget(self.pan_mode_rbtn, 2, 1)
-        self.options_layout.addWidget(self.rect_mode_rbtn, 2, 2)
-        self.options_layout.addWidget(self.plot_scale_lbl, 3, 0, 1, 1)
-        self.options_layout.addWidget(self.plot_linear_rbtn, 3, 1)
-        self.options_layout.addWidget(self.plot_log_rbtn, 3, 2)
-        self.options_layout.addWidget(self.cmap_scale_lbl, 4, 0, 1, 1)
-        self.options_layout.addWidget(self.cmap_linear_rbtn, 4, 1)
-        self.options_layout.addWidget(self.cmap_log_rbtn, 4, 2)
-        self.options_layout.addWidget(self.cmap_linear_pctl_lbl, 5, 0)
-        self.options_layout.addWidget(self.cmap_linear_slider, 5, 1, 1, 2)
+        self.options_layout.addWidget(self.crosshair_lbl, 0, 0, 1, 1)
+        self.options_layout.addWidget(self.crosshair_mouse_chkbox, 0, 1)
+        self.options_layout.addWidget(self.crosshair_roi_chkbox, 0, 2)
+        self.options_layout.addWidget(self.mouse_mode_lbl, 1, 0)
+        self.options_layout.addWidget(self.pan_mode_rbtn, 1, 1)
+        self.options_layout.addWidget(self.rect_mode_rbtn, 1, 2)
+        self.options_layout.addWidget(self.cmap_scale_lbl, 2, 0, 1, 1)
+        self.options_layout.addWidget(self.cmap_linear_rbtn, 2, 1)
+        self.options_layout.addWidget(self.cmap_log_rbtn, 2, 2)
+        self.options_layout.addWidget(self.cmap_linear_pctl_lbl, 3, 0)
+        self.options_layout.addWidget(self.cmap_linear_slider, 3, 1, 1, 2)
 
         # Link widgets to actions
         self.live_browse_btn.clicked.connect(self.openDirectory)
@@ -172,6 +169,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.remote_x_direction_rbtn.toggled.connect(self.toggleSliceDirection)
         self.remote_y_direction_rbtn.toggled.connect(self.toggleSliceDirection)
         self.remote_z_direction_rbtn.toggled.connect(self.toggleSliceDirection)
+        self.remote_x_spinbox.valueChanged[int].connect(self.changeSliderValue)
+        self.remote_y_spinbox.valueChanged[int].connect(self.changeSliderValue)
+        self.remote_z_spinbox.valueChanged[int].connect(self.changeSliderValue)
         self.remote_x_slider.valueChanged.connect(self.loadRemoteImage)
         self.remote_y_slider.valueChanged.connect(self.loadRemoteImage)
         self.remote_z_slider.valueChanged.connect(self.loadRemoteImage)
@@ -180,8 +180,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.crosshair_roi_chkbox.stateChanged.connect(self.toggleROICrosshair)
         self.pan_mode_rbtn.toggled.connect(self.toggleMouseMode)
         self.rect_mode_rbtn.toggled.connect(self.toggleMouseMode)
-        self.plot_linear_rbtn.toggled.connect(self.togglePlotScale)
-        self.plot_log_rbtn.toggled.connect(self.togglePlotScale)
         self.cmap_linear_rbtn.toggled.connect(self.toggleCmapScale)
         self.cmap_log_rbtn.toggled.connect(self.toggleCmapScale)
         self.cmap_linear_slider.valueChanged.connect(self.changeCmapLinearPctl)
@@ -213,8 +211,11 @@ class OptionsWidget(pg.LayoutWidget):
                     self.image_data.append(image)
             self.image_data = np.stack(self.image_data)
             self.remote_x_slider.setMaximum(self.image_data.shape[0] - 1)
+            self.remote_x_spinbox.setRange(0, self.image_data.shape[0] - 1)
             self.remote_y_slider.setMaximum(self.image_data.shape[1] - 1)
+            self.remote_y_spinbox.setRange(0, self.image_data.shape[1] - 1)
             self.remote_z_slider.setMaximum(self.image_data.shape[2] - 1)
+            self.remote_z_spinbox.setRange(0, self.image_data.shape[2] - 1)
             self.loadRemoteImage()
 
     # --------------------------------------------------------------------------
@@ -250,20 +251,22 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def loadRemoteImage(self):
-
         # Read and set image file
         if self.remote_x_direction_rbtn.isChecked():
+            self.remote_x_spinbox.setValue(int(self.remote_x_slider.value()))
             x_slice = int(self.remote_x_slider.value())
             self.image = self.image_data[x_slice, :, :]
 
         elif self.remote_y_direction_rbtn.isChecked():
+            self.remote_y_spinbox.setValue(int(self.remote_y_slider.value()))
             y_slice = int(self.remote_y_slider.value())
             self.image = self.image_data[:, y_slice, :]
-            self.image = ndimage.rotate(self.image, 90)
+            #self.image = ndimage.rotate(self.image, 90)
         else:
+            self.remote_z_spinbox.setValue(int(self.remote_z_slider.value()))
             z_slice = int(self.remote_z_slider.value())
             self.image = self.image_data[:, :, z_slice]
-            self.image = ndimage.rotate(self.image, 90)
+            #self.image = ndimage.rotate(self.image, 90)
 
         self.main_window.image_widget.displayImage(self.image)
 
@@ -289,6 +292,18 @@ class OptionsWidget(pg.LayoutWidget):
             self.remote_z_slider.setEnabled(True)
 
         self.loadRemoteImage()
+
+    # --------------------------------------------------------------------------
+
+    def changeSliderValue(self, value):
+        spinbox = self.sender()
+
+        if spinbox == self.remote_x_spinbox:
+            self.remote_x_slider.setValue(value)
+        elif spinbox == self.remote_y_spinbox:
+            self.remote_y_slider.setValue(value)
+        else:
+            self.remote_z_slider.setValue(value)
 
     # --------------------------------------------------------------------------
 
@@ -321,18 +336,6 @@ class OptionsWidget(pg.LayoutWidget):
             self.main_window.image_widget.view.setMouseMode(pg.ViewBox.PanMode)
         else:
             self.main_window.image_widget.view.setMouseMode(pg.ViewBox.RectMode)
-
-    # --------------------------------------------------------------------------
-
-    def togglePlotScale(self):
-        button = self.sender()
-        # Toggles between log and linear scaling
-        if button.text() == "Logarithmic":
-            self.main_window.x_plot_widget.setLogMode(False, True)
-            self.main_window.y_plot_widget.setLogMode(True, False)
-        else:
-            self.main_window.x_plot_widget.setLogMode(False, False)
-            self.main_window.y_plot_widget.setLogMode(False, False)
 
     # --------------------------------------------------------------------------
 
@@ -557,9 +560,6 @@ class ImageWidget(pg.PlotWidget):
         self.main_window.analysis_widget.image_max_intensity_txtbox.setText(str(np.amax(self.image)))
         self.main_window.analysis_widget.image_cmap_pctl_txtbox.setText(str(self.cmap_linear_norm_pctl))
 
-        # For 3D plotting
-        #self.mean_image = self.image[:,:,:-1].mean(axis=2)
-
         # Autofocuses on figure
         #self.view.enableAutoRange()
 
@@ -573,7 +573,6 @@ class ImageWidget(pg.PlotWidget):
         view_point = self.view.mapSceneToView(scene_point)
 
         x, y = view_point.x(), view_point.y()
-        intensity = self.image[int(x), int(y)]
 
         # Changes position of crosshair
         self.v_line.setPos(x)
@@ -582,6 +581,9 @@ class ImageWidget(pg.PlotWidget):
         # Update analysis textboxes
         self.main_window.analysis_widget.mouse_x_txtbox.setText(str(int(x)))
         self.main_window.analysis_widget.mouse_y_txtbox.setText(str(int(y)))
-        self.main_window.analysis_widget.mouse_intensity_txtbox.setText(str(intensity))
+
+        if self.image.shape[0] >= x >= 0 and self.image.shape[1] >= y >= 0:
+            intensity = self.image[int(x), int(y)]
+            self.main_window.analysis_widget.mouse_intensity_txtbox.setText(str(intensity))
 
 # ==============================================================================
