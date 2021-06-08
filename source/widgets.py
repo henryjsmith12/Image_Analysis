@@ -63,6 +63,13 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_current_file_lbl = QtGui.QLabel("Current Image:")
         self.live_current_file_txtbox = QtGui.QLineEdit()
         self.live_current_file_txtbox.setReadOnly(True)
+        self.live_refresh_rate_lbl = QtGui.QLabel("Refresh Rate (s):")
+        self.live_refresh_rate_spinbox = QtGui.QDoubleSpinBox()
+        self.live_refresh_rate_spinbox.setSingleStep(0.01)
+        self.live_refresh_rate_spinbox.setRange(0.0, 1.0)
+        self.live_refresh_rate_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.live_refresh_rate_slider.setRange(0, 100)
+        self.live_refresh_rate = 0.0
 
         # Create remote image widgets
         self.remote_browse_btn = QtGui.QPushButton("Browse")
@@ -129,10 +136,12 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_image_layout.addWidget(self.live_current_file_lbl, 4, 0)
         self.live_image_layout.addWidget(self.live_current_file_txtbox, 4, 1, 1, 3)
         self.live_image_layout.addWidget(self.live_plot_btn, 5, 0, 1, 2)
+        self.live_image_layout.addWidget(self.live_refresh_rate_lbl, 5, 2)
+        self.live_image_layout.addWidget(self.live_refresh_rate_spinbox, 5, 3)
 
         self.remote_image_layout.addWidget(self.remote_browse_btn, 0, 0, 1, 4)
         self.remote_image_layout.addWidget(self.remote_current_directory_lbl, 1, 0)
-        self.remote_image_layout.addWidget(self.remote_current_directory_txtbox, 1, 1, 1, 3)
+        self.remote_image_layout.addWidget(self.remote_current_directory_txtbox, 1, 1, 1, 4)
         self.remote_image_layout.addWidget(self.remote_direction_lbl, 2, 0)
         self.remote_image_layout.addWidget(self.remote_x_direction_rbtn, 2, 1)
         self.remote_image_layout.addWidget(self.remote_y_direction_rbtn, 2, 2)
@@ -164,6 +173,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_clear_btn.clicked.connect(self.clear)
         self.live_file_list.itemClicked.connect(self.loadLiveImage)
         self.live_plot_btn.clicked.connect(self.simLivePlotting)
+        self.live_refresh_rate_spinbox.valueChanged.connect(self.changeRefreshRate)
 
         self.remote_browse_btn.clicked.connect(self.openDirectory)
         self.remote_x_direction_rbtn.toggled.connect(self.toggleSliceDirection)
@@ -366,6 +376,12 @@ class OptionsWidget(pg.LayoutWidget):
         for i in range(self.live_file_list.count()):
             self.loadLiveImage(self.live_file_list.item(i))
             QtGui.QApplication.processEvents()
+            time.sleep(self.live_refresh_rate)
+
+    # --------------------------------------------------------------------------
+
+    def changeRefreshRate(self, value):
+        self.live_refresh_rate = value
 
 
 # ==============================================================================
