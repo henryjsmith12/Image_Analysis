@@ -608,7 +608,6 @@ class ImageWidget(pg.PlotWidget):
             intensity = self.image[int(x), int(y)]
             self.main_window.analysis_widget.mouse_intensity_txtbox.setText(str(intensity))
 
-
 # ==============================================================================
 
 class ROIWidget(pg.ROI):

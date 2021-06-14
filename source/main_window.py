@@ -28,7 +28,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Window attributes
         self.setMinimumSize(900, 600)
-        self.setGeometry(100, 100, 1200, 800)
+        self.setGeometry(100, 100, 1250, 900)
         self.setWindowTitle("Image Analysis")
 
         self.createDocks()
@@ -39,13 +39,13 @@ class MainWindow(QtGui.QMainWindow):
     def createDocks(self):
         # Docked widgets for main window
         self.options_dock = Dock("Options", size=(100, 300))
-        self.analysis_dock = Dock("Analysis", size=(200, 100))
-        self.image_dock = Dock("Image", size=(200, 200))
+        self.analysis_dock = Dock("Analysis", size=(300, 100))
+        self.image_dock = Dock("Image", size=(300, 300))
 
         # Add/organize docks
         self.dock_area.addDock(self.options_dock, "left")
         self.dock_area.addDock(self.image_dock, "right", self.options_dock)
-        self.dock_area.addDock(self.analysis_dock, "bottom")
+        self.dock_area.addDock(self.analysis_dock, "bottom", self.image_dock)
 
     # --------------------------------------------------------------------------
 
