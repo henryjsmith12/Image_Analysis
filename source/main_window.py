@@ -44,8 +44,8 @@ class MainWindow(QtGui.QMainWindow):
 
         # Add/organize docks
         self.dock_area.addDock(self.options_dock, "left")
-        self.dock_area.addDock(self.analysis_dock, "right", self.options_dock)
-        self.dock_area.addDock(self.image_dock, "top", self.analysis_dock)
+        self.dock_area.addDock(self.image_dock, "right", self.options_dock)
+        self.dock_area.addDock(self.analysis_dock, "bottom")
 
     # --------------------------------------------------------------------------
 
