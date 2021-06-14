@@ -585,9 +585,6 @@ class ImageWidget(pg.PlotWidget):
         self.main_window.analysis_widget.image_max_intensity_txtbox.setText(str(np.amax(self.image)))
         self.main_window.analysis_widget.image_cmap_pctl_txtbox.setText(str(self.cmap_linear_norm_pctl))
 
-        # Autofocuses on figure
-        #self.view.enableAutoRange()
-
         # Update crosshair information
         self.view.scene().sigMouseMoved.connect(self.updateMouseCrosshair)
 
@@ -611,6 +608,7 @@ class ImageWidget(pg.PlotWidget):
             intensity = self.image[int(x), int(y)]
             self.main_window.analysis_widget.mouse_intensity_txtbox.setText(str(intensity))
 
+
 # ==============================================================================
 
 class ROIWidget(pg.ROI):
@@ -625,20 +623,72 @@ class ROIWidget(pg.ROI):
 
         self.layout = layout
 
-        self.center_x_lbl = QtGui.QLabel("x Pos:")
-        self.center_x_spinbox = QtGui.QSpinBox()
-        self.center_y_lbl = QtGui.QLabel("y Pos:")
-        self.center_y_spinbox = QtGui.QSpinBox()
+        self.x_lbl = QtGui.QLabel("x Pos:")
+        self.x_spinbox = QtGui.QSpinBox()
+        self.x_spinbox.setMinimum(0)
+        self.x_spinbox.setMaximum(1000)
+        self.y_lbl = QtGui.QLabel("y Pos:")
+        self.y_spinbox = QtGui.QSpinBox()
+        self.y_spinbox.setMinimum(0)
+        self.y_spinbox.setMaximum(1000)
         self.width_lbl = QtGui.QLabel("Width:")
         self.width_spinbox = QtGui.QSpinBox()
+        self.width_spinbox.setMinimum(0)
+        self.width_spinbox.setMaximum(1000)
         self.height_lbl = QtGui.QLabel("Height:")
         self.height_spinbox = QtGui.QSpinBox()
+        self.height_spinbox.setMinimum(0)
+        self.height_spinbox.setMaximum(1000)
 
-        self.layout.addWidget(self.center_x_lbl, 0, 0)
-        self.layout.addWidget(self.center_x_spinbox, 0, 1)
-        self.layout.addWidget(self.center_y_lbl, 1, 0)
-        self.layout.addWidget(self.center_y_spinbox, 1, 1)
+        self.layout.addWidget(self.x_lbl, 0, 0)
+        self.layout.addWidget(self.x_spinbox, 0, 1)
+        self.layout.addWidget(self.y_lbl, 1, 0)
+        self.layout.addWidget(self.y_spinbox, 1, 1)
         self.layout.addWidget(self.width_lbl, 2, 0)
         self.layout.addWidget(self.width_spinbox, 2, 1)
         self.layout.addWidget(self.height_lbl, 3, 0)
         self.layout.addWidget(self.height_spinbox, 3, 1)
+
+        self.sigRegionChanged.connect(self.updateAnalysis)
+        self.visibleChanged.connect(self.updateAnalysis)
+        self.width_spinbox.valueChanged.connect(self.updateSize)
+        self.height_spinbox.valueChanged.connect(self.updateSize)
+        self.x_spinbox.valueChanged.connect(self.updatePosition)
+        self.y_spinbox.valueChanged.connect(self.updatePosition)
+
+        # Keeps track of whether textboxes or roi was updated last
+        # Helps avoid infinite loop of updating
+        self.updating = ""
+
+    # --------------------------------------------------------------------------
+
+    def updateAnalysis(self):
+        if self.updating != "roi":
+            self.updating = "analysis"
+            self.x_spinbox.setValue(self.pos()[0] + self.size()[0] / 2)
+            self.y_spinbox.setValue(self.pos()[1] + self.size()[1] / 2)
+            self.width_spinbox.setValue(self.size()[0])
+            self.height_spinbox.setValue(self.size()[1])
+            self.updating = ""
+
+    # --------------------------------------------------------------------------
+
+    def updateSize(self):
+        if self.updating != "analysis":
+            self.updating = "roi"
+            width = self.width_spinbox.value()
+            height = self.height_spinbox.value()
+            self.setSize((width, height))
+            self.updatePosition()
+            self.updating = ""
+
+    # --------------------------------------------------------------------------
+
+    def updatePosition(self):
+        if self.updating != "analysis":
+            self.updating = "roi"
+            # Bottom lefthand corner of roi
+            x_origin = self.x_spinbox.value() - self.size()[0] / 2
+            y_origin = self.y_spinbox.value() - self.size()[1] / 2
+            self.setPos((x_origin, y_origin))
+            self.updating = ""
