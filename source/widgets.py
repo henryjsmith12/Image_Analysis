@@ -63,7 +63,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_current_file_lbl = QtGui.QLabel("Current Image:")
         self.live_current_file_txtbox = QtGui.QLineEdit()
         self.live_current_file_txtbox.setReadOnly(True)
-        self.live_refresh_rate_lbl = QtGui.QLabel("Refresh Rate (s):")
+        self.live_refresh_rate_lbl = QtGui.QLabel("Refresh Delay (s):")
         self.live_refresh_rate_spinbox = QtGui.QDoubleSpinBox()
         self.live_refresh_rate_spinbox.setSingleStep(0.01)
         self.live_refresh_rate_spinbox.setRange(0.0, 1.0)
@@ -103,6 +103,7 @@ class OptionsWidget(pg.LayoutWidget):
         # Create options widgets
         self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
         self.reset_btn = QtGui.QPushButton("Reset View")
+        self.roi_boxes_chkbox = QtGui.QCheckBox("ROI")
         self.crosshair_lbl = QtGui.QLabel("Crosshair:")
         self.crosshair_mouse_chkbox = QtGui.QCheckBox("Mouse")
         self.crosshair_roi_chkbox = QtGui.QCheckBox("ROI")
@@ -163,20 +164,21 @@ class OptionsWidget(pg.LayoutWidget):
         self.remote_image_layout.addWidget(self.remote_z_spinbox, 5, 1)
         self.remote_image_layout.addWidget(self.remote_z_slider, 5, 2, 1, 3)
 
-        self.options_layout.addWidget(self.crosshair_lbl, 0, 0, 1, 1)
-        self.options_layout.addWidget(self.crosshair_mouse_chkbox, 0, 1)
-        self.options_layout.addWidget(self.crosshair_roi_chkbox, 0, 2)
-        self.options_layout.addWidget(self.mouse_mode_lbl, 1, 0)
-        self.options_layout.addWidget(self.pan_mode_rbtn, 1, 1)
-        self.options_layout.addWidget(self.rect_mode_rbtn, 1, 2)
-        self.options_layout.addWidget(self.background_color_lbl, 2, 0)
-        self.options_layout.addWidget(self.background_black_rbtn, 2, 1)
-        self.options_layout.addWidget(self.background_white_rbtn, 2, 2)
-        self.options_layout.addWidget(self.cmap_scale_lbl, 3, 0)
-        self.options_layout.addWidget(self.cmap_linear_rbtn, 3, 1)
-        self.options_layout.addWidget(self.cmap_log_rbtn, 3, 2)
-        self.options_layout.addWidget(self.cmap_linear_pctl_lbl, 4, 0)
-        self.options_layout.addWidget(self.cmap_linear_slider, 4, 1, 1, 2)
+        self.options_layout.addWidget(self.roi_boxes_chkbox, 0, 0)
+        self.options_layout.addWidget(self.crosshair_lbl, 1, 0, 1, 1)
+        self.options_layout.addWidget(self.crosshair_mouse_chkbox, 1, 1)
+        self.options_layout.addWidget(self.crosshair_roi_chkbox, 1, 2)
+        self.options_layout.addWidget(self.mouse_mode_lbl, 2, 0)
+        self.options_layout.addWidget(self.pan_mode_rbtn, 2, 1)
+        self.options_layout.addWidget(self.rect_mode_rbtn, 2, 2)
+        self.options_layout.addWidget(self.background_color_lbl, 3, 0)
+        self.options_layout.addWidget(self.background_black_rbtn, 3, 1)
+        self.options_layout.addWidget(self.background_white_rbtn, 3, 2)
+        self.options_layout.addWidget(self.cmap_scale_lbl, 4, 0)
+        self.options_layout.addWidget(self.cmap_linear_rbtn, 4, 1)
+        self.options_layout.addWidget(self.cmap_log_rbtn, 4, 2)
+        self.options_layout.addWidget(self.cmap_linear_pctl_lbl, 5, 0)
+        self.options_layout.addWidget(self.cmap_linear_slider, 5, 1, 1, 2)
 
         # Link widgets to actions
         self.live_browse_btn.clicked.connect(self.openDirectory)
@@ -196,6 +198,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.remote_y_slider.valueChanged.connect(self.loadRemoteImage)
         self.remote_z_slider.valueChanged.connect(self.loadRemoteImage)
 
+        self.roi_boxes_chkbox.stateChanged.connect(self.toggleROIBoxes)
         self.crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
         self.crosshair_roi_chkbox.stateChanged.connect(self.toggleROICrosshair)
         self.pan_mode_rbtn.toggled.connect(self.toggleMouseMode)
@@ -329,6 +332,20 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
+    def toggleROIBoxes(self, state):
+        if state == 2:
+            self.main_window.image_widget.roi1.show()
+            self.main_window.image_widget.roi2.show()
+            self.main_window.image_widget.roi3.show()
+            self.main_window.image_widget.roi4.show()
+        else:
+            self.main_window.image_widget.roi1.hide()
+            self.main_window.image_widget.roi2.hide()
+            self.main_window.image_widget.roi3.hide()
+            self.main_window.image_widget.roi4.hide()
+
+    # --------------------------------------------------------------------------
+
     def toggleMouseCrosshair(self, state):
         # Turn mouse crosshair on/off
         if state == 2:
@@ -403,7 +420,6 @@ class OptionsWidget(pg.LayoutWidget):
     def changeRefreshRate(self, value):
         self.live_refresh_rate = value
 
-
 # ==============================================================================
 
 class AnalysisWidget(pg.LayoutWidget):
@@ -421,33 +437,41 @@ class AnalysisWidget(pg.LayoutWidget):
         # Create GroupBoxes
         self.mouse_gbox = QtGui.QGroupBox("Mouse")
         self.image_gbox = QtGui.QGroupBox("Image")
-        self.roi_gbox = QtGui.QGroupBox("ROI")
-        self.peak_gbox = QtGui.QGroupBox("Peak")
+        self.roi1_gbox = QtGui.QGroupBox("ROI 1")
+        self.roi2_gbox = QtGui.QGroupBox("ROI 2")
+        self.roi3_gbox = QtGui.QGroupBox("ROI 3")
+        self.roi4_gbox = QtGui.QGroupBox("ROI 4")
 
         # Add GroupBoxes to widget
         self.addWidget(self.mouse_gbox, row=0, col=0, rowspan=1)
         self.addWidget(self.image_gbox, row=1, col=0, rowspan=1)
-        self.addWidget(self.roi_gbox, row=0, col=1, rowspan=2)
-        self.addWidget(self.peak_gbox, row=0, col=2, rowspan=2)
+        self.addWidget(self.roi1_gbox, row=0, col=1, rowspan=2)
+        self.addWidget(self.roi2_gbox, row=0, col=2, rowspan=2)
+        self.addWidget(self.roi3_gbox, row=0, col=3, rowspan=2)
+        self.addWidget(self.roi4_gbox, row=0, col=4, rowspan=2)
 
         # Create/add layouts
         self.mouse_layout = QtGui.QGridLayout()
         self.image_layout = QtGui.QGridLayout()
-        self.roi_layout = QtGui.QGridLayout()
-        self.peak_layout = QtGui.QGridLayout()
+        self.roi1_layout = QtGui.QGridLayout()
+        self.roi2_layout = QtGui.QGridLayout()
+        self.roi3_layout = QtGui.QGridLayout()
+        self.roi4_layout = QtGui.QGridLayout()
         self.mouse_gbox.setLayout(self.mouse_layout)
         self.image_gbox.setLayout(self.image_layout)
-        self.roi_gbox.setLayout(self.roi_layout)
-        self.peak_gbox.setLayout(self.peak_layout)
+        self.roi1_gbox.setLayout(self.roi1_layout)
+        self.roi2_gbox.setLayout(self.roi2_layout)
+        self.roi3_gbox.setLayout(self.roi3_layout)
+        self.roi4_gbox.setLayout(self.roi4_layout)
 
     # --------------------------------------------------------------------------
 
     def setupComponents(self):
         # Create mouse widgets
-        self.mouse_x_lbl = QtGui.QLabel("x Position:")
+        self.mouse_x_lbl = QtGui.QLabel("x Pos:")
         self.mouse_x_txtbox = QtGui.QLineEdit()
         self.mouse_x_txtbox.setReadOnly(True)
-        self.mouse_y_lbl = QtGui.QLabel("y Position:")
+        self.mouse_y_lbl = QtGui.QLabel("y Pos:")
         self.mouse_y_txtbox = QtGui.QLineEdit()
         self.mouse_y_txtbox.setReadOnly(True)
         self.mouse_intensity_lbl = QtGui.QLabel("Intensity:")
@@ -468,34 +492,6 @@ class AnalysisWidget(pg.LayoutWidget):
         self.image_cmap_pctl_txtbox = QtGui.QLineEdit()
         self.image_cmap_pctl_txtbox.setReadOnly(True)
 
-        # Create roi widgets
-        self.roi_center_x_lbl = QtGui.QLabel("Center x:")
-        self.roi_center_x_txtbox = QtGui.QLineEdit()
-        self.roi_center_x_txtbox.setReadOnly(True)
-        self.roi_center_y_lbl = QtGui.QLabel("Center y:")
-        self.roi_center_y_txtbox = QtGui.QLineEdit()
-        self.roi_center_y_txtbox.setReadOnly(True)
-        self.roi_width_lbl = QtGui.QLabel("Width:")
-        self.roi_width_txtbox = QtGui.QLineEdit()
-        self.roi_width_txtbox.setReadOnly(True)
-        self.roi_height_lbl = QtGui.QLabel("Height:")
-        self.roi_height_txtbox = QtGui.QLineEdit()
-        self.roi_height_txtbox.setReadOnly(True)
-
-        # Create peak widgets
-        self.peak_center_x_lbl = QtGui.QLabel("Center x:")
-        self.peak_center_x_txtbox = QtGui.QLineEdit()
-        self.peak_center_x_txtbox.setReadOnly(True)
-        self.peak_center_y_lbl = QtGui.QLabel("Center y:")
-        self.peak_center_y_txtbox = QtGui.QLineEdit()
-        self.peak_center_y_txtbox.setReadOnly(True)
-        self.peak_width_lbl = QtGui.QLabel("Width:")
-        self.peak_width_txtbox = QtGui.QLineEdit()
-        self.peak_width_txtbox.setReadOnly(True)
-        self.peak_height_lbl = QtGui.QLabel("Height:")
-        self.peak_height_txtbox = QtGui.QLineEdit()
-        self.peak_height_txtbox.setReadOnly(True)
-
         # Add widgets to GroupBoxes
         self.mouse_layout.addWidget(self.mouse_x_lbl, 0, 0)
         self.mouse_layout.addWidget(self.mouse_x_txtbox, 0, 1)
@@ -513,25 +509,6 @@ class AnalysisWidget(pg.LayoutWidget):
         self.image_layout.addWidget(self.image_cmap_pctl_lbl, 3, 0)
         self.image_layout.addWidget(self.image_cmap_pctl_txtbox, 3, 1)
 
-        self.roi_layout.addWidget(self.roi_center_x_lbl, 0, 0)
-        self.roi_layout.addWidget(self.roi_center_x_txtbox, 0, 1)
-        self.roi_layout.addWidget(self.roi_center_y_lbl, 1, 0)
-        self.roi_layout.addWidget(self.roi_center_y_txtbox, 1, 1)
-        self.roi_layout.addWidget(self.roi_width_lbl, 2, 0)
-        self.roi_layout.addWidget(self.roi_width_txtbox, 2, 1)
-        self.roi_layout.addWidget(self.roi_height_lbl, 3, 0)
-        self.roi_layout.addWidget(self.roi_height_txtbox, 3, 1)
-
-        self.peak_layout.addWidget(self.peak_center_x_lbl, 0, 0)
-        self.peak_layout.addWidget(self.peak_center_x_txtbox, 0, 1)
-        self.peak_layout.addWidget(self.peak_center_y_lbl, 1, 0)
-        self.peak_layout.addWidget(self.peak_center_y_txtbox, 1, 1)
-        self.peak_layout.addWidget(self.peak_width_lbl, 2, 0)
-        self.peak_layout.addWidget(self.peak_width_txtbox, 2, 1)
-        self.peak_layout.addWidget(self.peak_height_lbl, 3, 0)
-        self.peak_layout.addWidget(self.peak_height_txtbox, 3, 1)
-
-
 # ==============================================================================
 
 class ImageWidget(pg.PlotWidget):
@@ -545,8 +522,8 @@ class ImageWidget(pg.PlotWidget):
         super(ImageWidget, self).__init__(parent)
         self.main_window = parent
 
-        self.hideAxis("left")
-        self.hideAxis("bottom")
+        #self.hideAxis("left")
+        #self.hideAxis("bottom")
         self.setAspectLocked(True)
         self.setBackground("default")
 
@@ -554,8 +531,19 @@ class ImageWidget(pg.PlotWidget):
         self.image_item = pg.ImageItem()
         self.addItem(self.image_item)
 
+        # Set current cmap/cmap scaling
         self.cmap_scale = "Linear"
         self.cmap_linear_norm_pctl = 1.0
+
+        self.roi1 = ROIWidget([200, 100], [40, 40], self.main_window.analysis_widget.roi1_layout)
+        self.roi2 = ROIWidget([205, 105], [30, 30], self.main_window.analysis_widget.roi2_layout)
+        self.roi3 = ROIWidget([210, 110], [20, 20], self.main_window.analysis_widget.roi3_layout)
+        self.roi4 = ROIWidget([215, 115], [10, 10], self.main_window.analysis_widget.roi4_layout)
+
+        self.addItem(self.roi1)
+        self.addItem(self.roi2)
+        self.addItem(self.roi3)
+        self.addItem(self.roi4)
 
         # Create mouse crosshair
         self.v_line = pg.InfiniteLine(angle=90, movable=False)
@@ -624,3 +612,33 @@ class ImageWidget(pg.PlotWidget):
             self.main_window.analysis_widget.mouse_intensity_txtbox.setText(str(intensity))
 
 # ==============================================================================
+
+class ROIWidget(pg.ROI):
+
+    def __init__ (self, position, size, layout):
+        super().__init__(position, size=size)
+
+        self.addScaleHandle([0.5, 0], [0.5, 0.5])
+        self.addScaleHandle([0, 0.5], [0.5, 0.5])
+        self.addScaleHandle([0, 0], [0.5, 0.5])
+        self.hide()
+
+        self.layout = layout
+
+        self.center_x_lbl = QtGui.QLabel("x Pos:")
+        self.center_x_spinbox = QtGui.QSpinBox()
+        self.center_y_lbl = QtGui.QLabel("y Pos:")
+        self.center_y_spinbox = QtGui.QSpinBox()
+        self.width_lbl = QtGui.QLabel("Width:")
+        self.width_spinbox = QtGui.QSpinBox()
+        self.height_lbl = QtGui.QLabel("Height:")
+        self.height_spinbox = QtGui.QSpinBox()
+
+        self.layout.addWidget(self.center_x_lbl, 0, 0)
+        self.layout.addWidget(self.center_x_spinbox, 0, 1)
+        self.layout.addWidget(self.center_y_lbl, 1, 0)
+        self.layout.addWidget(self.center_y_spinbox, 1, 1)
+        self.layout.addWidget(self.width_lbl, 2, 0)
+        self.layout.addWidget(self.width_spinbox, 2, 1)
+        self.layout.addWidget(self.height_lbl, 3, 0)
+        self.layout.addWidget(self.height_spinbox, 3, 1)
