@@ -106,7 +106,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.roi_boxes_chkbox = QtGui.QCheckBox("ROI")
         self.crosshair_lbl = QtGui.QLabel("Crosshair:")
         self.crosshair_mouse_chkbox = QtGui.QCheckBox("Mouse")
-        self.crosshair_roi_chkbox = QtGui.QCheckBox("ROI")
         self.mouse_mode_lbl = QtGui.QLabel("Mouse Mode:")
         self.mouse_mode_group = QtGui.QButtonGroup()
         self.pan_mode_rbtn = QtGui.QRadioButton("Pan")
@@ -167,7 +166,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_layout.addWidget(self.roi_boxes_chkbox, 0, 0)
         self.options_layout.addWidget(self.crosshair_lbl, 1, 0, 1, 1)
         self.options_layout.addWidget(self.crosshair_mouse_chkbox, 1, 1)
-        self.options_layout.addWidget(self.crosshair_roi_chkbox, 1, 2)
         self.options_layout.addWidget(self.mouse_mode_lbl, 2, 0)
         self.options_layout.addWidget(self.pan_mode_rbtn, 2, 1)
         self.options_layout.addWidget(self.rect_mode_rbtn, 2, 2)
@@ -200,7 +198,6 @@ class OptionsWidget(pg.LayoutWidget):
 
         self.roi_boxes_chkbox.stateChanged.connect(self.toggleROIBoxes)
         self.crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
-        self.crosshair_roi_chkbox.stateChanged.connect(self.toggleROICrosshair)
         self.pan_mode_rbtn.toggled.connect(self.toggleMouseMode)
         self.rect_mode_rbtn.toggled.connect(self.toggleMouseMode)
         self.background_black_rbtn.toggled.connect(self.toggleBackgroundColor)
@@ -354,17 +351,6 @@ class OptionsWidget(pg.LayoutWidget):
         else:
             self.main_window.image_widget.v_line.setVisible(False)
             self.main_window.image_widget.h_line.setVisible(False)
-
-    # --------------------------------------------------------------------------
-
-    def toggleROICrosshair(self, state):
-        # Turn roi (viewbox) crosshair on/off
-        if state == 2:
-            self.main_window.image_widget.roi_v_line.setVisible(True)
-            self.main_window.image_widget.roi_h_line.setVisible(True)
-        else:
-            self.main_window.image_widget.roi_v_line.setVisible(False)
-            self.main_window.image_widget.roi_h_line.setVisible(False)
 
     # --------------------------------------------------------------------------
 
@@ -615,6 +601,9 @@ class ROIWidget(pg.ROI):
     def __init__ (self, position, size, layout):
         super().__init__(position, size=size)
 
+        self.pen = pg.mkPen("m", width=2)
+        self.setPen(self.pen)
+        
         self.addScaleHandle([0.5, 0], [0.5, 0.5])
         self.addScaleHandle([0, 0.5], [0.5, 0.5])
         self.addScaleHandle([0, 0], [0.5, 0.5])
