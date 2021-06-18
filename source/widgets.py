@@ -273,7 +273,9 @@ class OptionsWidget(pg.LayoutWidget):
             self.remote_z_slider.setMaximum(self.image_data.shape[2] - 1)
             self.remote_z_spinbox.setRange(0, self.image_data.shape[2] - 1)
 
-            # 3d array loaded into viewing window
+            # Creates plots of average intesity for each ROI
+            self.main_window.roi_plots_widget.displayROIPlots(self.image_data)
+            # Loads 3d array into viewing window
             self.loadRemoteImage()
 
     # --------------------------------------------------------------------------
@@ -739,6 +741,42 @@ class ImageWidget(pg.PlotWidget):
 
 # ==============================================================================
 
+class ROIPlotsWidget(pg.GraphicsLayoutWidget):
+
+    """
+    Contains average intensity plots for ROI's. Plots only work with remote mode.
+    """
+
+    def __init__ (self, parent, title="Average Intensity"):
+        super(ROIPlotsWidget, self).__init__(parent)
+        self.main_window = parent
+
+        self.roi_plot_1 = self.addPlot(title="ROI 1")
+        self.roi_plot_2 = self.addPlot(title="ROI 2")
+        self.nextRow()
+        self.roi_plot_3 = self.addPlot(title="ROI 3")
+        self.roi_plot_4 = self.addPlot(title="ROI 4")
+
+    # --------------------------------------------------------------------------
+
+    def displayROIPlots(self, data):
+        image = self.main_window.image_widget.image_item
+
+        roi_1_avg_intensity = self.main_window.image_widget.roi1.getAverageIntensity(data, image)
+        roi_2_avg_intensity = self.main_window.image_widget.roi2.getAverageIntensity(data, image)
+        roi_3_avg_intensity = self.main_window.image_widget.roi3.getAverageIntensity(data, image)
+        roi_4_avg_intensity = self.main_window.image_widget.roi4.getAverageIntensity(data, image)
+
+        print(roi_1_avg_intensity)
+
+        self.roi_plot_1.plot(roi_1_avg_intensity)
+        self.roi_plot_2.plot(roi_2_avg_intensity)
+        self.roi_plot_3.plot(roi_3_avg_intensity)
+        self.roi_plot_4.plot(roi_4_avg_intensity)
+        print("HERE")
+
+# ==============================================================================
+
 class ROIWidget(pg.ROI):
 
     """
@@ -865,5 +903,15 @@ class ROIWidget(pg.ROI):
         color = self.color_btn.color()
 
         self.setPen(pg.mkPen(color, width=3))
+
+    # --------------------------------------------------------------------------
+
+    def getAverageIntensity(self, data, image):
+        avg_intensity = []
+        for i in range(data.shape[0]):
+            image_roi = self.getArrayRegion(data, image)
+            avg = np.mean(image_roi)
+            avg_intensity.append(avg)
+        return avg_intensity
 
 # ==============================================================================
