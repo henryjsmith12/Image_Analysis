@@ -6,7 +6,6 @@ See LICENSE file.
 # ==============================================================================
 
 import pyqtgraph as pg
-import pyqtgraph.opengl as gl
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 from pyqtgraph.Qt import QtGui, QtCore
@@ -603,7 +602,7 @@ class ROIWidget(pg.ROI):
 
         self.pen = pg.mkPen("m", width=2)
         self.setPen(self.pen)
-        
+
         self.addScaleHandle([0.5, 0], [0.5, 0.5])
         self.addScaleHandle([0, 0.5], [0.5, 0.5])
         self.addScaleHandle([0, 0], [0.5, 0.5])
