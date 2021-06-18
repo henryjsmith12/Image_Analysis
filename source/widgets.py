@@ -124,7 +124,9 @@ class OptionsWidget(pg.LayoutWidget):
 
         # Create options widgets
         self.roi_boxes_chkbox = QtGui.QCheckBox("ROI")
+        self.roi_color_btn = pg.ColorButton()
         self.crosshair_mouse_chkbox = QtGui.QCheckBox("Crosshair")
+        self.crosshair_color_btn = pg.ColorButton()
         self.mouse_mode_lbl = QtGui.QLabel("Mouse Mode:")
         self.mouse_mode_group = QtGui.QButtonGroup()
         self.mouse_pan_rbtn = QtGui.QRadioButton("Pan")
@@ -181,7 +183,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.remote_image_layout.addWidget(self.remote_z_spinbox, 5, 1)
         self.remote_image_layout.addWidget(self.remote_z_slider, 5, 2, 1, 3)
         self.options_layout.addWidget(self.roi_boxes_chkbox, 0, 0)
+        self.options_layout.addWidget(self.roi_color_btn, 0, 1)
         self.options_layout.addWidget(self.crosshair_mouse_chkbox, 1, 0)
+        self.options_layout.addWidget(self.crosshair_color_btn, 1, 1)
         self.options_layout.addWidget(self.mouse_mode_lbl, 2, 0)
         self.options_layout.addWidget(self.mouse_pan_rbtn, 2, 1)
         self.options_layout.addWidget(self.mouse_rect_rbtn, 2, 2)
@@ -211,7 +215,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.remote_y_slider.valueChanged.connect(self.loadRemoteImage)
         self.remote_z_slider.valueChanged.connect(self.loadRemoteImage)
         self.roi_boxes_chkbox.stateChanged.connect(self.toggleROIBoxes)
+        self.roi_color_btn.sigColorChanged.connect(self.changeROIColor)
         self.crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
+        self.crosshair_color_btn.sigColorChanged.connect(self.changeCrosshairColor)
         self.mouse_pan_rbtn.toggled.connect(self.toggleMouseMode)
         self.mouse_rect_rbtn.toggled.connect(self.toggleMouseMode)
         self.background_black_rbtn.toggled.connect(self.toggleBackgroundColor)
@@ -410,6 +416,21 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
+    def changeROIColor(self):
+
+        """
+        Changes color for ROI boxes.
+        """
+
+        color = self.roi_color_btn.color()
+
+        self.main_window.image_widget.roi1.setPen(pg.mkPen(color, width=2))
+        self.main_window.image_widget.roi2.setPen(pg.mkPen(color, width=2))
+        self.main_window.image_widget.roi3.setPen(pg.mkPen(color, width=2))
+        self.main_window.image_widget.roi4.setPen(pg.mkPen(color, width=2))
+
+    # --------------------------------------------------------------------------
+
     def toggleMouseCrosshair(self, state):
 
         """
@@ -423,6 +444,19 @@ class OptionsWidget(pg.LayoutWidget):
         else:
             self.main_window.image_widget.v_line.setVisible(False)
             self.main_window.image_widget.h_line.setVisible(False)
+
+    # --------------------------------------------------------------------------
+
+    def changeCrosshairColor(self):
+
+        """
+        Changes color for mouse crosshair.
+        """
+
+        color = self.crosshair_color_btn.color()
+
+        self.main_window.image_widget.v_line.setPen(pg.mkPen(color))
+        self.main_window.image_widget.h_line.setPen(pg.mkPen(color))
 
     # --------------------------------------------------------------------------
 
@@ -662,16 +696,6 @@ class ImageWidget(pg.PlotWidget):
         self.addItem(self.v_line, ignoreBounds=True)
         self.addItem(self.h_line, ignoreBounds=True)
 
-        # Creates roi crosshair
-        self.roi_v_line = pg.InfiniteLine(angle=90, movable=False)
-        self.roi_h_line = pg.InfiniteLine(angle=0, movable=False)
-        self.roi_v_line.setVisible(False)
-        self.roi_h_line.setVisible(False)
-        self.roi_v_line.setZValue(1000)
-        self.roi_h_line.setZValue(1000)
-        self.addItem(self.roi_v_line, ignoreBounds=True)
-        self.addItem(self.roi_h_line, ignoreBounds=True)
-
     # --------------------------------------------------------------------------
 
     def displayImage(self, image):
@@ -742,7 +766,7 @@ class ROIWidget(pg.ROI):
     def __init__ (self, position, size, layout):
         super().__init__(position, size=size)
 
-        self.pen = pg.mkPen("m", width=2)
+        self.pen = pg.mkPen(width=2)
         self.setPen(self.pen)
 
         # For vertical, horizontal, and diagonal scaling
