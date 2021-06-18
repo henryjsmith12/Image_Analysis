@@ -865,3 +865,5 @@ class ROIWidget(pg.ROI):
         color = self.color_btn.color()
 
         self.setPen(pg.mkPen(color, width=3))
+
+# ==============================================================================

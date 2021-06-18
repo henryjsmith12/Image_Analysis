@@ -15,8 +15,13 @@ from source.widgets import * # Local
 class MainWindow(QtGui.QMainWindow):
 
     """
-    - Initializes main window
-    - Creates/adds docked widgets
+    Contains docked widgets and components of app.
+
+    - OptionsWidget: Image selection modes and plotting options.
+
+    - AnalysisWidget: ROI controls and mouse/image information.
+
+    - ImageWidget: Plot window for image and ROI's.
     """
 
     def __init__ (self, parent=None):
@@ -52,7 +57,7 @@ class MainWindow(QtGui.QMainWindow):
     def createWidgets(self):
         # Create widgets and setup widget components
         self.options_widget = OptionsWidget(self) # File options widget
-        self.options_widget.setupComponents() # Options (sub)widgets
+        self.options_widget.setupComponents() # Options (sub)widget creation
         self.analysis_widget = AnalysisWidget(self) # Image analysis/info widget
         self.analysis_widget.setupComponents() # Analysis (sub)widgets
         self.image_widget = ImageWidget(self) # Image widget with sample image
@@ -61,6 +66,5 @@ class MainWindow(QtGui.QMainWindow):
         self.options_dock.addWidget(self.options_widget)
         self.analysis_dock.addWidget(self.analysis_widget)
         self.image_dock.addWidget(self.image_widget)
-
 
 # ==============================================================================

@@ -12,6 +12,8 @@ from source.main_window import MainWindow # Local
 # ==============================================================================
 
 app = pg.mkQApp("Image Analysis")
-window = MainWindow() # Inherits from pg.QtGui.QMainWindow
+window = MainWindow()
 window.show()
 pg.mkQApp().exec_()
+
+# ==============================================================================
