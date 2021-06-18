@@ -20,28 +20,43 @@ import time
 class OptionsWidget(pg.LayoutWidget):
 
     """
-    - File selector
-    - List of image files
-    - Plotting options
+    Contains controls to view and customize images and alter the viewing window.
+
+    - Live mode: A directory of image file names is displayed and the user can
+        view an image by clicking on its name. The user can also view all images
+        in an automated loop by clicking on "Simulate Live Plotting". The refresh
+        rate can be changed with the spinbox adjacent to the button.
+
+    - Remote mode: A 3d array of image data is created from a directory of images.
+        The user can view slices of the data by choosing a direction and moving
+        the respective slider.
+
+    - Plotting options: The user can choose a variety of options to customize
+        their image viewing experience:
+            - ROI toggle/color picker
+            - Mouse crosshair toggle
+            - Mouse zoom/pan mode toggle
+            - Background color toggle
+            - ColorMap scale toggle/percentile slider
     """
 
     def __init__ (self, parent):
         super(OptionsWidget, self).__init__(parent)
         self.main_window = parent
 
-        # Create GroupBoxes
-        self.image_selection_tabs = QtGui.QTabWidget()
+        # Create GroupBoxes/TabWidget for GroupBoxes
+        self.image_mode_tabs = QtGui.QTabWidget()
         self.live_image_gbox = QtGui.QGroupBox("Live")
         self.remote_image_gbox = QtGui.QGroupBox("Remote")
-        self.image_selection_tabs.addTab(self.live_image_gbox, "Live")
-        self.image_selection_tabs.addTab(self.remote_image_gbox, "Remote")
+        self.image_mode_tabs.addTab(self.live_image_gbox, "Live")
+        self.image_mode_tabs.addTab(self.remote_image_gbox, "Remote")
         self.options_gbox = QtGui.QGroupBox("Plotting Options")
 
         # Disable Options GroupBox until file selected
         self.options_gbox.setEnabled(False)
 
         # Add GroupBoxes to widget
-        self.addWidget(self.image_selection_tabs, row=0, col=0)
+        self.addWidget(self.image_mode_tabs, row=0, col=0)
         self.addWidget(self.options_gbox, row=1, col=0)
 
         # Create/add layouts
@@ -55,13 +70,21 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def setupComponents(self):
-        # Create live image widgets
+
+        """
+        - Creates subwidgets
+        - Adds subwidgets to widget
+        - Connects subwidgets to functions
+        """
+
+        # Create live mode widgets
         self.live_browse_btn = QtGui.QPushButton("Browse")
         self.live_clear_btn = QtGui.QPushButton("Clear")
         self.live_file_list = QtGui.QListWidget()
         self.live_current_file_lbl = QtGui.QLabel("Current Image:")
         self.live_current_file_txtbox = QtGui.QLineEdit()
         self.live_current_file_txtbox.setReadOnly(True)
+        self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
         self.live_refresh_rate_lbl = QtGui.QLabel("Refresh Delay (s):")
         self.live_refresh_rate_spinbox = QtGui.QDoubleSpinBox()
         self.live_refresh_rate_spinbox.setSingleStep(0.01)
@@ -70,7 +93,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_refresh_rate_slider.setRange(0, 100)
         self.live_refresh_rate = 0.0
 
-        # Create remote image widgets
+        # Create remote mode widgets
         self.remote_browse_btn = QtGui.QPushButton("Browse")
         self.remote_current_directory_lbl = QtGui.QLabel("Current Directory:")
         self.remote_current_directory_txtbox = QtGui.QLineEdit()
@@ -100,18 +123,16 @@ class OptionsWidget(pg.LayoutWidget):
         self.remote_z_slider.setEnabled(False)
 
         # Create options widgets
-        self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
-        self.reset_btn = QtGui.QPushButton("Reset View")
         self.roi_boxes_chkbox = QtGui.QCheckBox("ROI")
         self.crosshair_lbl = QtGui.QLabel("Crosshair:")
         self.crosshair_mouse_chkbox = QtGui.QCheckBox("Mouse")
         self.mouse_mode_lbl = QtGui.QLabel("Mouse Mode:")
         self.mouse_mode_group = QtGui.QButtonGroup()
-        self.pan_mode_rbtn = QtGui.QRadioButton("Pan")
-        self.pan_mode_rbtn.setChecked(True)
-        self.rect_mode_rbtn = QtGui.QRadioButton("Rectangle")
-        self.mouse_mode_group.addButton(self.pan_mode_rbtn)
-        self.mouse_mode_group.addButton(self.rect_mode_rbtn)
+        self.mouse_pan_rbtn = QtGui.QRadioButton("Pan")
+        self.mouse_pan_rbtn.setChecked(True)
+        self.mouse_rect_rbtn = QtGui.QRadioButton("Rectangle")
+        self.mouse_mode_group.addButton(self.mouse_pan_rbtn)
+        self.mouse_mode_group.addButton(self.mouse_rect_rbtn)
         self.background_color_lbl = QtGui.QLabel("Background Color:")
         self.background_color_group = QtGui.QButtonGroup()
         self.background_black_rbtn = QtGui.QRadioButton("Black")
@@ -126,14 +147,14 @@ class OptionsWidget(pg.LayoutWidget):
         self.cmap_log_rbtn = QtGui.QRadioButton("Logarithmic")
         self.cmap_scale_group.addButton(self.cmap_linear_rbtn)
         self.cmap_scale_group.addButton(self.cmap_log_rbtn)
-        self.cmap_linear_pctl_lbl = QtGui.QLabel("CMap Pctl:")
-        self.cmap_linear_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.cmap_linear_slider.setMinimum(1)
-        self.cmap_linear_slider.setMaximum(100)
-        self.cmap_linear_slider.setSingleStep(10)
-        self.cmap_linear_slider.setTickInterval(10)
-        self.cmap_linear_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        self.cmap_linear_slider.setValue(100)
+        self.cmap_pctl_lbl = QtGui.QLabel("CMap Pctl:")
+        self.cmap_pctl_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.cmap_pctl_slider.setMinimum(1)
+        self.cmap_pctl_slider.setMaximum(100)
+        self.cmap_pctl_slider.setSingleStep(10)
+        self.cmap_pctl_slider.setTickInterval(10)
+        self.cmap_pctl_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.cmap_pctl_slider.setValue(100)
 
         # Add widgets to GroupBoxes
         self.live_image_layout.addWidget(self.live_browse_btn, 0, 0, 1, 2)
@@ -144,7 +165,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_image_layout.addWidget(self.live_plot_btn, 5, 0, 1, 2)
         self.live_image_layout.addWidget(self.live_refresh_rate_lbl, 5, 2)
         self.live_image_layout.addWidget(self.live_refresh_rate_spinbox, 5, 3)
-
         self.remote_image_layout.addWidget(self.remote_browse_btn, 0, 0, 1, 4)
         self.remote_image_layout.addWidget(self.remote_current_directory_lbl, 1, 0)
         self.remote_image_layout.addWidget(self.remote_current_directory_txtbox, 1, 1, 1, 4)
@@ -161,21 +181,20 @@ class OptionsWidget(pg.LayoutWidget):
         self.remote_image_layout.addWidget(self.remote_z_slider_lbl, 5, 0)
         self.remote_image_layout.addWidget(self.remote_z_spinbox, 5, 1)
         self.remote_image_layout.addWidget(self.remote_z_slider, 5, 2, 1, 3)
-
         self.options_layout.addWidget(self.roi_boxes_chkbox, 0, 0)
         self.options_layout.addWidget(self.crosshair_lbl, 1, 0, 1, 1)
         self.options_layout.addWidget(self.crosshair_mouse_chkbox, 1, 1)
         self.options_layout.addWidget(self.mouse_mode_lbl, 2, 0)
-        self.options_layout.addWidget(self.pan_mode_rbtn, 2, 1)
-        self.options_layout.addWidget(self.rect_mode_rbtn, 2, 2)
+        self.options_layout.addWidget(self.mouse_pan_rbtn, 2, 1)
+        self.options_layout.addWidget(self.mouse_rect_rbtn, 2, 2)
         self.options_layout.addWidget(self.background_color_lbl, 3, 0)
         self.options_layout.addWidget(self.background_black_rbtn, 3, 1)
         self.options_layout.addWidget(self.background_white_rbtn, 3, 2)
         self.options_layout.addWidget(self.cmap_scale_lbl, 4, 0)
         self.options_layout.addWidget(self.cmap_linear_rbtn, 4, 1)
         self.options_layout.addWidget(self.cmap_log_rbtn, 4, 2)
-        self.options_layout.addWidget(self.cmap_linear_pctl_lbl, 5, 0)
-        self.options_layout.addWidget(self.cmap_linear_slider, 5, 1, 1, 2)
+        self.options_layout.addWidget(self.cmap_pctl_lbl, 5, 0)
+        self.options_layout.addWidget(self.cmap_pctl_slider, 5, 1, 1, 2)
 
         # Link widgets to actions
         self.live_browse_btn.clicked.connect(self.openDirectory)
@@ -183,7 +202,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_file_list.itemClicked.connect(self.loadLiveImage)
         self.live_plot_btn.clicked.connect(self.simLivePlotting)
         self.live_refresh_rate_spinbox.valueChanged.connect(self.changeRefreshRate)
-
         self.remote_browse_btn.clicked.connect(self.openDirectory)
         self.remote_x_direction_rbtn.toggled.connect(self.toggleSliceDirection)
         self.remote_y_direction_rbtn.toggled.connect(self.toggleSliceDirection)
@@ -194,54 +212,76 @@ class OptionsWidget(pg.LayoutWidget):
         self.remote_x_slider.valueChanged.connect(self.loadRemoteImage)
         self.remote_y_slider.valueChanged.connect(self.loadRemoteImage)
         self.remote_z_slider.valueChanged.connect(self.loadRemoteImage)
-
         self.roi_boxes_chkbox.stateChanged.connect(self.toggleROIBoxes)
         self.crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
-        self.pan_mode_rbtn.toggled.connect(self.toggleMouseMode)
-        self.rect_mode_rbtn.toggled.connect(self.toggleMouseMode)
+        self.mouse_pan_rbtn.toggled.connect(self.toggleMouseMode)
+        self.mouse_rect_rbtn.toggled.connect(self.toggleMouseMode)
         self.background_black_rbtn.toggled.connect(self.toggleBackgroundColor)
         self.background_white_rbtn.toggled.connect(self.toggleBackgroundColor)
         self.cmap_linear_rbtn.toggled.connect(self.toggleCmapScale)
         self.cmap_log_rbtn.toggled.connect(self.toggleCmapScale)
-        self.cmap_linear_slider.valueChanged.connect(self.changeCmapLinearPctl)
+        self.cmap_pctl_slider.valueChanged.connect(self.changeCmapPctl)
 
     # --------------------------------------------------------------------------
 
     def openDirectory(self):
+
+        """
+        - Selects directory for both live and remote modes
+        - Loads data for remote mode
+        """
+
         # Find directory with image files
         self.directory = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder")
 
-        # Sorted list of files
+        # (Alphabetically) Sorted list of files
         self.image_files = sorted(os.listdir(self.directory))
 
-        # For remote plotting
+        # For remote mode plotting
         self.image_data = []
 
-        # Live plotting
-        if self.live_image_gbox is self.image_selection_tabs.currentWidget():
-            # Display files
+        # Live mode
+        if self.live_image_gbox is self.image_mode_tabs.currentWidget():
+            # Clear current directory and display new directory
+            # Images can be view by clicking name
             self.live_file_list.clear()
             self.live_file_list.addItems(self.image_files)
-        # Remote plotting
+
+        # Remote mode
         else:
+            # Display directory name in textbox
             self.remote_current_directory_txtbox.setText(self.directory)
+            # Loop through images in selected directory
             for i in range(len(self.image_files)):
                 if self.image_files[i] != "alignment.tif":
+                    # Creates 2d image from file path
                     file_path = f"{self.directory}/{self.image_files[i]}"
                     image = ndimage.rotate(tiff.imread(file_path), 90)
+                    # Appends image to list of images
                     self.image_data.append(image)
+
+            # Converts list of 2d images to 3d array
             self.image_data = np.stack(self.image_data)
+
+            # Sets limits for sliders and spinboxes
             self.remote_x_slider.setMaximum(self.image_data.shape[0] - 1)
             self.remote_x_spinbox.setRange(0, self.image_data.shape[0] - 1)
             self.remote_y_slider.setMaximum(self.image_data.shape[1] - 1)
             self.remote_y_spinbox.setRange(0, self.image_data.shape[1] - 1)
             self.remote_z_slider.setMaximum(self.image_data.shape[2] - 1)
             self.remote_z_spinbox.setRange(0, self.image_data.shape[2] - 1)
+
+            # 3d array loaded into viewing window
             self.loadRemoteImage()
 
     # --------------------------------------------------------------------------
 
     def clear(self):
+
+        """
+        Clears images from viewing window and file list
+        """
+
         self.file_list.clear()
 
         # Clear plots
@@ -257,10 +297,15 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def loadLiveImage(self, file):
-        #Concatenate directory and file names
+
+        """
+        Loads image to viewing window.
+        """
+
+        # Concatenates directory and file names
         self.file_path = f"{self.directory}/{file.text()}"
 
-        # Read and set image file
+        # Reads image file and sets image
         self.image = ndimage.rotate(tiff.imread(self.file_path), 90)
         self.main_window.image_widget.displayImage(self.image)
 
@@ -272,23 +317,28 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def loadRemoteImage(self):
-        # Read and set image file
+
+        """
+        Loads image to viewing window.
+        """
+
+        # x
         if self.remote_x_direction_rbtn.isChecked():
             self.remote_x_spinbox.setValue(int(self.remote_x_slider.value()))
             x_slice = int(self.remote_x_slider.value())
             self.image = self.image_data[x_slice, :, :]
-
+        # y
         elif self.remote_y_direction_rbtn.isChecked():
             self.remote_y_spinbox.setValue(int(self.remote_y_slider.value()))
             y_slice = int(self.remote_y_slider.value())
             self.image = self.image_data[:, y_slice, :]
-            #self.image = ndimage.rotate(self.image, 90)
+        # z
         else:
             self.remote_z_spinbox.setValue(int(self.remote_z_slider.value()))
             z_slice = int(self.remote_z_slider.value())
             self.image = self.image_data[:, :, z_slice]
-            #self.image = ndimage.rotate(self.image, 90)
 
+        # Sets image
         self.main_window.image_widget.displayImage(self.image)
 
         # Enable options
@@ -297,6 +347,11 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def toggleSliceDirection(self):
+
+        """
+        Toggles direction of data slice for remote mode plotting.
+        """
+
         button = self.sender()
 
         if button.text() == "x":
@@ -312,11 +367,17 @@ class OptionsWidget(pg.LayoutWidget):
             self.remote_y_slider.setEnabled(False)
             self.remote_z_slider.setEnabled(True)
 
+        # Loads new image into viewing window
         self.loadRemoteImage()
 
     # --------------------------------------------------------------------------
 
     def changeSliderValue(self, value):
+
+        """
+        Toggles data slice for remote mode plotting.
+        """
+
         spinbox = self.sender()
 
         if spinbox == self.remote_x_spinbox:
@@ -326,9 +387,18 @@ class OptionsWidget(pg.LayoutWidget):
         else:
             self.remote_z_slider.setValue(value)
 
+        # No need to call loadRemoteImage()
+        # Connected with valueChanged signal that calls loadRemoteImage()
+
     # --------------------------------------------------------------------------
 
     def toggleROIBoxes(self, state):
+
+        """
+        Toggles visibility for ROI boxes.
+        """
+
+        # 2 = checked
         if state == 2:
             self.main_window.image_widget.roi1.show()
             self.main_window.image_widget.roi2.show()
@@ -343,7 +413,12 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def toggleMouseCrosshair(self, state):
-        # Turn mouse crosshair on/off
+
+        """
+        Toggles visibility for mouse crosshair.
+        """
+
+        # 2 = checked
         if state == 2:
             self.main_window.image_widget.v_line.setVisible(True)
             self.main_window.image_widget.h_line.setVisible(True)
@@ -354,8 +429,16 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def toggleMouseMode(self):
+
+        """
+        Toggles mode for zooming and panning with mouse.
+
+        - Pan: Left click to pan; wheel to zoom.
+        - Rectangle: Left click and drag to select roi to view; wheel to zoom.
+        """
+
         button = self.sender()
-        # Toggles between pan and rectangle mouse controls
+
         if button.text() == "Pan":
             self.main_window.image_widget.view.setMouseMode(pg.ViewBox.PanMode)
         else:
@@ -364,8 +447,15 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def toggleBackgroundColor(self):
+
+        """
+        Toggles background color for image plot widget.
+
+        - Options: black or white.
+        """
+
         button = self.sender()
-        # Toggles between background colors for plot widget
+
         if button.text() == "Black":
             self.main_window.image_widget.setBackground("default")
         else:
@@ -374,8 +464,15 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def toggleCmapScale(self):
+
+        """
+        Toggles colormap scale for image.
+
+        - Options: linear or logarithmic.
+        """
+
         button = self.sender()
-        # Toggles between log and linear scaling
+
         if button.text() == "Logarithmic":
             self.main_window.image_widget.cmap_scale = "Log"
             self.main_window.image_widget.displayImage(self.image)
@@ -385,35 +482,47 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def changeCmapLinearPctl(self):
+    def changeCmapPctl(self):
+
+        """
+        Changes colormap pctl to value of slider (between 0.0 and 1.0).
+        """
+
         slider = self.sender()
 
-        self.main_window.image_widget.cmap_linear_norm_pctl = slider.value() / 100.0
+        self.main_window.image_widget.cmap_pctl = slider.value() / 100.0
         self.main_window.image_widget.displayImage(self.image)
 
     # --------------------------------------------------------------------------
 
     def simLivePlotting(self):
-        # Loops through files in list
+
+        """
+        Simulates live update of image plot. Updates separated by refresh rate.
+        """
+
+        # Loops through images
         for i in range(self.live_file_list.count()):
+            # Loads image to viewing window
             self.loadLiveImage(self.live_file_list.item(i))
+            # Necessary to refresh UI
             QtGui.QApplication.processEvents()
+            # Loop sleeps for set period (<1 second)
             time.sleep(self.live_refresh_rate)
 
     # --------------------------------------------------------------------------
 
     def changeRefreshRate(self, value):
+
+        """
+        Changes refresh rate for live plotting (Between 0 and 1 second).
+        """
+
         self.live_refresh_rate = value
 
 # ==============================================================================
 
 class AnalysisWidget(pg.LayoutWidget):
-
-    """
-    - ROI values
-    - peak values
-    - Mouse (Crosshair) values
-    """
 
     def __init__ (self, parent):
         super(AnalysisWidget, self).__init__(parent)
@@ -498,11 +607,6 @@ class AnalysisWidget(pg.LayoutWidget):
 
 class ImageWidget(pg.PlotWidget):
 
-    """
-    - Image display
-    - Avg intensity calculation
-    """
-
     def __init__ (self, parent):
         super(ImageWidget, self).__init__(parent)
         self.main_window = parent
@@ -518,7 +622,7 @@ class ImageWidget(pg.PlotWidget):
 
         # Set current cmap/cmap scaling
         self.cmap_scale = "Linear"
-        self.cmap_linear_norm_pctl = 1.0
+        self.cmap_pctl = 1.0
 
         self.roi1 = ROIWidget([200, 100], [40, 40], self.main_window.analysis_widget.roi1_layout)
         self.roi2 = ROIWidget([205, 105], [30, 30], self.main_window.analysis_widget.roi2_layout)
@@ -555,9 +659,9 @@ class ImageWidget(pg.PlotWidget):
         self.image = image
 
         if self.cmap_scale == "Log":
-            norm = colors.LogNorm(vmax=np.amax(self.image)*self.cmap_linear_norm_pctl)
+            norm = colors.LogNorm(vmax=np.amax(self.image)*self.cmap_pctl)
         else:
-            norm = colors.Normalize(vmax=np.amax(self.image)*self.cmap_linear_norm_pctl)
+            norm = colors.Normalize(vmax=np.amax(self.image)*self.cmap_pctl)
 
         # vmax=np.amax(self.image)
         norm_image = norm(self.image)
@@ -568,7 +672,7 @@ class ImageWidget(pg.PlotWidget):
         self.main_window.analysis_widget.image_width_txtbox.setText(str(self.image.shape[0]))
         self.main_window.analysis_widget.image_height_txtbox.setText(str(self.image.shape[1]))
         self.main_window.analysis_widget.image_max_intensity_txtbox.setText(str(np.amax(self.image)))
-        self.main_window.analysis_widget.image_cmap_pctl_txtbox.setText(str(self.cmap_linear_norm_pctl))
+        self.main_window.analysis_widget.image_cmap_pctl_txtbox.setText(str(self.cmap_pctl))
 
         # Update crosshair information
         self.view.scene().sigMouseMoved.connect(self.updateMouseCrosshair)
