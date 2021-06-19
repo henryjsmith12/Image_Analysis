@@ -274,7 +274,7 @@ class OptionsWidget(pg.LayoutWidget):
             self.remote_z_spinbox.setRange(0, self.image_data.shape[2] - 1)
 
             # Creates plots of average intesity for each ROI
-            self.main_window.roi_plots_widget.displayROIPlots(self.image_data)
+            self.main_window.roi_plots_widget.displayROIPlots()
             # Loads 3d array into viewing window
             self.loadRemoteImage()
 
@@ -576,16 +576,16 @@ class AnalysisWidget(pg.LayoutWidget):
         # Create/add layouts
         self.mouse_layout = QtGui.QGridLayout()
         self.image_layout = QtGui.QGridLayout()
-        self.roi1_layout = QtGui.QGridLayout()
-        self.roi2_layout = QtGui.QGridLayout()
-        self.roi3_layout = QtGui.QGridLayout()
-        self.roi4_layout = QtGui.QGridLayout()
+        self.roi_1_layout = QtGui.QGridLayout()
+        self.roi_2_layout = QtGui.QGridLayout()
+        self.roi_3_layout = QtGui.QGridLayout()
+        self.roi_4_layout = QtGui.QGridLayout()
         self.mouse_gbox.setLayout(self.mouse_layout)
         self.image_gbox.setLayout(self.image_layout)
-        self.roi1_gbox.setLayout(self.roi1_layout)
-        self.roi2_gbox.setLayout(self.roi2_layout)
-        self.roi3_gbox.setLayout(self.roi3_layout)
-        self.roi4_gbox.setLayout(self.roi4_layout)
+        self.roi1_gbox.setLayout(self.roi_1_layout)
+        self.roi2_gbox.setLayout(self.roi_2_layout)
+        self.roi3_gbox.setLayout(self.roi_3_layout)
+        self.roi4_gbox.setLayout(self.roi_4_layout)
 
     # --------------------------------------------------------------------------
 
@@ -664,10 +664,18 @@ class ImageWidget(pg.PlotWidget):
 
         # Creates and adds ROIWidgets
         # See ROIWidget class for more information
-        self.roi1 = ROIWidget([200, 100], [40, 40], self.main_window.analysis_widget.roi1_layout)
-        self.roi2 = ROIWidget([205, 105], [30, 30], self.main_window.analysis_widget.roi2_layout)
-        self.roi3 = ROIWidget([210, 110], [20, 20], self.main_window.analysis_widget.roi3_layout)
-        self.roi4 = ROIWidget([215, 115], [10, 10], self.main_window.analysis_widget.roi4_layout)
+        roi_1_layout = self.main_window.analysis_widget.roi_1_layout
+        roi_2_layout = self.main_window.analysis_widget.roi_2_layout
+        roi_3_layout = self.main_window.analysis_widget.roi_3_layout
+        roi_4_layout = self.main_window.analysis_widget.roi_4_layout
+        roi_1_plot = self.main_window.roi_plots_widget.roi_1_plot
+        roi_2_plot = self.main_window.roi_plots_widget.roi_2_plot
+        roi_3_plot = self.main_window.roi_plots_widget.roi_3_plot
+        roi_4_plot = self.main_window.roi_plots_widget.roi_4_plot
+        self.roi1 = ROIWidget([200, 100], [40, 40], roi_1_layout, roi_1_plot)
+        self.roi2 = ROIWidget([205, 105], [30, 30], roi_2_layout, roi_2_plot)
+        self.roi3 = ROIWidget([210, 110], [20, 20], roi_3_layout, roi_3_plot)
+        self.roi4 = ROIWidget([215, 115], [10, 10], roi_4_layout, roi_4_plot)
         self.addItem(self.roi1)
         self.addItem(self.roi2)
         self.addItem(self.roi3)
@@ -751,29 +759,22 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
         super(ROIPlotsWidget, self).__init__(parent)
         self.main_window = parent
 
-        self.roi_plot_1 = self.addPlot(title="ROI 1")
-        self.roi_plot_2 = self.addPlot(title="ROI 2")
+        self.roi_1_plot = self.addPlot(title="ROI 1")
+        self.roi_2_plot = self.addPlot(title="ROI 2")
         self.nextRow()
-        self.roi_plot_3 = self.addPlot(title="ROI 3")
-        self.roi_plot_4 = self.addPlot(title="ROI 4")
+        self.roi_3_plot = self.addPlot(title="ROI 3")
+        self.roi_4_plot = self.addPlot(title="ROI 4")
 
     # --------------------------------------------------------------------------
 
-    def displayROIPlots(self, data):
-        image = self.main_window.image_widget.image_item
+    def displayROIPlots(self):
 
-        roi_1_avg_intensity = self.main_window.image_widget.roi1.getAverageIntensity(data, image)
-        roi_2_avg_intensity = self.main_window.image_widget.roi2.getAverageIntensity(data, image)
-        roi_3_avg_intensity = self.main_window.image_widget.roi3.getAverageIntensity(data, image)
-        roi_4_avg_intensity = self.main_window.image_widget.roi4.getAverageIntensity(data, image)
+        self.data = self.main_window.options_widget.image_data
 
-        print(roi_1_avg_intensity)
-
-        self.roi_plot_1.plot(roi_1_avg_intensity)
-        self.roi_plot_2.plot(roi_2_avg_intensity)
-        self.roi_plot_3.plot(roi_3_avg_intensity)
-        self.roi_plot_4.plot(roi_4_avg_intensity)
-        print("HERE")
+        self.main_window.image_widget.roi1.plotAverageIntensity(self.data)
+        self.main_window.image_widget.roi2.plotAverageIntensity(self.data)
+        self.main_window.image_widget.roi3.plotAverageIntensity(self.data)
+        self.main_window.image_widget.roi4.plotAverageIntensity(self.data)
 
 # ==============================================================================
 
@@ -784,7 +785,7 @@ class ROIWidget(pg.ROI):
     analysis widget.
     """
 
-    def __init__ (self, position, size, layout):
+    def __init__ (self, position, size, layout, plot):
         super().__init__(position, size=size)
 
         self.pen = pg.mkPen(width=3)
@@ -799,6 +800,8 @@ class ROIWidget(pg.ROI):
         self.hide()
 
         self.layout = layout
+        self.roi_plot = plot
+        self.data = []
 
         # Creates subwidgets for groupbox
         self.x_lbl = QtGui.QLabel("x Pos:")
@@ -849,7 +852,7 @@ class ROIWidget(pg.ROI):
     def updateAnalysis(self):
 
         """
-        Updates spinboxes in analysis widget.
+        Updates spinboxes in analysis widget and ROI plots.
         """
 
         if self.updating != "roi":
@@ -859,6 +862,8 @@ class ROIWidget(pg.ROI):
             self.width_spinbox.setValue(self.size()[0])
             self.height_spinbox.setValue(self.size()[1])
             self.updating = ""
+
+        self.plotAverageIntensity(self.data)
 
     # --------------------------------------------------------------------------
 
@@ -906,12 +911,23 @@ class ROIWidget(pg.ROI):
 
     # --------------------------------------------------------------------------
 
-    def getAverageIntensity(self, data, image):
-        avg_intensity = []
-        for i in range(data.shape[0]):
-            image_roi = self.getArrayRegion(data, image)
-            avg = np.mean(image_roi)
-            avg_intensity.append(avg)
-        return avg_intensity
+    def plotAverageIntensity(self, data):
 
+        if self.data == []:
+            self.data = data
+
+        if self.data != []:
+            x_min = int(self.pos()[0])
+            x_max = int(self.pos()[0] + self.size()[0])
+            y_min = int(self.pos()[1])
+            y_max = int(self.pos()[1] + self.size()[1])
+
+            data_roi = self.data[:, x_min:x_max, y_min:y_max]
+            avg_intensity = []
+
+            for i in range(data_roi.shape[0]):
+                avg = np.mean(data_roi[i])
+                avg_intensity.append(avg)
+
+            self.roi_plot.plot(avg_intensity, clear=True)
 # ==============================================================================
