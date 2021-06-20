@@ -19,6 +19,8 @@ setup(
     install_requires=['pyqtgraph',
                       'matplotlib',
                       'numpy',
+                      'scipy',
+                      'tifffile',
                       ],
     license='See LICENSE File',
     platforms='any',
