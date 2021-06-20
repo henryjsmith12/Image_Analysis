@@ -770,6 +770,11 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
 
     def displayROIPlots(self):
 
+        """
+        Uses data to display avg intensities in all ROI plots. This function is
+        only used for the initial display when a new dataset is loaded.
+        """
+
         data = self.main_window.options_widget.image_data
 
         self.main_window.image_widget.roi1.plotAverageIntensity(data)
@@ -936,4 +941,5 @@ class ROIWidget(pg.ROI):
                 avg_intensity.append(avg)
 
             self.roi_plot.plot(avg_intensity, clear=True)
+            
 # ==============================================================================

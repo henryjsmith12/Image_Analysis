@@ -53,8 +53,7 @@ class MainWindow(QtGui.QMainWindow):
         self.dock_area.addDock(self.image_dock, "right", self.options_dock)
         self.dock_area.addDock(self.roi_plots_dock, "right", self.options_dock)
         self.dock_area.addDock(self.analysis_dock, "bottom", self.image_dock)
-        self.dock_area.addDock(self.analysis_dock, "bottom", self.roi_plots_dock)
-
+        self.dock_area.moveDock(self.analysis_dock, "bottom", self.roi_plots_dock)
         self.dock_area.moveDock(self.image_dock, "above", self.roi_plots_dock)
 
     # --------------------------------------------------------------------------
