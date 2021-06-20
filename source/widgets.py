@@ -275,6 +275,7 @@ class OptionsWidget(pg.LayoutWidget):
 
             # Creates plots of average intesity for each ROI
             self.main_window.roi_plots_widget.displayROIPlots()
+
             # Loads 3d array into viewing window
             self.loadRemoteImage()
 
@@ -672,10 +673,10 @@ class ImageWidget(pg.PlotWidget):
         roi_2_plot = self.main_window.roi_plots_widget.roi_2_plot
         roi_3_plot = self.main_window.roi_plots_widget.roi_3_plot
         roi_4_plot = self.main_window.roi_plots_widget.roi_4_plot
-        self.roi1 = ROIWidget([200, 100], [40, 40], roi_1_layout, roi_1_plot)
-        self.roi2 = ROIWidget([205, 105], [30, 30], roi_2_layout, roi_2_plot)
-        self.roi3 = ROIWidget([210, 110], [20, 20], roi_3_layout, roi_3_plot)
-        self.roi4 = ROIWidget([215, 115], [10, 10], roi_4_layout, roi_4_plot)
+        self.roi1 = ROIWidget([210, 100], [40, 40], roi_1_layout, roi_1_plot)
+        self.roi2 = ROIWidget([215, 105], [30, 30], roi_2_layout, roi_2_plot)
+        self.roi3 = ROIWidget([220, 110], [20, 20], roi_3_layout, roi_3_plot)
+        self.roi4 = ROIWidget([225, 115], [10, 10], roi_4_layout, roi_4_plot)
         self.addItem(self.roi1)
         self.addItem(self.roi2)
         self.addItem(self.roi3)
@@ -769,12 +770,12 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
 
     def displayROIPlots(self):
 
-        self.data = self.main_window.options_widget.image_data
+        data = self.main_window.options_widget.image_data
 
-        self.main_window.image_widget.roi1.plotAverageIntensity(self.data)
-        self.main_window.image_widget.roi2.plotAverageIntensity(self.data)
-        self.main_window.image_widget.roi3.plotAverageIntensity(self.data)
-        self.main_window.image_widget.roi4.plotAverageIntensity(self.data)
+        self.main_window.image_widget.roi1.plotAverageIntensity(data)
+        self.main_window.image_widget.roi2.plotAverageIntensity(data)
+        self.main_window.image_widget.roi3.plotAverageIntensity(data)
+        self.main_window.image_widget.roi4.plotAverageIntensity(data)
 
 # ==============================================================================
 
@@ -788,6 +789,12 @@ class ROIWidget(pg.ROI):
     def __init__ (self, position, size, layout, plot):
         super().__init__(position, size=size)
 
+        self.layout = layout
+        self.roi_plot = plot
+        self.data = []
+
+        self.roi_plot.setLabel("left", "Avg Intensity")
+
         self.pen = pg.mkPen(width=3)
         self.setPen(self.pen)
 
@@ -798,10 +805,6 @@ class ROIWidget(pg.ROI):
 
         # Intially hide the ROI
         self.hide()
-
-        self.layout = layout
-        self.roi_plot = plot
-        self.data = []
 
         # Creates subwidgets for groupbox
         self.x_lbl = QtGui.QLabel("x Pos:")
@@ -913,8 +916,11 @@ class ROIWidget(pg.ROI):
 
     def plotAverageIntensity(self, data):
 
-        if self.data == []:
-            self.data = data
+        """
+        Creates list of avg pixel intensities from ROI through set of images.
+        """
+
+        self.data = data
 
         if self.data != []:
             x_min = int(self.pos()[0])

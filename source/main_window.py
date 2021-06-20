@@ -43,10 +43,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def createDocks(self):
         # Docked widgets for main window
-        self.options_dock = Dock("Options", size=(100, 300))
-        self.analysis_dock = Dock("Analysis", size=(300, 100))
+        self.options_dock = Dock("Options", size=(100, 300), hideTitle=True)
+        self.analysis_dock = Dock("Analysis", size=(300, 100), hideTitle=True)
         self.image_dock = Dock("Image", size=(300, 300))
-
         self.roi_plots_dock = Dock("ROI Plots", size=(300, 300))
 
         # Add/organize docks
