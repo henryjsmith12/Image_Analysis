@@ -45,6 +45,11 @@ class OptionsWidget(pg.LayoutWidget):
         self.main_window = parent
 
         # Create GroupBoxes/TabWidget for GroupBoxes
+
+        """
+        ** TODO: spec selection groupbox
+        """
+
         self.image_mode_tabs = QtGui.QTabWidget()
         self.live_image_gbox = QtGui.QGroupBox("Live")
         self.post_image_gbox = QtGui.QGroupBox("Post")
@@ -78,6 +83,27 @@ class OptionsWidget(pg.LayoutWidget):
         """
 
         # Create live mode widgets
+
+        """
+        ** TODO: HKL conversion parameter dialog (+ button to open dialog) for live
+            plotting. Contains:
+
+            - detectorDir1 (str)
+            - detectorDir2 (str)
+            - cch1/2 (float)
+            - Nch1/2 (int)
+            - distance (float) (optional)
+            - pwidth1/2 (float) (optional)
+            - chpdeg1/2 (float) (optional)
+            - detrot (float) (optional)
+            - tiltazimuth (float) (optional)
+            - tilt (float) (optional)
+            - Nav (tuple or list) (optional)
+            - roi (tuple or list) (optional)
+
+            - ub matrix & diffractometer angles should be read in from EPICS/spec
+        """
+
         self.live_browse_btn = QtGui.QPushButton("Browse")
         self.live_clear_btn = QtGui.QPushButton("Clear")
         self.live_file_list = QtGui.QListWidget()
@@ -93,9 +119,32 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_refresh_rate_slider.setRange(0, 100)
         self.live_refresh_rate = 0.0
 
+        """
+        ** TODO: HKL conversion button for post plotting.
+
+            - user selects detector config file, instrument config file
+            - user selects dataset
+            - creates .vti file
+            - load data
+        """
+
         # Create post mode widgets
-        self.post_browse_btn = QtGui.QPushButton("Browse")
-        self.post_current_directory_lbl = QtGui.QLabel("Current Directory:")
+        self.post_project_lbl = QtGui.QLabel("Project:")
+        self.post_project_txtbox = QtGui.QLineEdit()
+        self.post_project_btn = QtGui.QPushButton("Browse")
+        self.post_spec_lbl = QtGui.QLabel("spec File:")
+        self.post_spec_txtbox = QtGui.QLineEdit()
+        self.post_spec_btn = QtGui.QPushButton("Browse")
+        self.post_detector_lbl = QtGui.QLabel("Det. Config:")
+        self.post_detector_txtbox = QtGui.QLineEdit()
+        self.post_detector_btn = QtGui.QPushButton("Browse")
+        self.post_instrument_lbl = QtGui.QLabel("Instr. Config:")
+        self.post_instrument_txtbox = QtGui.QLineEdit()
+        self.post_instrument_btn = QtGui.QPushButton("Browse")
+
+
+        #self.post_browse_btn = QtGui.QPushButton("Browse")
+        self.post_current_directory_lbl = QtGui.QLabel("Current Scan:")
         self.post_current_directory_txtbox = QtGui.QLineEdit()
         self.post_current_directory_txtbox.setReadOnly(True)
         self.post_direction_lbl = QtGui.QLabel("Slice Direction:")
@@ -166,22 +215,35 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_image_layout.addWidget(self.live_plot_btn, 5, 0, 1, 2)
         self.live_image_layout.addWidget(self.live_refresh_rate_lbl, 5, 2)
         self.live_image_layout.addWidget(self.live_refresh_rate_spinbox, 5, 3)
-        self.post_image_layout.addWidget(self.post_browse_btn, 0, 0, 1, 4)
-        self.post_image_layout.addWidget(self.post_current_directory_lbl, 1, 0)
-        self.post_image_layout.addWidget(self.post_current_directory_txtbox, 1, 1, 1, 4)
-        self.post_image_layout.addWidget(self.post_direction_lbl, 2, 0)
-        self.post_image_layout.addWidget(self.post_x_direction_rbtn, 2, 1)
-        self.post_image_layout.addWidget(self.post_y_direction_rbtn, 2, 2)
-        self.post_image_layout.addWidget(self.post_z_direction_rbtn, 2, 3)
-        self.post_image_layout.addWidget(self.post_x_slider_lbl, 3, 0)
-        self.post_image_layout.addWidget(self.post_x_spinbox, 3, 1)
-        self.post_image_layout.addWidget(self.post_x_slider, 3, 2, 1, 3)
-        self.post_image_layout.addWidget(self.post_y_slider_lbl, 4, 0)
-        self.post_image_layout.addWidget(self.post_y_spinbox, 4, 1)
-        self.post_image_layout.addWidget(self.post_y_slider, 4, 2, 1, 3)
-        self.post_image_layout.addWidget(self.post_z_slider_lbl, 5, 0)
-        self.post_image_layout.addWidget(self.post_z_spinbox, 5, 1)
-        self.post_image_layout.addWidget(self.post_z_slider, 5, 2, 1, 3)
+
+        self.post_image_layout.addWidget(self.post_project_lbl, 0, 0)
+        self.post_image_layout.addWidget(self.post_project_txtbox, 0, 1, 1, 3)
+        self.post_image_layout.addWidget(self.post_project_btn, 0, 4)
+        self.post_image_layout.addWidget(self.post_spec_lbl, 1, 0)
+        self.post_image_layout.addWidget(self.post_spec_txtbox, 1, 1, 1, 3)
+        self.post_image_layout.addWidget(self.post_spec_btn, 1, 4)
+        self.post_image_layout.addWidget(self.post_detector_lbl, 2, 0)
+        self.post_image_layout.addWidget(self.post_detector_txtbox, 2, 1, 1, 3)
+        self.post_image_layout.addWidget(self.post_detector_btn, 2, 4)
+        self.post_image_layout.addWidget(self.post_instrument_lbl, 3, 0)
+        self.post_image_layout.addWidget(self.post_instrument_txtbox, 3, 1, 1, 3)
+        self.post_image_layout.addWidget(self.post_instrument_btn, 3, 4)
+
+        self.post_image_layout.addWidget(self.post_current_directory_lbl, 4, 0)
+        self.post_image_layout.addWidget(self.post_current_directory_txtbox, 4, 1, 1, 4)
+        self.post_image_layout.addWidget(self.post_direction_lbl, 5, 0)
+        self.post_image_layout.addWidget(self.post_x_direction_rbtn, 5, 1)
+        self.post_image_layout.addWidget(self.post_y_direction_rbtn, 5, 2)
+        self.post_image_layout.addWidget(self.post_z_direction_rbtn, 5, 3)
+        self.post_image_layout.addWidget(self.post_x_slider_lbl, 6, 0)
+        self.post_image_layout.addWidget(self.post_x_spinbox, 6, 1)
+        self.post_image_layout.addWidget(self.post_x_slider, 6, 2, 1, 3)
+        self.post_image_layout.addWidget(self.post_y_slider_lbl, 7, 0)
+        self.post_image_layout.addWidget(self.post_y_spinbox, 7, 1)
+        self.post_image_layout.addWidget(self.post_y_slider, 7, 2, 1, 3)
+        self.post_image_layout.addWidget(self.post_z_slider_lbl, 8, 0)
+        self.post_image_layout.addWidget(self.post_z_spinbox, 8, 1)
+        self.post_image_layout.addWidget(self.post_z_slider, 8, 2, 1, 3)
         self.options_layout.addWidget(self.roi_boxes_chkbox, 0, 0)
         self.options_layout.addWidget(self.crosshair_mouse_chkbox, 0, 1)
         self.options_layout.addWidget(self.crosshair_color_btn, 0, 2)
@@ -203,7 +265,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_file_list.itemClicked.connect(self.loadLiveImage)
         self.live_plot_btn.clicked.connect(self.simLivePlotting)
         self.live_refresh_rate_spinbox.valueChanged.connect(self.changeRefreshRate)
-        self.post_browse_btn.clicked.connect(self.openDirectory)
+
+
+        #self.post_browse_btn.clicked.connect(self.openDirectory)
         self.post_x_direction_rbtn.toggled.connect(self.toggleSliceDirection)
         self.post_y_direction_rbtn.toggled.connect(self.toggleSliceDirection)
         self.post_z_direction_rbtn.toggled.connect(self.toggleSliceDirection)
@@ -943,3 +1007,8 @@ class ROIWidget(pg.ROI):
             self.roi_plot.plot(avg_intensity, clear=True)
 
 # ==============================================================================
+
+class DataSourceDialogWidget(QtGui.QDialog):
+
+    def __init__ (self):
+        super().__init__()
