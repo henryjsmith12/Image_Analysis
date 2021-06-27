@@ -15,6 +15,8 @@ from scipy import ndimage
 import tifffile as tiff
 import time
 
+from source.data_processing import * # Local
+
 # ==============================================================================
 
 class OptionsWidget(pg.LayoutWidget):
@@ -129,21 +131,8 @@ class OptionsWidget(pg.LayoutWidget):
         """
 
         # Create post mode widgets
-        self.post_project_lbl = QtGui.QLabel("Project:")
-        self.post_project_txtbox = QtGui.QLineEdit()
-        self.post_project_btn = QtGui.QPushButton("Browse")
-        self.post_spec_lbl = QtGui.QLabel("spec File:")
-        self.post_spec_txtbox = QtGui.QLineEdit()
-        self.post_spec_btn = QtGui.QPushButton("Browse")
-        self.post_detector_lbl = QtGui.QLabel("Det. Config:")
-        self.post_detector_txtbox = QtGui.QLineEdit()
-        self.post_detector_btn = QtGui.QPushButton("Browse")
-        self.post_instrument_lbl = QtGui.QLabel("Instr. Config:")
-        self.post_instrument_txtbox = QtGui.QLineEdit()
-        self.post_instrument_btn = QtGui.QPushButton("Browse")
-
-
-        #self.post_browse_btn = QtGui.QPushButton("Browse")
+        self.post_data_source_btn = QtGui.QPushButton("Set Data Source")
+        self.post_data_source_list = QtGui.QListWidget()
         self.post_current_directory_lbl = QtGui.QLabel("Current Scan:")
         self.post_current_directory_txtbox = QtGui.QLineEdit()
         self.post_current_directory_txtbox.setReadOnly(True)
@@ -216,18 +205,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_image_layout.addWidget(self.live_refresh_rate_lbl, 5, 2)
         self.live_image_layout.addWidget(self.live_refresh_rate_spinbox, 5, 3)
 
-        self.post_image_layout.addWidget(self.post_project_lbl, 0, 0)
-        self.post_image_layout.addWidget(self.post_project_txtbox, 0, 1, 1, 3)
-        self.post_image_layout.addWidget(self.post_project_btn, 0, 4)
-        self.post_image_layout.addWidget(self.post_spec_lbl, 1, 0)
-        self.post_image_layout.addWidget(self.post_spec_txtbox, 1, 1, 1, 3)
-        self.post_image_layout.addWidget(self.post_spec_btn, 1, 4)
-        self.post_image_layout.addWidget(self.post_detector_lbl, 2, 0)
-        self.post_image_layout.addWidget(self.post_detector_txtbox, 2, 1, 1, 3)
-        self.post_image_layout.addWidget(self.post_detector_btn, 2, 4)
-        self.post_image_layout.addWidget(self.post_instrument_lbl, 3, 0)
-        self.post_image_layout.addWidget(self.post_instrument_txtbox, 3, 1, 1, 3)
-        self.post_image_layout.addWidget(self.post_instrument_btn, 3, 4)
+        self.post_image_layout.addWidget(self.post_data_source_btn, 0, 0, 1, 2)
+        self.post_image_layout.addWidget(self.post_data_source_list, 1, 0, 3, 5)
+
 
         self.post_image_layout.addWidget(self.post_current_directory_lbl, 4, 0)
         self.post_image_layout.addWidget(self.post_current_directory_txtbox, 4, 1, 1, 4)
@@ -266,8 +246,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_plot_btn.clicked.connect(self.simLivePlotting)
         self.live_refresh_rate_spinbox.valueChanged.connect(self.changeRefreshRate)
 
-
-        #self.post_browse_btn.clicked.connect(self.openDirectory)
+        self.post_data_source_btn.clicked.connect(self.setDataSource)
+        self.post_data_source_list.itemClicked.connect(self.loadDataSource)
         self.post_x_direction_rbtn.toggled.connect(self.toggleSliceDirection)
         self.post_y_direction_rbtn.toggled.connect(self.toggleSliceDirection)
         self.post_z_direction_rbtn.toggled.connect(self.toggleSliceDirection)
@@ -412,6 +392,31 @@ class OptionsWidget(pg.LayoutWidget):
 
         # Enable options
         self.options_gbox.setEnabled(True)
+
+    # --------------------------------------------------------------------------
+
+    def setDataSource(self):
+        dialog = DataSourceDialogWidget()
+        if dialog:
+            self.project = dialog.project_name
+            self.spec = dialog.spec_name
+            self.detector = dialog.detector_config_name
+            self.instrument = dialog.instrument_config_name
+
+            if not "" in [self.project, self.spec, self.detector, self.instrument]:
+                if os.path.exists(os.path.join(self.project, "images")):
+                    image_directory = os.path.join(self.project, "images")
+                    scan_directory = os.path.join(image_directory, os.listdir(image_directory)[0])
+                    scans = sorted(os.listdir(scan_directory))
+
+                    self.post_data_source_list.clear()
+                    self.post_data_source_list.addItems(scans)
+
+    # --------------------------------------------------------------------------
+
+    def loadDataSource(self, scan):
+        scan_number = scan.text()[2:]
+        SpecProcessing.test()
 
     # --------------------------------------------------------------------------
 
@@ -1012,3 +1017,83 @@ class DataSourceDialogWidget(QtGui.QDialog):
 
     def __init__ (self):
         super().__init__()
+
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+
+        self.project_name = ""
+        self.spec_name = ""
+        self.detector_config_name = ""
+        self.instrument_config_name = ""
+        self.ok = False
+
+        self.project_lbl = QtGui.QLabel("Project:")
+        self.project_txtbox = QtGui.QLineEdit()
+        self.project_btn = QtGui.QPushButton("Browse")
+        self.spec_lbl = QtGui.QLabel("spec File:")
+        self.spec_txtbox = QtGui.QLineEdit()
+        self.spec_btn = QtGui.QPushButton("Browse")
+        self.detector_lbl = QtGui.QLabel("Det. Config:")
+        self.detector_txtbox = QtGui.QLineEdit()
+        self.detector_btn = QtGui.QPushButton("Browse")
+        self.instrument_lbl = QtGui.QLabel("Instr. Config:")
+        self.instrument_txtbox = QtGui.QLineEdit()
+        self.instrument_btn = QtGui.QPushButton("Browse")
+        self.dialog_btnbox = QtGui.QDialogButtonBox()
+        self.dialog_btnbox.addButton("Cancel", QtGui.QDialogButtonBox.RejectRole)
+        self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
+
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+
+        self.layout.addWidget(self.project_lbl, 0, 0)
+        self.layout.addWidget(self.project_txtbox, 0, 1, 1, 3)
+        self.layout.addWidget(self.project_btn, 0, 4)
+        self.layout.addWidget(self.spec_lbl, 1, 0)
+        self.layout.addWidget(self.spec_txtbox, 1, 1, 1, 3)
+        self.layout.addWidget(self.spec_btn, 1, 4)
+        self.layout.addWidget(self.detector_lbl, 2, 0)
+        self.layout.addWidget(self.detector_txtbox, 2, 1, 1, 3)
+        self.layout.addWidget(self.detector_btn, 2, 4)
+        self.layout.addWidget(self.instrument_lbl, 3, 0)
+        self.layout.addWidget(self.instrument_txtbox, 3, 1, 1, 3)
+        self.layout.addWidget(self.instrument_btn, 3, 4)
+        self.layout.addWidget(self.dialog_btnbox, 4, 3, 1, 2)
+
+        self.project_btn.clicked.connect(self.selectProject)
+        self.spec_btn.clicked.connect(self.selectSpecFile)
+        self.detector_btn.clicked.connect(self.selectDetectorConfigFile)
+        self.instrument_btn.clicked.connect(self.selectInstrumentConfigFile)
+        self.dialog_btnbox.accepted.connect(self.accept)
+        self.dialog_btnbox.rejected.connect(self.reject)
+
+        self.exec_()
+
+    # --------------------------------------------------------------------------
+
+    def selectProject(self):
+        project = QtGui.QFileDialog.getExistingDirectory(self)
+        self.project_name = project
+        self.project_txtbox.setText(project)
+
+    # --------------------------------------------------------------------------
+
+    def selectSpecFile(self):
+        spec = QtGui.QFileDialog.getOpenFileName(self, "", "", "spec Files (*.spec)")
+        self.spec_name = spec[0]
+        self.spec_txtbox.setText(spec[0])
+
+    # --------------------------------------------------------------------------
+
+    def selectDetectorConfigFile(self):
+        detector = QtGui.QFileDialog.getOpenFileName(self, "", "", "xml Files (*.xml)")
+        self.detector_config_name = detector[0]
+        self.detector_txtbox.setText(detector[0])
+
+    # --------------------------------------------------------------------------
+
+    def selectInstrumentConfigFile(self):
+        instrument = QtGui.QFileDialog.getOpenFileName(self, "", "", "xml Files (*.xml)")
+        self.instrument_config_name = instrument[0]
+        self.instrument_txtbox.setText(instrument[0])
+
+# ==============================================================================
