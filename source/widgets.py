@@ -374,21 +374,28 @@ class OptionsWidget(pg.LayoutWidget):
         # x
         if self.post_x_direction_rbtn.isChecked():
             self.post_x_spinbox.setValue(int(self.post_x_slider.value()))
-            x_slice = int(self.post_x_slider.value())
-            self.image = self.image_data[x_slice, :, :]
+
+            rect = QtCore.QRectF(self.k_axis[0], self.k_axis[1], self.l_axis[0], self.l_axis[1])
+            h_slice = int(self.post_x_slider.value())
+            self.image = self.dataset[h_slice, self.k_range[0]:self.k_range[1], self.l_range[0]:self.l_range[1]]
+
         # y
         elif self.post_y_direction_rbtn.isChecked():
             self.post_y_spinbox.setValue(int(self.post_y_slider.value()))
-            y_slice = int(self.post_y_slider.value())
-            self.image = self.image_data[:, y_slice, :]
+
+            rect = QtCore.QRectF(self.h_axis[0], self.h_axis[1], self.l_axis[0], self.l_axis[1])
+            k_slice = int(self.post_y_slider.value())
+            self.image = self.dataset[self.h_range[0]:self.h_range[1], k_slice, self.l_range[0]:self.l_range[1]]
         # z
         else:
             self.post_z_spinbox.setValue(int(self.post_z_slider.value()))
-            z_slice = int(self.post_z_slider.value())
-            self.image = self.image_data[:, :, z_slice]
+
+            rect = QtCore.QRectF(self.h_axis[0], self.h_axis[1], self.k_axis[0], self.k_axis[1])
+            l_slice = int(self.post_z_slider.value())
+            self.image = self.dataset[self.h_range[0]:self.h_range[1], self.k_range[0]:self.k_range[1], l_slice]
 
         # Sets image
-        self.main_window.image_widget.displayImage(self.image)
+        self.main_window.image_widget.displayImage(self.image, rect=rect)
 
         # Enable options
         self.options_gbox.setEnabled(True)
@@ -415,8 +422,21 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def loadDataSource(self, scan):
-        scan_number = scan.text()[2:]
-        SpecProcessing.test()
+        scan = scan.text()[2:]
+        vti_file = DataProcessing.createVTIFile(self.project, self.spec, self.detector,
+            self.instrument, scan)
+
+        self.axes, self.dataset = DataProcessing.loadData(vti_file)
+
+        self.h_axis = [self.axes[0][0], self.axes[0][-1]]
+        self.k_axis = [self.axes[1][0], self.axes[1][-1]]
+        self.l_axis = [self.axes[2][0], self.axes[2][-1]]
+
+        self.h_range = [0,99]
+        self.k_range = [0,99]
+        self.l_range = [0,499]
+
+        self.loadPostImage()
 
     # --------------------------------------------------------------------------
 
@@ -761,13 +781,14 @@ class ImageWidget(pg.PlotWidget):
 
     # --------------------------------------------------------------------------
 
-    def displayImage(self, image):
+    def displayImage(self, image, rect=None):
 
         """
         Adds image to plot window with correct options.
         """
 
         self.image = image
+
 
         # Checks colormap scale
         if self.cmap_scale == "Log":
@@ -781,6 +802,7 @@ class ImageWidget(pg.PlotWidget):
         color_image = plt.cm.jet(norm_image)
         # Sets image
         self.image_item.setImage(color_image)
+        self.image_item.setRect(rect)
 
         # Update analysis textboxes
         self.main_window.analysis_widget.image_width_txtbox.setText(str(self.image.shape[0]))
