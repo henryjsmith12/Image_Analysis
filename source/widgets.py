@@ -377,7 +377,7 @@ class OptionsWidget(pg.LayoutWidget):
 
             rect = QtCore.QRectF(self.k_axis[0], self.k_axis[1], self.l_axis[0], self.l_axis[1])
             h_slice = int(self.post_x_slider.value())
-            self.image = self.dataset[h_slice, self.k_range[0]:self.k_range[1], self.l_range[0]:self.l_range[1]]
+            self.image = self.dataset[48, self.k_range[0]:self.k_range[1], self.l_range[0]:self.l_range[1]]
 
         # y
         elif self.post_y_direction_rbtn.isChecked():
@@ -385,14 +385,14 @@ class OptionsWidget(pg.LayoutWidget):
 
             rect = QtCore.QRectF(self.h_axis[0], self.h_axis[1], self.l_axis[0], self.l_axis[1])
             k_slice = int(self.post_y_slider.value())
-            self.image = self.dataset[self.h_range[0]:self.h_range[1], k_slice, self.l_range[0]:self.l_range[1]]
+            self.image = self.dataset[self.h_range[0]:self.h_range[1], 46, self.l_range[0]:self.l_range[1]]
         # z
         else:
             self.post_z_spinbox.setValue(int(self.post_z_slider.value()))
 
             rect = QtCore.QRectF(self.h_axis[0], self.h_axis[1], self.k_axis[0], self.k_axis[1])
             l_slice = int(self.post_z_slider.value())
-            self.image = self.dataset[self.h_range[0]:self.h_range[1], self.k_range[0]:self.k_range[1], l_slice]
+            self.image = self.dataset[self.h_range[0]:self.h_range[1], self.k_range[0]:self.k_range[1], 50]
 
         # Sets image
         self.main_window.image_widget.displayImage(self.image, rect=rect)
@@ -426,7 +426,7 @@ class OptionsWidget(pg.LayoutWidget):
         vti_file = DataProcessing.createVTIFile(self.project, self.spec, self.detector,
             self.instrument, scan)
 
-        self.axes, self.dataset = DataProcessing.loadData(vti_file)
+        self.axes, self.dataset = DataProcessing.loadData(self.project + "/scan25_2.vti")
 
         self.h_axis = [self.axes[0][0], self.axes[0][-1]]
         self.k_axis = [self.axes[1][0], self.axes[1][-1]]
@@ -436,6 +436,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.k_range = [0,99]
         self.l_range = [0,499]
 
+        #h_data = self.dataset[48, k_range[0]:k_range[1], l_range[0]:l_range[1]]
+        #plt.imshow(h_data, aspect='auto', extent=(self.axes[2][0], self.axes[2][-1], self.axes[1][0],self.axes[1][-1]),norm=colors.LogNorm(),cmap='jet' )
+        #plt.show()
         self.loadPostImage()
 
     # --------------------------------------------------------------------------

@@ -26,6 +26,14 @@ import xrayutilities as xu
 class DataProcessing:
 
     def createVTIFile(project_dir, spec_file, detector_config_name, instrument_config_name, scan):
+
+        def updateDataSourceProgress(value1, value2):
+            print("DataSource Progress %s/%s" % (value1, value2))
+
+        def updateMapperProgress(value1):
+            print("Mapper Progress %s" % (value1))
+
+
         d_reader = detReader(detector_config_name)
         detector_name = "Pilatus"
         detector = d_reader.getDetectorById(detector_name)
@@ -34,7 +42,7 @@ class DataProcessing:
         bin = [1,1]
 
         spec_name, spec_ext = os.path.splitext(os.path.basename(spec_file))
-        output_file_name = os.path.join(project_dir, spec_name + '.vti')
+        output_file_name = os.path.join(project_dir, spec_name + "_" + scan + ".vti")
 
         app_config = RSMap3DConfigParser()
         max_image_memory = app_config.getMaxImageMemory()
@@ -45,6 +53,7 @@ class DataProcessing:
             scanList= scan_range, appConfig=app_config)
 
         data_source.setCurrentDetector(detector_name)
+        data_source.setProgressUpdater(updateDataSourceProgress)
         data_source.loadSource(mapHKL=True)
         data_source.setRangeBounds(data_source.getOverallRanges())
         image_tbu = data_source.getImageToBeUsed()
@@ -53,10 +62,9 @@ class DataProcessing:
         grid_mapper = QGridMapper(data_source, output_file_name, outputType=BINARY_OUTPUT,
             transform=UnityTransform3D(), gridWriter=VTIGridWriter(), appConfig=app_config)
 
-        try:
-            grid_mapper.doMap()
-        except TypeError:
-            ...
+        grid_mapper.setProgressUpdater(updateMapperProgress)
+        grid_mapper.doMap()
+
 
         return output_file_name
 
@@ -96,7 +104,7 @@ class DataProcessing:
         print ("H (" + str(x[0]) + ", " + str(x[-1]) + ")")
         print ("K (" + str(y[0]) + ", " + str(y[-1]) + ")")
         print ("L (" + str(z[0]) + ", " + str(z[-1]) + ")")
-        
+
         axes = [x, y, z]
 
         return axes, ctrdata
