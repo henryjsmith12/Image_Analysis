@@ -518,6 +518,8 @@ class OptionsWidget(pg.LayoutWidget):
             self.main_window.image_widget.roi3.hide()
             self.main_window.image_widget.roi4.hide()
 
+
+
     # --------------------------------------------------------------------------
 
     def toggleMouseCrosshair(self, state):
@@ -754,6 +756,7 @@ class ImageWidget(pg.PlotWidget):
         self.main_window = parent
 
         # x:y ratio set to 1
+        #self.setAspectLocked(False)
         #self.setAspectLocked(True)
         # Background initially set to black
         self.setBackground("default")
@@ -776,10 +779,10 @@ class ImageWidget(pg.PlotWidget):
         roi_2_plot = self.main_window.roi_plots_widget.roi_2_plot
         roi_3_plot = self.main_window.roi_plots_widget.roi_3_plot
         roi_4_plot = self.main_window.roi_plots_widget.roi_4_plot
-        self.roi1 = ROIWidget([210, 100], [40, 40], roi_1_layout, roi_1_plot)
-        self.roi2 = ROIWidget([215, 105], [30, 30], roi_2_layout, roi_2_plot)
-        self.roi3 = ROIWidget([220, 110], [20, 20], roi_3_layout, roi_3_plot)
-        self.roi4 = ROIWidget([225, 115], [10, 10], roi_4_layout, roi_4_plot)
+        self.roi1 = ROIWidget([-1, -1], [2, 2], roi_1_layout, roi_1_plot)
+        self.roi2 = ROIWidget([-0.75, -0.75], [1.5, 1.5], roi_2_layout, roi_2_plot)
+        self.roi3 = ROIWidget([-0.5, -0.5], [1, 1], roi_3_layout, roi_3_plot)
+        self.roi4 = ROIWidget([-0.25, -0.25], [0.5, 0.5], roi_4_layout, roi_4_plot)
         self.addItem(self.roi1)
         self.addItem(self.roi2)
         self.addItem(self.roi3)
@@ -802,7 +805,6 @@ class ImageWidget(pg.PlotWidget):
         """
 
         self.image = np.rot90(image, 3)
-
 
         # Checks colormap scale
         if self.cmap_scale == "Log":
