@@ -138,27 +138,27 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_current_directory_txtbox.setReadOnly(True)
         self.post_direction_lbl = QtGui.QLabel("Slice Direction:")
         self.post_direction_group = QtGui.QButtonGroup()
-        self.post_x_direction_rbtn = QtGui.QRadioButton("x")
-        self.post_x_direction_rbtn.setChecked(True)
-        self.post_y_direction_rbtn = QtGui.QRadioButton("y")
-        self.post_z_direction_rbtn = QtGui.QRadioButton("z")
-        self.post_direction_group.addButton(self.post_x_direction_rbtn)
-        self.post_direction_group.addButton(self.post_y_direction_rbtn)
-        self.post_direction_group.addButton(self.post_z_direction_rbtn)
-        self.post_x_slider_lbl = QtGui.QLabel("x Slice:")
-        self.post_x_spinbox = QtGui.QSpinBox()
-        self.post_x_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.post_x_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        self.post_y_slider_lbl = QtGui.QLabel("y Slice:")
-        self.post_y_spinbox = QtGui.QSpinBox()
-        self.post_y_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.post_y_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        self.post_y_slider.setEnabled(False)
-        self.post_z_slider_lbl = QtGui.QLabel("z Slice:")
-        self.post_z_spinbox = QtGui.QSpinBox()
-        self.post_z_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.post_z_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        self.post_z_slider.setEnabled(False)
+        self.post_h_direction_rbtn = QtGui.QRadioButton("h")
+        self.post_h_direction_rbtn.setChecked(True)
+        self.post_k_direction_rbtn = QtGui.QRadioButton("k")
+        self.post_l_direction_rbtn = QtGui.QRadioButton("l")
+        self.post_direction_group.addButton(self.post_h_direction_rbtn)
+        self.post_direction_group.addButton(self.post_k_direction_rbtn)
+        self.post_direction_group.addButton(self.post_l_direction_rbtn)
+        self.post_h_slider_lbl = QtGui.QLabel("h Slice:")
+        self.post_h_spinbox = QtGui.QSpinBox()
+        self.post_h_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.post_h_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.post_k_slider_lbl = QtGui.QLabel("k Slice:")
+        self.post_k_spinbox = QtGui.QSpinBox()
+        self.post_k_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.post_k_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.post_k_slider.setEnabled(False)
+        self.post_l_slider_lbl = QtGui.QLabel("l Slice:")
+        self.post_l_spinbox = QtGui.QSpinBox()
+        self.post_l_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.post_l_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.post_l_slider.setEnabled(False)
 
         # Create options widgets
         self.roi_boxes_chkbox = QtGui.QCheckBox("ROI")
@@ -212,18 +212,18 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_image_layout.addWidget(self.post_current_directory_lbl, 4, 0)
         self.post_image_layout.addWidget(self.post_current_directory_txtbox, 4, 1, 1, 4)
         self.post_image_layout.addWidget(self.post_direction_lbl, 5, 0)
-        self.post_image_layout.addWidget(self.post_x_direction_rbtn, 5, 1)
-        self.post_image_layout.addWidget(self.post_y_direction_rbtn, 5, 2)
-        self.post_image_layout.addWidget(self.post_z_direction_rbtn, 5, 3)
-        self.post_image_layout.addWidget(self.post_x_slider_lbl, 6, 0)
-        self.post_image_layout.addWidget(self.post_x_spinbox, 6, 1)
-        self.post_image_layout.addWidget(self.post_x_slider, 6, 2, 1, 3)
-        self.post_image_layout.addWidget(self.post_y_slider_lbl, 7, 0)
-        self.post_image_layout.addWidget(self.post_y_spinbox, 7, 1)
-        self.post_image_layout.addWidget(self.post_y_slider, 7, 2, 1, 3)
-        self.post_image_layout.addWidget(self.post_z_slider_lbl, 8, 0)
-        self.post_image_layout.addWidget(self.post_z_spinbox, 8, 1)
-        self.post_image_layout.addWidget(self.post_z_slider, 8, 2, 1, 3)
+        self.post_image_layout.addWidget(self.post_h_direction_rbtn, 5, 1)
+        self.post_image_layout.addWidget(self.post_k_direction_rbtn, 5, 2)
+        self.post_image_layout.addWidget(self.post_l_direction_rbtn, 5, 3)
+        self.post_image_layout.addWidget(self.post_h_slider_lbl, 6, 0)
+        self.post_image_layout.addWidget(self.post_h_spinbox, 6, 1)
+        self.post_image_layout.addWidget(self.post_h_slider, 6, 2, 1, 3)
+        self.post_image_layout.addWidget(self.post_k_slider_lbl, 7, 0)
+        self.post_image_layout.addWidget(self.post_k_spinbox, 7, 1)
+        self.post_image_layout.addWidget(self.post_k_slider, 7, 2, 1, 3)
+        self.post_image_layout.addWidget(self.post_l_slider_lbl, 8, 0)
+        self.post_image_layout.addWidget(self.post_l_spinbox, 8, 1)
+        self.post_image_layout.addWidget(self.post_l_slider, 8, 2, 1, 3)
         self.options_layout.addWidget(self.roi_boxes_chkbox, 0, 0)
         self.options_layout.addWidget(self.crosshair_mouse_chkbox, 0, 1)
         self.options_layout.addWidget(self.crosshair_color_btn, 0, 2)
@@ -248,15 +248,15 @@ class OptionsWidget(pg.LayoutWidget):
 
         self.post_data_source_btn.clicked.connect(self.setDataSource)
         self.post_data_source_list.itemClicked.connect(self.loadDataSource)
-        self.post_x_direction_rbtn.toggled.connect(self.toggleSliceDirection)
-        self.post_y_direction_rbtn.toggled.connect(self.toggleSliceDirection)
-        self.post_z_direction_rbtn.toggled.connect(self.toggleSliceDirection)
-        self.post_x_spinbox.valueChanged[int].connect(self.changeSliderValue)
-        self.post_y_spinbox.valueChanged[int].connect(self.changeSliderValue)
-        self.post_z_spinbox.valueChanged[int].connect(self.changeSliderValue)
-        self.post_x_slider.valueChanged.connect(self.loadPostImage)
-        self.post_y_slider.valueChanged.connect(self.loadPostImage)
-        self.post_z_slider.valueChanged.connect(self.loadPostImage)
+        self.post_h_direction_rbtn.toggled.connect(self.toggleSliceDirection)
+        self.post_k_direction_rbtn.toggled.connect(self.toggleSliceDirection)
+        self.post_l_direction_rbtn.toggled.connect(self.toggleSliceDirection)
+        self.post_h_spinbox.valueChanged[int].connect(self.changeSliderValue)
+        self.post_k_spinbox.valueChanged[int].connect(self.changeSliderValue)
+        self.post_l_spinbox.valueChanged[int].connect(self.changeSliderValue)
+        self.post_h_slider.valueChanged.connect(self.loadPostImage)
+        self.post_k_slider.valueChanged.connect(self.loadPostImage)
+        self.post_l_slider.valueChanged.connect(self.loadPostImage)
         self.roi_boxes_chkbox.stateChanged.connect(self.toggleROIBoxes)
         self.crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
         self.crosshair_color_btn.sigColorChanged.connect(self.changeCrosshairColor)
@@ -310,12 +310,12 @@ class OptionsWidget(pg.LayoutWidget):
             self.image_data = np.stack(self.image_data)
 
             # Sets limits for sliders and spinboxes
-            self.post_x_slider.setMaximum(self.image_data.shape[0] - 1)
-            self.post_x_spinbox.setRange(0, self.image_data.shape[0] - 1)
-            self.post_y_slider.setMaximum(self.image_data.shape[1] - 1)
-            self.post_y_spinbox.setRange(0, self.image_data.shape[1] - 1)
-            self.post_z_slider.setMaximum(self.image_data.shape[2] - 1)
-            self.post_z_spinbox.setRange(0, self.image_data.shape[2] - 1)
+            self.post_h_slider.setMaximum(self.image_data.shape[0] - 1)
+            self.post_h_spinbox.setRange(0, self.image_data.shape[0] - 1)
+            self.post_k_slider.setMaximum(self.image_data.shape[1] - 1)
+            self.post_k_spinbox.setRange(0, self.image_data.shape[1] - 1)
+            self.post_l_slider.setMaximum(self.image_data.shape[2] - 1)
+            self.post_l_spinbox.setRange(0, self.image_data.shape[2] - 1)
 
             # Creates plots of average intesity for each ROI
             self.main_window.roi_plots_widget.displayROIPlots()
@@ -370,29 +370,31 @@ class OptionsWidget(pg.LayoutWidget):
         """
         Loads image to viewing window.
         """
+        h_min, h_max = self.h_axis
+        k_min, k_max = self.k_axis
+        l_min, l_max = self.l_axis
 
-        # x
-        if self.post_x_direction_rbtn.isChecked():
-            self.post_x_spinbox.setValue(int(self.post_x_slider.value()))
+        # h
+        if self.post_h_direction_rbtn.isChecked():
+            self.post_h_spinbox.setValue(int(self.post_h_slider.value()))
+            rect = QtCore.QRectF(l_min, k_min, l_max - l_min, k_max - k_min)
+            h_slice = int(self.post_h_slider.value())
+            self.image = self.dataset[h_slice, :, :]
 
-            rect = QtCore.QRectF(self.k_axis[0], self.k_axis[1], self.l_axis[0], self.l_axis[1])
-            h_slice = int(self.post_x_slider.value())
-            self.image = self.dataset[48, self.k_range[0]:self.k_range[1], self.l_range[0]:self.l_range[1]]
+        # k
+        elif self.post_k_direction_rbtn.isChecked():
+            self.post_k_spinbox.setValue(int(self.post_k_slider.value()))
+            rect = QtCore.QRectF(l_min, h_min, l_max - l_min, h_max - h_min)
+            k_slice = int(self.post_k_slider.value())
+            self.image = self.dataset[:, k_slice, :]
 
-        # y
-        elif self.post_y_direction_rbtn.isChecked():
-            self.post_y_spinbox.setValue(int(self.post_y_slider.value()))
-
-            rect = QtCore.QRectF(self.h_axis[0], self.h_axis[1], self.l_axis[0], self.l_axis[1])
-            k_slice = int(self.post_y_slider.value())
-            self.image = self.dataset[self.h_range[0]:self.h_range[1], 46, self.l_range[0]:self.l_range[1]]
-        # z
+        # l
         else:
-            self.post_z_spinbox.setValue(int(self.post_z_slider.value()))
+            self.post_l_spinbox.setValue(int(self.post_l_slider.value()))
+            rect = QtCore.QRectF(k_min, h_min, k_max - k_min, h_max - h_min)
+            l_slice = int(self.post_l_slider.value())
+            self.image = self.dataset[:, :, l_slice]
 
-            rect = QtCore.QRectF(self.h_axis[0], self.h_axis[1], self.k_axis[0], self.k_axis[1])
-            l_slice = int(self.post_z_slider.value())
-            self.image = self.dataset[self.h_range[0]:self.h_range[1], self.k_range[0]:self.k_range[1], 50]
 
         # Sets image
         self.main_window.image_widget.displayImage(self.image, rect=rect)
@@ -419,6 +421,9 @@ class OptionsWidget(pg.LayoutWidget):
                     self.post_data_source_list.clear()
                     self.post_data_source_list.addItems(scans)
 
+                    self.main_window.image_widget.setLabel("left", "K")
+                    self.main_window.image_widget.setLabel("bottom", "L")
+
     # --------------------------------------------------------------------------
 
     def loadDataSource(self, scan):
@@ -426,19 +431,19 @@ class OptionsWidget(pg.LayoutWidget):
         vti_file = DataProcessing.createVTIFile(self.project, self.spec, self.detector,
             self.instrument, scan)
 
-        self.axes, self.dataset = DataProcessing.loadData(self.project + "/scan25_2.vti")
+        self.axes, self.dataset = DataProcessing.loadData(vti_file)
 
         self.h_axis = [self.axes[0][0], self.axes[0][-1]]
         self.k_axis = [self.axes[1][0], self.axes[1][-1]]
         self.l_axis = [self.axes[2][0], self.axes[2][-1]]
 
-        self.h_range = [0,99]
-        self.k_range = [0,99]
-        self.l_range = [0,499]
+        self.post_h_slider.setMaximum(self.dataset.shape[0] - 1)
+        self.post_h_spinbox.setRange(0, self.dataset.shape[0] - 1)
+        self.post_k_slider.setMaximum(self.dataset.shape[1] - 1)
+        self.post_k_spinbox.setRange(0, self.dataset.shape[1] - 1)
+        self.post_l_slider.setMaximum(self.dataset.shape[2] - 1)
+        self.post_l_spinbox.setRange(0, self.dataset.shape[2] - 1)
 
-        #h_data = self.dataset[48, k_range[0]:k_range[1], l_range[0]:l_range[1]]
-        #plt.imshow(h_data, aspect='auto', extent=(self.axes[2][0], self.axes[2][-1], self.axes[1][0],self.axes[1][-1]),norm=colors.LogNorm(),cmap='jet' )
-        #plt.show()
         self.loadPostImage()
 
     # --------------------------------------------------------------------------
@@ -451,18 +456,24 @@ class OptionsWidget(pg.LayoutWidget):
 
         button = self.sender()
 
-        if button.text() == "x":
-            self.post_x_slider.setEnabled(True)
-            self.post_y_slider.setEnabled(False)
-            self.post_z_slider.setEnabled(False)
-        elif button.text() == "y":
-            self.post_x_slider.setEnabled(False)
-            self.post_y_slider.setEnabled(True)
-            self.post_z_slider.setEnabled(False)
+        if button.text() == "h":
+            self.post_h_slider.setEnabled(True)
+            self.post_k_slider.setEnabled(False)
+            self.post_l_slider.setEnabled(False)
+            self.main_window.image_widget.setLabel("left", "K")
+            self.main_window.image_widget.setLabel("bottom", "L")
+        elif button.text() == "k":
+            self.post_h_slider.setEnabled(False)
+            self.post_k_slider.setEnabled(True)
+            self.post_l_slider.setEnabled(False)
+            self.main_window.image_widget.setLabel("left", "H")
+            self.main_window.image_widget.setLabel("bottom", "L")
         else:
-            self.post_x_slider.setEnabled(False)
-            self.post_y_slider.setEnabled(False)
-            self.post_z_slider.setEnabled(True)
+            self.post_h_slider.setEnabled(False)
+            self.post_k_slider.setEnabled(False)
+            self.post_l_slider.setEnabled(True)
+            self.main_window.image_widget.setLabel("left", "H")
+            self.main_window.image_widget.setLabel("bottom", "K")
 
         # Loads new image into viewing window
         self.loadPostImage()
@@ -477,12 +488,12 @@ class OptionsWidget(pg.LayoutWidget):
 
         spinbox = self.sender()
 
-        if spinbox == self.post_x_spinbox:
-            self.post_x_slider.setValue(value)
-        elif spinbox == self.post_y_spinbox:
-            self.post_y_slider.setValue(value)
+        if spinbox == self.post_h_spinbox:
+            self.post_h_slider.setValue(value)
+        elif spinbox == self.post_k_spinbox:
+            self.post_k_slider.setValue(value)
         else:
-            self.post_z_slider.setValue(value)
+            self.post_l_slider.setValue(value)
 
         # No need to call loadPostImage()
         # Connected with valueChanged signal that calls loadPostImage()
@@ -743,7 +754,7 @@ class ImageWidget(pg.PlotWidget):
         self.main_window = parent
 
         # x:y ratio set to 1
-        self.setAspectLocked(True)
+        #self.setAspectLocked(True)
         # Background initially set to black
         self.setBackground("default")
 
@@ -790,7 +801,7 @@ class ImageWidget(pg.PlotWidget):
         Adds image to plot window with correct options.
         """
 
-        self.image = image
+        self.image = np.rot90(image, 3)
 
 
         # Checks colormap scale

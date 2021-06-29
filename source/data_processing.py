@@ -20,7 +20,6 @@ import vtk
 from vtk.util import numpy_support as npSup
 import xrayutilities as xu
 
-
 # ==============================================================================
 
 class DataProcessing:
@@ -76,14 +75,20 @@ class DataProcessing:
         reader.Update()
 
         data = reader.GetOutput()
-        vectors = list(data.GetDimensions())
+        dim = data.GetDimensions()
+    #    print ("dim" + str(dim))
+
+        vec = list(dim )
+    #    print ("vec: %s" % vec)
+        vec = [i for i in dim]
+        vec.reverse()
 
         u = npSup.vtk_to_numpy(data.GetPointData().GetArray('Scalars_'))
 
         max_value = np.nanmax(u)
         min_value = np.nanmin(u)
 
-        u = u.reshape(vectors)
+        u = u.reshape(vec)
 
         ctrdata = np.swapaxes(u, 0, 2)
 
@@ -108,6 +113,5 @@ class DataProcessing:
         axes = [x, y, z]
 
         return axes, ctrdata
-
 
 # ==============================================================================
