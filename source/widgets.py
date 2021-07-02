@@ -47,16 +47,12 @@ class OptionsWidget(pg.LayoutWidget):
         self.main_window = parent
 
         # Create GroupBoxes/TabWidget for GroupBoxes
-
-        """
-        ** TODO: spec selection groupbox
-        """
-
         self.image_mode_tabs = QtGui.QTabWidget()
         self.live_image_gbox = QtGui.QGroupBox("Live")
         self.post_image_gbox = QtGui.QGroupBox("Post")
         self.image_mode_tabs.addTab(self.live_image_gbox, "Live")
         self.image_mode_tabs.addTab(self.post_image_gbox, "Post")
+
         self.options_gbox = QtGui.QGroupBox("Plotting Options")
 
         # Disable Options GroupBox until file selected
@@ -121,15 +117,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_refresh_rate_slider.setRange(0, 100)
         self.live_refresh_rate = 0.0
 
-        """
-        ** TODO: HKL conversion button for post plotting.
-
-            - user selects detector config file, instrument config file
-            - user selects dataset
-            - creates .vti file
-            - load data
-        """
-
         # Create post mode widgets
         self.post_data_source_btn = QtGui.QPushButton("Set Data Source")
         self.post_data_source_list = QtGui.QListWidget()
@@ -138,23 +125,23 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_current_directory_txtbox.setReadOnly(True)
         self.post_direction_lbl = QtGui.QLabel("Slice Direction:")
         self.post_direction_group = QtGui.QButtonGroup()
-        self.post_h_direction_rbtn = QtGui.QRadioButton("h")
+        self.post_h_direction_rbtn = QtGui.QRadioButton("H")
         self.post_h_direction_rbtn.setChecked(True)
-        self.post_k_direction_rbtn = QtGui.QRadioButton("k")
-        self.post_l_direction_rbtn = QtGui.QRadioButton("l")
+        self.post_k_direction_rbtn = QtGui.QRadioButton("K")
+        self.post_l_direction_rbtn = QtGui.QRadioButton("L")
         self.post_direction_group.addButton(self.post_h_direction_rbtn)
         self.post_direction_group.addButton(self.post_k_direction_rbtn)
         self.post_direction_group.addButton(self.post_l_direction_rbtn)
-        self.post_h_slider_lbl = QtGui.QLabel("h Slice:")
+        self.post_h_slider_lbl = QtGui.QLabel("H Slice:")
         self.post_h_spinbox = QtGui.QSpinBox()
         self.post_h_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.post_h_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        self.post_k_slider_lbl = QtGui.QLabel("k Slice:")
+        self.post_k_slider_lbl = QtGui.QLabel("K Slice:")
         self.post_k_spinbox = QtGui.QSpinBox()
         self.post_k_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.post_k_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
         self.post_k_slider.setEnabled(False)
-        self.post_l_slider_lbl = QtGui.QLabel("l Slice:")
+        self.post_l_slider_lbl = QtGui.QLabel("L Slice:")
         self.post_l_spinbox = QtGui.QSpinBox()
         self.post_l_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.post_l_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
@@ -207,8 +194,6 @@ class OptionsWidget(pg.LayoutWidget):
 
         self.post_image_layout.addWidget(self.post_data_source_btn, 0, 0, 1, 2)
         self.post_image_layout.addWidget(self.post_data_source_list, 1, 0, 3, 5)
-
-
         self.post_image_layout.addWidget(self.post_current_directory_lbl, 4, 0)
         self.post_image_layout.addWidget(self.post_current_directory_txtbox, 4, 1, 1, 4)
         self.post_image_layout.addWidget(self.post_direction_lbl, 5, 0)
@@ -365,6 +350,75 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
+    def setDataSource(self):
+        dialog = DataSourceDialogWidget()
+        if dialog:
+            self.project = dialog.project_name
+            self.spec = dialog.spec_name
+            self.detector = dialog.detector_config_name
+            self.instrument = dialog.instrument_config_name
+            self.process_data = dialog.process_data
+
+            if not self.project == "":
+                if os.path.exists(os.path.join(self.project, "images")):
+                    image_directory = os.path.join(self.project, "images")
+                    self.scan_directory = os.path.join(image_directory, os.listdir(image_directory)[0])
+                    scans = sorted(os.listdir(self.scan_directory))
+
+                    self.post_data_source_list.clear()
+                    self.post_data_source_list.addItems(scans)
+
+                    self.main_window.image_widget.setLabel("left", "K")
+                    self.main_window.image_widget.setLabel("bottom", "L")
+
+
+
+    # --------------------------------------------------------------------------
+
+    def loadDataSource(self, scan):
+
+        self.dataset = []
+
+        if not "" in [self.spec, self.detector, self.instrument]:
+            scan = scan.text()[2:]
+            vti_file = DataProcessing.createVTIFile(self.project, self.spec, self.detector,
+                self.instrument, scan)
+
+            self.axes, self.dataset = DataProcessing.loadData(vti_file)
+            self.h_axis = [self.axes[0][0], self.axes[0][-1]]
+            self.k_axis = [self.axes[1][0], self.axes[1][-1]]
+            self.l_axis = [self.axes[2][0], self.axes[2][-1]]
+
+        else:
+            # (Alphabetically) Sorted list of scan images
+            scan_path = os.path.join(self.scan_directory, scan.text())
+            self.image_files = sorted(os.listdir(scan_path))
+
+            for i in range(len(self.image_files)):
+                if self.image_files[i] != "alignment.tif":
+                    # Creates 2d image from file path
+                    file_path = f"{scan_path}/{self.image_files[i]}"
+                    image = ndimage.rotate(tiff.imread(file_path), 90)
+                    # Appends image to list of images
+                    self.dataset.append(image)
+            self.dataset = np.stack(self.dataset)
+            self.dataset = np.swapaxes(self.dataset, 0, 2)
+
+            self.h_axis = [0, self.dataset.shape[0]]
+            self.k_axis = [0, self.dataset.shape[1]]
+            self.l_axis = [0, self.dataset.shape[2]]
+
+        self.post_h_slider.setMaximum(self.dataset.shape[0] - 1)
+        self.post_h_spinbox.setRange(0, self.dataset.shape[0] - 1)
+        self.post_k_slider.setMaximum(self.dataset.shape[1] - 1)
+        self.post_k_spinbox.setRange(0, self.dataset.shape[1] - 1)
+        self.post_l_slider.setMaximum(self.dataset.shape[2] - 1)
+        self.post_l_spinbox.setRange(0, self.dataset.shape[2] - 1)
+
+        self.loadPostImage()
+
+    # --------------------------------------------------------------------------
+
     def loadPostImage(self):
 
         """
@@ -404,50 +458,6 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def setDataSource(self):
-        dialog = DataSourceDialogWidget()
-        if dialog:
-            self.project = dialog.project_name
-            self.spec = dialog.spec_name
-            self.detector = dialog.detector_config_name
-            self.instrument = dialog.instrument_config_name
-
-            if not "" in [self.project, self.spec, self.detector, self.instrument]:
-                if os.path.exists(os.path.join(self.project, "images")):
-                    image_directory = os.path.join(self.project, "images")
-                    scan_directory = os.path.join(image_directory, os.listdir(image_directory)[0])
-                    scans = sorted(os.listdir(scan_directory))
-
-                    self.post_data_source_list.clear()
-                    self.post_data_source_list.addItems(scans)
-
-                    self.main_window.image_widget.setLabel("left", "K")
-                    self.main_window.image_widget.setLabel("bottom", "L")
-
-    # --------------------------------------------------------------------------
-
-    def loadDataSource(self, scan):
-        scan = scan.text()[2:]
-        vti_file = DataProcessing.createVTIFile(self.project, self.spec, self.detector,
-            self.instrument, scan)
-
-        self.axes, self.dataset = DataProcessing.loadData(vti_file)
-
-        self.h_axis = [self.axes[0][0], self.axes[0][-1]]
-        self.k_axis = [self.axes[1][0], self.axes[1][-1]]
-        self.l_axis = [self.axes[2][0], self.axes[2][-1]]
-
-        self.post_h_slider.setMaximum(self.dataset.shape[0] - 1)
-        self.post_h_spinbox.setRange(0, self.dataset.shape[0] - 1)
-        self.post_k_slider.setMaximum(self.dataset.shape[1] - 1)
-        self.post_k_spinbox.setRange(0, self.dataset.shape[1] - 1)
-        self.post_l_slider.setMaximum(self.dataset.shape[2] - 1)
-        self.post_l_spinbox.setRange(0, self.dataset.shape[2] - 1)
-
-        self.loadPostImage()
-
-    # --------------------------------------------------------------------------
-
     def toggleSliceDirection(self):
 
         """
@@ -456,13 +466,13 @@ class OptionsWidget(pg.LayoutWidget):
 
         button = self.sender()
 
-        if button.text() == "h":
+        if button.text() == "H":
             self.post_h_slider.setEnabled(True)
             self.post_k_slider.setEnabled(False)
             self.post_l_slider.setEnabled(False)
             self.main_window.image_widget.setLabel("left", "K")
             self.main_window.image_widget.setLabel("bottom", "L")
-        elif button.text() == "k":
+        elif button.text() == "K":
             self.post_h_slider.setEnabled(False)
             self.post_k_slider.setEnabled(True)
             self.post_l_slider.setEnabled(False)
@@ -1062,20 +1072,29 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.spec_name = ""
         self.detector_config_name = ""
         self.instrument_config_name = ""
+        self.process_data = False
         self.ok = False
 
+        self.process_data_chkbox = QtGui.QCheckBox("Process Data")
         self.project_lbl = QtGui.QLabel("Project:")
         self.project_txtbox = QtGui.QLineEdit()
+        self.project_txtbox.setReadOnly(True)
         self.project_btn = QtGui.QPushButton("Browse")
         self.spec_lbl = QtGui.QLabel("spec File:")
         self.spec_txtbox = QtGui.QLineEdit()
+        self.spec_txtbox.setReadOnly(True)
         self.spec_btn = QtGui.QPushButton("Browse")
+        self.spec_btn.setEnabled(False)
         self.detector_lbl = QtGui.QLabel("Det. Config:")
         self.detector_txtbox = QtGui.QLineEdit()
+        self.detector_txtbox.setReadOnly(True)
         self.detector_btn = QtGui.QPushButton("Browse")
+        self.detector_btn.setEnabled(False)
         self.instrument_lbl = QtGui.QLabel("Instr. Config:")
         self.instrument_txtbox = QtGui.QLineEdit()
+        self.instrument_txtbox.setReadOnly(True)
         self.instrument_btn = QtGui.QPushButton("Browse")
+        self.instrument_btn.setEnabled(False)
         self.dialog_btnbox = QtGui.QDialogButtonBox()
         self.dialog_btnbox.addButton("Cancel", QtGui.QDialogButtonBox.RejectRole)
         self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
@@ -1095,12 +1114,14 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.layout.addWidget(self.instrument_lbl, 3, 0)
         self.layout.addWidget(self.instrument_txtbox, 3, 1, 1, 3)
         self.layout.addWidget(self.instrument_btn, 3, 4)
+        self.layout.addWidget(self.process_data_chkbox, 4, 0)
         self.layout.addWidget(self.dialog_btnbox, 4, 3, 1, 2)
 
         self.project_btn.clicked.connect(self.selectProject)
         self.spec_btn.clicked.connect(self.selectSpecFile)
         self.detector_btn.clicked.connect(self.selectDetectorConfigFile)
         self.instrument_btn.clicked.connect(self.selectInstrumentConfigFile)
+        self.process_data_chkbox.stateChanged.connect(self.setDataProcessingStatus)
         self.dialog_btnbox.accepted.connect(self.accept)
         self.dialog_btnbox.rejected.connect(self.reject)
 
@@ -1133,5 +1154,21 @@ class DataSourceDialogWidget(QtGui.QDialog):
         instrument = QtGui.QFileDialog.getOpenFileName(self, "", "", "xml Files (*.xml)")
         self.instrument_config_name = instrument[0]
         self.instrument_txtbox.setText(instrument[0])
+
+    # --------------------------------------------------------------------------
+
+    def setDataProcessingStatus(self):
+        checkbox = self.sender()
+
+        if checkbox.checkState():
+            self.process_data = True
+            self.spec_btn.setEnabled(True)
+            self.detector_btn.setEnabled(True)
+            self.instrument_btn.setEnabled(True)
+        else:
+            self.process_data = False
+            self.spec_btn.setEnabled(False)
+            self.detector_btn.setEnabled(False)
+            self.instrument_btn.setEnabled(False)
 
 # ==============================================================================
