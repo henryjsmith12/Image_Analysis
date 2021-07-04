@@ -268,45 +268,8 @@ class OptionsWidget(pg.LayoutWidget):
         # (Alphabetically) Sorted list of files
         self.image_files = sorted(os.listdir(self.directory))
 
-        # For post mode plotting
-        self.image_data = []
-
-        # Live mode
-        if self.live_image_gbox is self.image_mode_tabs.currentWidget():
-            # Clear current directory and display new directory
-            # Images can be view by clicking name
-            self.live_file_list.clear()
-            self.live_file_list.addItems(self.image_files)
-
-        # Post mode
-        else:
-            # Display directory name in textbox
-            self.post_current_directory_txtbox.setText(self.directory)
-            # Loop through images in selected directory
-            for i in range(len(self.image_files)):
-                if self.image_files[i] != "alignment.tif":
-                    # Creates 2d image from file path
-                    file_path = f"{self.directory}/{self.image_files[i]}"
-                    image = ndimage.rotate(tiff.imread(file_path), 90)
-                    # Appends image to list of images
-                    self.image_data.append(image)
-
-            # Converts list of 2d images to 3d array
-            self.image_data = np.stack(self.image_data)
-
-            # Sets limits for sliders and spinboxes
-            self.post_h_slider.setMaximum(self.image_data.shape[0] - 1)
-            self.post_h_spinbox.setRange(0, self.image_data.shape[0] - 1)
-            self.post_k_slider.setMaximum(self.image_data.shape[1] - 1)
-            self.post_k_spinbox.setRange(0, self.image_data.shape[1] - 1)
-            self.post_l_slider.setMaximum(self.image_data.shape[2] - 1)
-            self.post_l_spinbox.setRange(0, self.image_data.shape[2] - 1)
-
-            # Creates plots of average intesity for each ROI
-            self.main_window.roi_plots_widget.displayROIPlots()
-
-            # Loads 3d array into viewing window
-            self.loadPostImage()
+        self.live_file_list.clear()
+        self.live_file_list.addItems(self.image_files)
 
     # --------------------------------------------------------------------------
 
@@ -341,7 +304,7 @@ class OptionsWidget(pg.LayoutWidget):
 
         # Reads image file and sets image
         self.image = ndimage.rotate(tiff.imread(self.file_path), 90)
-        self.main_window.image_widget.displayImage(self.image)
+        self.main_window.image_widget.displayImage(self.image, rect=None)
 
         self.live_current_file_txtbox.setText(file.text())
 
@@ -828,7 +791,9 @@ class ImageWidget(pg.PlotWidget):
         color_image = plt.cm.jet(norm_image)
         # Sets image
         self.image_item.setImage(color_image)
-        self.image_item.setRect(rect)
+        
+        if rect != None:
+            self.image_item.setRect(rect)
 
         # Update analysis textboxes
         self.main_window.analysis_widget.image_width_txtbox.setText(str(self.image.shape[0]))
