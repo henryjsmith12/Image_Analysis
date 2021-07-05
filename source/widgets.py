@@ -723,7 +723,7 @@ class AnalysisWidget(pg.LayoutWidget):
         self.image_height_lbl = QtGui.QLabel("Height:")
         self.image_height_txtbox = QtGui.QLineEdit()
         self.image_height_txtbox.setReadOnly(True)
-        self.image_max_intensity_lbl = QtGui.QLabel("Max Intensity:")
+        self.image_max_intensity_lbl = QtGui.QLabel("Max:")
         self.image_max_intensity_txtbox = QtGui.QLineEdit()
         self.image_max_intensity_txtbox.setReadOnly(True)
         self.image_cmap_pctl_lbl = QtGui.QLabel("CMap Pctl:")
@@ -823,13 +823,16 @@ class ImageWidget(pg.PlotWidget):
         # Sets image
         self.image_item.setImage(color_image)
 
-        if rect != None:
-            self.image_item.setRect(rect)
+        if rect == None:
+            rect = QtCore.QRect(0, 0, self.image.shape[0], self.image.shape[1])
+
+        self.image_item.setRect(rect)
+        self.rect = rect
 
         # Update analysis textboxes
         self.main_window.analysis_widget.image_width_txtbox.setText(str(self.image.shape[0]))
         self.main_window.analysis_widget.image_height_txtbox.setText(str(self.image.shape[1]))
-        self.main_window.analysis_widget.image_max_intensity_txtbox.setText(str(np.amax(self.image)))
+        self.main_window.analysis_widget.image_max_intensity_txtbox.setText(str(round(np.amax(self.image))))
         self.main_window.analysis_widget.image_cmap_pctl_txtbox.setText(str(self.cmap_pctl))
 
         # Update crosshair information
@@ -853,12 +856,15 @@ class ImageWidget(pg.PlotWidget):
         self.h_line.setPos(y)
 
         # Update analysis textboxes
-        self.main_window.analysis_widget.mouse_x_txtbox.setText(str(int(x)))
-        self.main_window.analysis_widget.mouse_y_txtbox.setText(str(int(y)))
+        self.main_window.analysis_widget.mouse_x_txtbox.setText(str(round(x, 5)))
+        self.main_window.analysis_widget.mouse_y_txtbox.setText(str(round(y, 5)))
+
+        x = (x - self.rect.x()) * self.image.shape[0] / self.rect.width()
+        y = (y - self.rect.y()) * self.image.shape[1] / self.rect.height()
 
         # Checks if mouse is within confines of image
         if self.image.shape[0] >= x >= 0 and self.image.shape[1] >= y >= 0:
-            intensity = self.image[int(x), int(y)]
+            intensity = round(self.image[int(x), int(y)])
             self.main_window.analysis_widget.mouse_intensity_txtbox.setText(str(intensity))
 
 # ==============================================================================
