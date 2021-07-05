@@ -191,7 +191,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_image_layout.addWidget(self.live_plot_btn, 5, 0, 1, 2)
         self.live_image_layout.addWidget(self.live_refresh_rate_lbl, 5, 2)
         self.live_image_layout.addWidget(self.live_refresh_rate_spinbox, 5, 3)
-
         self.post_image_layout.addWidget(self.post_data_source_btn, 0, 0, 1, 2)
         self.post_image_layout.addWidget(self.post_data_source_list, 1, 0, 3, 5)
         self.post_image_layout.addWidget(self.post_current_directory_lbl, 4, 0)
@@ -258,8 +257,7 @@ class OptionsWidget(pg.LayoutWidget):
     def openDirectory(self):
 
         """
-        - Selects directory for both live and post modes
-        - Loads data for post mode
+        Selects directory for live mode
         """
 
         # Find directory with image files
@@ -296,7 +294,7 @@ class OptionsWidget(pg.LayoutWidget):
     def loadLiveImage(self, file):
 
         """
-        Loads image to viewing window.
+        Loads image to viewing window for live mode.
         """
 
         # Concatenates directory and file names
@@ -314,7 +312,16 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def setDataSource(self):
+
+        """
+        - Opens data source dialog
+        - If directory is valid, scan subdirectories are shown in the list widget
+        """
+
+        # See DataSourceDialogWidget class for more info
         dialog = DataSourceDialogWidget()
+
+        # If dialog return value == True
         if dialog:
             self.project = dialog.project_name
             self.spec = dialog.spec_name
@@ -322,36 +329,54 @@ class OptionsWidget(pg.LayoutWidget):
             self.instrument = dialog.instrument_config_name
             self.process_data = dialog.process_data
 
+            # If project direcory is given
             if not self.project == "":
+
+                # If project directory has image subdirectory
                 if os.path.exists(os.path.join(self.project, "images")):
                     image_directory = os.path.join(self.project, "images")
+                    # Image directory should only have one subdirectory
+                    # Subdirectory should share name with .spec file
                     self.scan_directory = os.path.join(image_directory, os.listdir(image_directory)[0])
+                    # Sorted alphabetically
                     scans = sorted(os.listdir(self.scan_directory))
 
+                    # Clear current list items and add new list items
                     self.post_data_source_list.clear()
                     self.post_data_source_list.addItems(scans)
 
+                    # Sets axis labels for image plot
                     self.main_window.image_widget.setLabel("left", "K")
                     self.main_window.image_widget.setLabel("bottom", "L")
-
-
 
     # --------------------------------------------------------------------------
 
     def loadDataSource(self, scan):
 
+        """
+        - Creates 3D array of data from given scan directory
+        - Sets spinbox/slider limits based on array's dimensions
+        """
+
+        # Placeholder list for 3D array
         self.dataset = []
 
+        # If spec and config directories were given (processed data)
         if not "" in [self.spec, self.detector, self.instrument]:
+            # Last two chars (should be digits) of scan name
             scan = scan.text()[2:]
+
+            # Creates vti file
             vti_file = DataProcessing.createVTIFile(self.project, self.spec, self.detector,
                 self.instrument, scan)
 
+            # Converts vti file into 3D array with proper axes
             self.axes, self.dataset = DataProcessing.loadData(vti_file)
             self.h_axis = [self.axes[0][0], self.axes[0][-1]]
             self.k_axis = [self.axes[1][0], self.axes[1][-1]]
             self.l_axis = [self.axes[2][0], self.axes[2][-1]]
 
+        # If only project directory was given (unprocessed data)
         else:
             # (Alphabetically) Sorted list of scan images
             scan_path = os.path.join(self.scan_directory, scan.text())
@@ -367,6 +392,7 @@ class OptionsWidget(pg.LayoutWidget):
             self.dataset = np.stack(self.dataset)
             self.dataset = np.swapaxes(self.dataset, 0, 2)
 
+            # Axes go from 0 to shape of array in each direction
             self.h_axis = [0, self.dataset.shape[0]]
             self.k_axis = [0, self.dataset.shape[1]]
             self.l_axis = [0, self.dataset.shape[2]]
@@ -387,25 +413,29 @@ class OptionsWidget(pg.LayoutWidget):
         """
         Loads image to viewing window.
         """
+
+        # Splits axis into min/max
         h_min, h_max = self.h_axis
         k_min, k_max = self.k_axis
         l_min, l_max = self.l_axis
 
-        # h
+        # h direction
         if self.post_h_direction_rbtn.isChecked():
+            # Syncs slider and spinbox
             self.post_h_spinbox.setValue(int(self.post_h_slider.value()))
+            # Creates rectangle for array to be plotted inside of
             rect = QtCore.QRectF(l_min, k_min, l_max - l_min, k_max - k_min)
             h_slice = int(self.post_h_slider.value())
             self.image = self.dataset[h_slice, :, :]
 
-        # k
+        # k direction
         elif self.post_k_direction_rbtn.isChecked():
             self.post_k_spinbox.setValue(int(self.post_k_slider.value()))
             rect = QtCore.QRectF(l_min, h_min, l_max - l_min, h_max - h_min)
             k_slice = int(self.post_k_slider.value())
             self.image = self.dataset[:, k_slice, :]
 
-        # l
+        # l direction
         else:
             self.post_l_spinbox.setValue(int(self.post_l_slider.value()))
             rect = QtCore.QRectF(k_min, h_min, k_max - k_min, h_max - h_min)
@@ -413,7 +443,7 @@ class OptionsWidget(pg.LayoutWidget):
             self.image = self.dataset[:, :, l_slice]
 
 
-        # Sets image
+        # Sets image in viewing window
         self.main_window.image_widget.displayImage(self.image, rect=rect)
 
         # Enable options
@@ -777,6 +807,7 @@ class ImageWidget(pg.PlotWidget):
         Adds image to plot window with correct options.
         """
 
+        # Rotates image 270 degrees
         self.image = np.rot90(image, 3)
 
         # Checks colormap scale
@@ -791,7 +822,7 @@ class ImageWidget(pg.PlotWidget):
         color_image = plt.cm.jet(norm_image)
         # Sets image
         self.image_item.setImage(color_image)
-        
+
         if rect != None:
             self.image_item.setRect(rect)
 
@@ -1028,11 +1059,17 @@ class ROIWidget(pg.ROI):
 
 class DataSourceDialogWidget(QtGui.QDialog):
 
+    """
+    Creates modal dialog widget for the user to choose directories and files as
+    their data source.
+    """
+
     def __init__ (self):
         super().__init__()
 
         self.setWindowModality(QtCore.Qt.ApplicationModal)
 
+        # Holds values from textboxes/checkbox
         self.project_name = ""
         self.spec_name = ""
         self.detector_config_name = ""
@@ -1040,6 +1077,7 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.process_data = False
         self.ok = False
 
+        # Creates subwidgets
         self.process_data_chkbox = QtGui.QCheckBox("Process Data")
         self.project_lbl = QtGui.QLabel("Project:")
         self.project_txtbox = QtGui.QLineEdit()
@@ -1067,6 +1105,7 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
+        # Adds widgets to layout
         self.layout.addWidget(self.project_lbl, 0, 0)
         self.layout.addWidget(self.project_txtbox, 0, 1, 1, 3)
         self.layout.addWidget(self.project_btn, 0, 4)
@@ -1082,6 +1121,7 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.layout.addWidget(self.process_data_chkbox, 4, 0)
         self.layout.addWidget(self.dialog_btnbox, 4, 3, 1, 2)
 
+        # Connects widgets to functions
         self.project_btn.clicked.connect(self.selectProject)
         self.spec_btn.clicked.connect(self.selectSpecFile)
         self.detector_btn.clicked.connect(self.selectDetectorConfigFile)
@@ -1090,6 +1130,7 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.dialog_btnbox.accepted.connect(self.accept)
         self.dialog_btnbox.rejected.connect(self.reject)
 
+        # Runs dialog widget
         self.exec_()
 
     # --------------------------------------------------------------------------
@@ -1123,6 +1164,11 @@ class DataSourceDialogWidget(QtGui.QDialog):
     # --------------------------------------------------------------------------
 
     def setDataProcessingStatus(self):
+
+        """
+        Changes the enabled status of certain widgets based on the checkbox's state.
+        """
+
         checkbox = self.sender()
 
         if checkbox.checkState():

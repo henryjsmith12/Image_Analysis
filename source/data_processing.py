@@ -24,14 +24,18 @@ import xrayutilities as xu
 
 class DataProcessing:
 
-    def createVTIFile(project_dir, spec_file, detector_config_name, instrument_config_name, scan):
+    """
+    Various methods to convert and process data before displaying.
+    """
 
+    def createVTIFile(project_dir, spec_file, detector_config_name, instrument_config_name, scan):
+        # Necessary subfunctions for function to run smoothly
+        # See rsMap3D source code
         def updateDataSourceProgress(value1, value2):
             print("DataSource Progress %s/%s" % (value1, value2))
 
         def updateMapperProgress(value1):
             print("Mapper Progress %s" % (value1))
-
 
         d_reader = detReader(detector_config_name)
         detector_name = "Pilatus"
@@ -41,6 +45,7 @@ class DataProcessing:
         bin = [1,1]
 
         spec_name, spec_ext = os.path.splitext(os.path.basename(spec_file))
+        # Sets destination file for gridmapper
         output_file_name = os.path.join(project_dir, spec_name + "_" + scan + ".vti")
 
         app_config = RSMap3DConfigParser()
@@ -50,7 +55,6 @@ class DataProcessing:
         data_source = Sector33SpecDataSource(project_dir, spec_name, spec_ext,
             instrument_config_name, detector_config_name, roi=roi, pixelsToAverage=bin,
             scanList= scan_range, appConfig=app_config)
-
         data_source.setCurrentDetector(detector_name)
         data_source.setProgressUpdater(updateDataSourceProgress)
         data_source.loadSource(mapHKL=True)
@@ -60,16 +64,18 @@ class DataProcessing:
 
         grid_mapper = QGridMapper(data_source, output_file_name, outputType=BINARY_OUTPUT,
             transform=UnityTransform3D(), gridWriter=VTIGridWriter(), appConfig=app_config)
-
         grid_mapper.setProgressUpdater(updateMapperProgress)
         grid_mapper.doMap()
-
 
         return output_file_name
 
     # --------------------------------------------------------------------------
 
     def loadData(vti_file):
+
+        """
+        Converts information from vti file into a 3d array with proper axes.
+        """
         reader = vtk.vtkXMLImageDataReader()
         reader.SetFileName(vti_file)
         reader.Update()
@@ -90,6 +96,7 @@ class DataProcessing:
 
         u = u.reshape(vec)
 
+        # Swaps H and L
         ctrdata = np.swapaxes(u, 0, 2)
 
         origin = data.GetOrigin()
