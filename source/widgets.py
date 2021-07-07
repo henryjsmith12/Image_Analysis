@@ -181,6 +181,11 @@ class OptionsWidget(pg.LayoutWidget):
         self.cmap_pctl_slider.setTickInterval(10)
         self.cmap_pctl_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
         self.cmap_pctl_slider.setValue(100)
+        self.aspect_ratio_lbl = QtGui.QLabel("Aspect Ratio:")
+        self.aspect_ratio_group = QtGui.QButtonGroup()
+        self.aspect_ratio_auto_rbtn = QtGui.QRadioButton("Auto")
+        self.aspect_ratio_auto_rbtn.setChecked(True)
+        self.aspect_ratio_one_rbtn = QtGui.QRadioButton("1:1")
 
         # Add widgets to GroupBoxes
         self.live_image_layout.addWidget(self.live_browse_btn, 0, 0, 1, 2)
@@ -222,6 +227,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_layout.addWidget(self.cmap_log_rbtn, 4, 2)
         self.options_layout.addWidget(self.cmap_pctl_lbl, 5, 0)
         self.options_layout.addWidget(self.cmap_pctl_slider, 5, 1, 1, 2)
+        self.options_layout.addWidget(self.aspect_ratio_lbl, 6, 0)
+        self.options_layout.addWidget(self.aspect_ratio_auto_rbtn, 6, 1)
+        self.options_layout.addWidget(self.aspect_ratio_one_rbtn, 6, 2)
 
         # Link widgets to actions
         self.live_browse_btn.clicked.connect(self.openDirectory)
@@ -251,6 +259,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.cmap_linear_rbtn.toggled.connect(self.toggleCmapScale)
         self.cmap_log_rbtn.toggled.connect(self.toggleCmapScale)
         self.cmap_pctl_slider.valueChanged.connect(self.changeCmapPctl)
+        self.aspect_ratio_auto_rbtn.toggled.connect(self.toggleAspectRatio)
+        self.aspect_ratio_one_rbtn.toggled.connect(self.toggleAspectRatio)
 
     # --------------------------------------------------------------------------
 
@@ -376,6 +386,8 @@ class OptionsWidget(pg.LayoutWidget):
             self.k_axis = [self.axes[1][0], self.axes[1][-1]]
             self.l_axis = [self.axes[2][0], self.axes[2][-1]]
 
+            self.main_window.roi_plots_widget.clearROIPlots()
+
         # If only project directory was given (unprocessed data)
         else:
             # (Alphabetically) Sorted list of scan images
@@ -397,6 +409,8 @@ class OptionsWidget(pg.LayoutWidget):
             self.k_axis = [0, self.dataset.shape[1]]
             self.l_axis = [0, self.dataset.shape[2]]
 
+            self.main_window.roi_plots_widget.displayROIPlots(self.dataset)
+
         self.post_h_slider.setMaximum(self.dataset.shape[0] - 1)
         self.post_h_spinbox.setRange(0, self.dataset.shape[0] - 1)
         self.post_k_slider.setMaximum(self.dataset.shape[1] - 1)
@@ -405,6 +419,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_l_spinbox.setRange(0, self.dataset.shape[2] - 1)
 
         self.loadPostImage()
+
 
     # --------------------------------------------------------------------------
 
@@ -441,7 +456,6 @@ class OptionsWidget(pg.LayoutWidget):
             rect = QtCore.QRectF(k_min, h_min, k_max - k_min, h_max - h_min)
             l_slice = int(self.post_l_slider.value())
             self.image = self.dataset[:, :, l_slice]
-
 
         # Sets image in viewing window
         self.main_window.image_widget.displayImage(self.image, rect=rect)
@@ -621,6 +635,23 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
+    def toggleAspectRatio(self):
+
+        """
+        Toggles aspect ratio for image.
+
+        - Options: auto or 1 to 1.
+        """
+
+        button = self.sender()
+
+        if button.text() == "Auto":
+            self.main_window.image_widget.setAspectLocked(False)
+        else:
+            self.main_window.image_widget.setAspectLocked(True, ratio=1)
+
+    # --------------------------------------------------------------------------
+
     def simLivePlotting(self):
 
         """
@@ -758,9 +789,6 @@ class ImageWidget(pg.PlotWidget):
         super(ImageWidget, self).__init__(parent)
         self.main_window = parent
 
-        # x:y ratio set to 1
-        #self.setAspectLocked(False)
-        #self.setAspectLocked(True)
         # Background initially set to black
         self.setBackground("default")
 
@@ -782,10 +810,10 @@ class ImageWidget(pg.PlotWidget):
         roi_2_plot = self.main_window.roi_plots_widget.roi_2_plot
         roi_3_plot = self.main_window.roi_plots_widget.roi_3_plot
         roi_4_plot = self.main_window.roi_plots_widget.roi_4_plot
-        self.roi1 = ROIWidget([-1, -1], [2, 2], roi_1_layout, roi_1_plot)
-        self.roi2 = ROIWidget([-0.75, -0.75], [1.5, 1.5], roi_2_layout, roi_2_plot)
-        self.roi3 = ROIWidget([-0.5, -0.5], [1, 1], roi_3_layout, roi_3_plot)
-        self.roi4 = ROIWidget([-0.25, -0.25], [0.5, 0.5], roi_4_layout, roi_4_plot)
+        self.roi1 = ROIWidget([200, 100], [40, 40], roi_1_layout, roi_1_plot)
+        self.roi2 = ROIWidget([210, 110], [30, 30], roi_2_layout, roi_2_plot)
+        self.roi3 = ROIWidget([220, 120], [20, 20], roi_3_layout, roi_3_plot)
+        self.roi4 = ROIWidget([230, 130], [10, 10], roi_4_layout, roi_4_plot)
         self.addItem(self.roi1)
         self.addItem(self.roi2)
         self.addItem(self.roi3)
@@ -887,19 +915,29 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def displayROIPlots(self):
+    def displayROIPlots(self, data):
 
         """
         Uses data to display avg intensities in all ROI plots. This function is
         only used for the initial display when a new dataset is loaded.
         """
 
-        data = self.main_window.options_widget.image_data
-
         self.main_window.image_widget.roi1.plotAverageIntensity(data)
         self.main_window.image_widget.roi2.plotAverageIntensity(data)
         self.main_window.image_widget.roi3.plotAverageIntensity(data)
         self.main_window.image_widget.roi4.plotAverageIntensity(data)
+
+    # --------------------------------------------------------------------------
+
+    def clearROIPlots(self):
+
+        """
+        Clears all ROI plots.
+        """
+        self.roi_1_plot.clear()
+        self.roi_2_plot.clear()
+        self.roi_3_plot.clear()
+        self.roi_4_plot.clear()
 
 # ==============================================================================
 
@@ -932,19 +970,19 @@ class ROIWidget(pg.ROI):
 
         # Creates subwidgets for groupbox
         self.x_lbl = QtGui.QLabel("x Pos:")
-        self.x_spinbox = QtGui.QSpinBox()
+        self.x_spinbox = QtGui.QDoubleSpinBox()
         self.x_spinbox.setMinimum(0)
         self.x_spinbox.setMaximum(1000)
         self.y_lbl = QtGui.QLabel("y Pos:")
-        self.y_spinbox = QtGui.QSpinBox()
+        self.y_spinbox = QtGui.QDoubleSpinBox()
         self.y_spinbox.setMinimum(0)
         self.y_spinbox.setMaximum(1000)
         self.width_lbl = QtGui.QLabel("Width:")
-        self.width_spinbox = QtGui.QSpinBox()
+        self.width_spinbox = QtGui.QDoubleSpinBox()
         self.width_spinbox.setMinimum(0)
         self.width_spinbox.setMaximum(1000)
         self.height_lbl = QtGui.QLabel("Height:")
-        self.height_spinbox = QtGui.QSpinBox()
+        self.height_spinbox = QtGui.QDoubleSpinBox()
         self.height_spinbox.setMinimum(0)
         self.height_spinbox.setMaximum(1000)
         self.color_btn = pg.ColorButton()
@@ -1044,6 +1082,7 @@ class ROIWidget(pg.ROI):
         Creates list of avg pixel intensities from ROI through set of images.
         """
 
+        print(data)
         self.data = data
 
         if self.data != []:
@@ -1052,10 +1091,10 @@ class ROIWidget(pg.ROI):
             y_min = int(self.pos()[1])
             y_max = int(self.pos()[1] + self.size()[1])
 
-            data_roi = self.data[:, x_min:x_max, y_min:y_max]
+            data_roi = self.data[y_min:y_max, x_min:x_max, :]
             avg_intensity = []
 
-            for i in range(data_roi.shape[0]):
+            for i in range(data_roi.shape[2]):
                 avg = np.mean(data_roi[i])
                 avg_intensity.append(avg)
 
@@ -1105,7 +1144,6 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.instrument_btn = QtGui.QPushButton("Browse")
         self.instrument_btn.setEnabled(False)
         self.dialog_btnbox = QtGui.QDialogButtonBox()
-        self.dialog_btnbox.addButton("Cancel", QtGui.QDialogButtonBox.RejectRole)
         self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
 
         self.layout = QtGui.QGridLayout()
@@ -1134,7 +1172,6 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.instrument_btn.clicked.connect(self.selectInstrumentConfigFile)
         self.process_data_chkbox.stateChanged.connect(self.setDataProcessingStatus)
         self.dialog_btnbox.accepted.connect(self.accept)
-        self.dialog_btnbox.rejected.connect(self.reject)
 
         # Runs dialog widget
         self.exec_()

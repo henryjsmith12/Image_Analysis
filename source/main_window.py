@@ -32,8 +32,8 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.dock_area)
 
         # Window attributes
-        self.setMinimumSize(900, 600)
-        self.setGeometry(100, 100, 1250, 900)
+        self.setMinimumSize(1250, 800)
+        self.setGeometry(50, 50, 1350, 800)
         self.setWindowTitle("Image Analysis")
 
         self.createDocks()
