@@ -1,0 +1,37 @@
+Metadata-Version: 2.1
+Name: pyRestTable
+Version: 2020.0.3
+Summary: Format a nice table in reST (reStructuredText) from Python
+Home-page: https://pyRestTable.readthedocs.io
+Author: Pete R. Jemian
+Author-email: prjemian@gmail.com
+License: Creative Commons Attribution 4.0 International Public License (see LICENSE file)
+Download-URL: https://github.com/prjemian/pyRestTable/archive/master.zip
+Keywords: reST,table,documentation
+Platform: any
+Classifier: Development Status :: 6 - Mature
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: License :: Freely Distributable
+Classifier: License :: Public Domain
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Topic :: Documentation
+Classifier: Topic :: Documentation :: Sphinx
+Classifier: Topic :: Software Development
+Classifier: Topic :: Software Development :: Documentation
+Classifier: Topic :: Text Processing :: Markup
+Classifier: Topic :: Utilities
+
+Format a nice table in reST (reStructuredText) from Python.
+
+Each cell may have multiple lines, separated by a newline.
+The content of each cell will be rendered as str(cell).
+At present, *pyRestTable* only supports tables with content 
+that does not span any cells (no rowspans or columnspans).
+
+

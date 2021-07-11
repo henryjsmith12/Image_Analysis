@@ -35,7 +35,6 @@ class OptionsWidget(pg.LayoutWidget):
 
     - Plotting options: The user can choose a variety of options to customize
         their image viewing experience:
-            - ROI toggle/** TODO: color picker
             - Mouse crosshair toggle
             - Mouse zoom/pan mode toggle
             - Background color toggle
@@ -311,7 +310,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.file_path = f"{self.directory}/{file.text()}"
 
         # Reads image file and sets image
-        self.image = ndimage.rotate(tiff.imread(self.file_path), 90)
+        self.image = np.fliplr(tiff.imread(self.file_path))
         self.main_window.image_widget.displayImage(self.image, rect=None)
 
         self.live_current_file_txtbox.setText(file.text())
@@ -374,7 +373,7 @@ class OptionsWidget(pg.LayoutWidget):
         # If spec and config directories were given (processed data)
         if not "" in [self.spec, self.detector, self.instrument]:
             # Last two chars (should be digits) of scan name
-            scan = scan.text()[2:]
+            scan = scan.text()[1:]
 
             # Creates vti file
             vti_file = DataProcessing.createVTIFile(self.project, self.spec, self.detector,
@@ -955,7 +954,8 @@ class ROIWidget(pg.ROI):
         self.roi_plot = plot
         self.data = []
 
-        #self.roi_plot.setLabel("left", "Avg Intensity")
+        self.roi_plot.setLabel("left", "Avg Intensity")
+        self.roi_plot.setLabel("bottom", "L Slice")
 
         self.pen = pg.mkPen(width=3)
         self.setPen(self.pen)
@@ -1082,7 +1082,6 @@ class ROIWidget(pg.ROI):
         Creates list of avg pixel intensities from ROI through set of images.
         """
 
-        print(data)
         self.data = data
 
         if self.data != []:
@@ -1095,7 +1094,7 @@ class ROIWidget(pg.ROI):
             avg_intensity = []
 
             for i in range(data_roi.shape[2]):
-                avg = np.mean(data_roi[i])
+                avg = np.mean(data_roi[:, :, i])
                 avg_intensity.append(avg)
 
             self.roi_plot.plot(avg_intensity, clear=True)

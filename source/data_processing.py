@@ -11,14 +11,12 @@ from rsMap3D.datasource.Sector33SpecDataSource import Sector33SpecDataSource
 from rsMap3D.datasource.DetectorGeometryForXrayutilitiesReader import DetectorGeometryForXrayutilitiesReader as detReader
 from rsMap3D.utils.srange import srange
 from rsMap3D.config.rsmap3dconfigparser import RSMap3DConfigParser
-from rsMap3D.constants import ENERGY_WAVELENGTH_CONVERT_FACTOR
 from rsMap3D.mappers.gridmapper import QGridMapper
 from rsMap3D.gui.rsm3dcommonstrings import BINARY_OUTPUT
 from rsMap3D.transforms.unitytransform3d import UnityTransform3D
 from rsMap3D.mappers.output.vtigridwriter import VTIGridWriter
 import vtk
 from vtk.util import numpy_support as npSup
-import xrayutilities as xu
 
 # ==============================================================================
 
@@ -45,7 +43,7 @@ class DataProcessing:
         bin = [1,1]
 
         spec_name, spec_ext = os.path.splitext(os.path.basename(spec_file))
-        # Sets destination file for gridmapper
+        # Sets destination file for grid mapper
         output_file_name = os.path.join(project_dir, spec_name + "_" + scan + ".vti")
 
         app_config = RSMap3DConfigParser()
