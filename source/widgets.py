@@ -157,7 +157,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_slice_direction_cbox = QtGui.QComboBox()
         self.post_slice_direction_cbox.addItems(["X(H)", "Y(K)", "Z(L)"])
         self.post_slice_direction_cbox.setEnabled(False)
-        self.post_slice_sbox = QtGui.QSpinBox()
+        self.post_slice_sbox = QtGui.QDoubleSpinBox()
         self.post_slice_sbox.setEnabled(False)
         self.post_slice_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.post_slice_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
@@ -183,6 +183,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_hkl_rbtn.toggled.connect(self.postToggleSpecConfigButton)
         self.post_xyz_rbtn.toggled.connect(self.postSetScanList)
         self.post_scan_list.itemClicked.connect(self.postLoadData)
+        self.post_slice_direction_cbox.currentTextChanged.connect(self.postLoadImage)
+        self.post_slice_sbox.valueChanged.connect(self.postChangeSliderValue)
+        self.post_slice_slider.valueChanged.connect(self.postLoadImage)
 
         # Options widgets
         self.options_roi_chkbox = QtGui.QCheckBox("ROI")
@@ -442,21 +445,63 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
+    def postSetSliceRanges(self):
+
+        """
+
+        """
+
+        if self.post_slice_direction_cbox.currentText() == "X(H)":
+            self.post_slice_slider.setRange(self.x_h_axis[0], self.x_h_axis[1] - 1)
+            self.post_slice_sbox.setRange(self.x_h_axis[0], self.x_h_axis[1] - 1)
+        elif self.post_slice_direction_cbox.currentText() == "Y(K)":
+            self.post_slice_slider.setRange(self.y_k_axis[0], self.y_k_axis[1] - 1)
+            self.post_slice_sbox.setRange(self.y_k_axis[0], self.y_k_axis[1] - 1)
+        elif self.post_slice_direction_cbox.currentText() == "Z(L)":
+            self.post_slice_slider.setRange(self.z_l_axis[0], self.z_l_axis[1] - 1)
+            self.post_slice_sbox.setRange(self.z_l_axis[0], self.z_l_axis[1] - 1)
+
+    # --------------------------------------------------------------------------
+
     def postLoadImage(self):
 
         """
 
         """
-        
-        x_h_min, x_h_max = self.h_axis
-        y_k_min, y_k_max = self.k_axis
-        z_l_min, z_l_max = self.l_axis
+
+        self.postSetSliceRanges()
+
+        x_h_min, x_h_max = self.x_h_axis
+        y_k_min, y_k_max = self.y_k_axis
+        z_l_min, z_l_max = self.z_l_axis
+
+        self.post_slice_sbox.setValue(int(self.post_slice_slider.value()))
 
         if self.post_slice_direction_cbox.currentText() == "X(H)":
+            # Creates rectangle for array to be plotted inside of
+            rect = QtCore.QRectF(z_l_min, y_k_min, z_l_max - z_l_min, y_k_max - y_k_min)
+            x_h_slice = int(self.post_slice_slider.value())
+            self.image = self.dataset[x_h_slice, :, :]
 
         elif self.post_slice_direction_cbox.currentText() == "Y(K)":
+            rect = QtCore.QRectF(z_l_min, x_h_min, z_l_max - z_l_min, x_h_max - x_h_min)
+            y_k_slice = int(self.post_slice_slider.value())
+            self.image = self.dataset[:, y_k_slice, :]
 
         elif self.post_slice_direction_cbox.currentText() == "Z(L)":
+            rect = QtCore.QRectF(y_k_min, x_h_min, y_k_max - y_k_min, x_h_max - x_h_min)
+            z_l_slice = int(self.post_slice_slider.value())
+            self.image = self.dataset[ :, :, z_l_slice]
+
+        # Sets image in viewing window
+        self.main_window.image_widget.displayImage(self.image, rect=rect)
+
+        # Enable options
+        self.options_gbox.setEnabled(True)
+
+        self.post_slice_direction_cbox.setEnabled(True)
+        self.post_slice_sbox.setEnabled(True)
+        self.post_slice_slider.setEnabled(True)
 
     # --------------------------------------------------------------------------
 
@@ -559,7 +604,6 @@ class OptionsWidget(pg.LayoutWidget):
 
         self.loadPostImage()
 
-
     # --------------------------------------------------------------------------
 
     def loadPostImage(self):
@@ -604,52 +648,13 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def toggleSliceDirection(self):
-
-        """
-        Toggles direction of data slice for post mode plotting.
-        """
-
-        button = self.sender()
-
-        if button.text() == "H":
-            self.post_h_slider.setEnabled(True)
-            self.post_k_slider.setEnabled(False)
-            self.post_l_slider.setEnabled(False)
-            self.main_window.image_widget.setLabel("left", "K")
-            self.main_window.image_widget.setLabel("bottom", "L")
-        elif button.text() == "K":
-            self.post_h_slider.setEnabled(False)
-            self.post_k_slider.setEnabled(True)
-            self.post_l_slider.setEnabled(False)
-            self.main_window.image_widget.setLabel("left", "H")
-            self.main_window.image_widget.setLabel("bottom", "L")
-        else:
-            self.post_h_slider.setEnabled(False)
-            self.post_k_slider.setEnabled(False)
-            self.post_l_slider.setEnabled(True)
-            self.main_window.image_widget.setLabel("left", "H")
-            self.main_window.image_widget.setLabel("bottom", "K")
-
-        # Loads new image into viewing window
-        self.loadPostImage()
-
-    # --------------------------------------------------------------------------
-
-    def changeSliderValue(self, value):
+    def postChangeSliderValue(self, value):
 
         """
         Toggles data slice for post mode plotting.
         """
 
-        spinbox = self.sender()
-
-        if spinbox == self.post_h_spinbox:
-            self.post_h_slider.setValue(value)
-        elif spinbox == self.post_k_spinbox:
-            self.post_k_slider.setValue(value)
-        else:
-            self.post_l_slider.setValue(value)
+        self.post_slice_slider.setValue(value)
 
         # No need to call loadPostImage()
         # Connected with valueChanged signal that calls loadPostImage()
