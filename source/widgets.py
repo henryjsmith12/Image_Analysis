@@ -130,8 +130,11 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_image_layout.addWidget(self.live_current_image_txtbox, 5, 2, 1, 4)
 
         # Live widget connections
-        self.live_set_scan_btn.clicked.connect(self.openDirectory)
-        self.live_image_list.itemClicked.connect(self.loadLiveImage)
+        self.live_set_scan_btn.clicked.connect(self.liveSetScan)
+        self.live_xyz_rbtn.toggled.connect(self.liveToggleHKLParametersButton)
+        self.live_hkl_rbtn.toggled.connect(self.liveToggleHKLParametersButton)
+        self.live_xyz_rbtn.toggled.connect(self.liveSetImageList)
+        self.live_image_list.itemClicked.connect(self.liveLoadImage)
 
         # Post widgets
         self.post_set_project_btn = QtGui.QPushButton("Set Project")
@@ -251,60 +254,90 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def openDirectory(self):
+    def liveSetScan(self):
 
         """
-        Selects directory for live mode
+        Selects scan directory for live mode.
         """
 
-        # Find directory with image files
-        self.directory = QtGui.QFileDialog.getExistingDirectory(self, "Open Folder")
+        # Clear scan image list and resets coordinate system radio buttons
+        self.live_image_list.clear()
+        self.live_xyz_rbtn.setChecked(False)
+        self.live_xyz_rbtn.setChecked(False)
 
-        # (Alphabetically) Sorted list of files
-        self.image_files = sorted(os.listdir(self.directory))
+        # Directory path containing scan images
+        self.live_scan_path = QtGui.QFileDialog.getExistingDirectory(self,
+            "Open Scan Directory")
+
+        # Checks if directory only contains image files
+        for file_name in os.listdir(self.live_scan_path):
+            if not file_name.endswith((".tif", ".tiff")):
+                return
+
+        # Separates path basename from path to display in txtbox
+        self.live_scan_path_base = os.path.basename(self.live_scan_path)
+        self.live_set_scan_txtbox.setText(self.live_scan_path_base)
+        self.live_image_files = sorted(os.listdir(self.live_scan_path))
+
+        # Enables coordinate system radio buttons
+        self.live_xyz_rbtn.setEnabled(True)
+        self.live_hkl_rbtn.setEnabled(True)
+
+    # --------------------------------------------------------------------------
+
+    def liveToggleHKLParametersButton(self):
+
+        """
+        - Enables/disables HKL conversion parameters button.
+        - Clears scan image list
+        """
+
+        if self.live_hkl_rbtn.isChecked():
+            self.live_hkl_params_btn.setEnabled(True)
+        else:
+            self.live_hkl_params_btn.setEnabled(False)
 
         self.live_image_list.clear()
-        self.live_image_list.addItems(self.image_files)
 
     # --------------------------------------------------------------------------
 
-    def clear(self):
+    def liveSetImageList(self):
 
         """
-        Clears images from viewing window and file list
+        Displays scan image directory contents in list widget.
         """
 
-        self.file_list.clear()
-
-        # Clear plots
-        self.main_window.image_widget.clear()
-        self.main_window.x_plot_widget.clear()
-        self.main_window.y_plot_widget.clear()
-
-        self.current_file_txtbox.setText("")
-
-        # Disbale options
-        self.options_gbox.setEnabled(False)
+        self.live_image_list.clear()
+        self.live_image_list.addItems(self.live_image_files)
 
     # --------------------------------------------------------------------------
 
-    def loadLiveImage(self, file):
+    def liveLoadImage(self, file_name):
 
         """
-        Loads image to viewing window for live mode.
+        - Reads image from file path.
+        - Calls displayImage to load image into viewing window.
         """
 
         # Concatenates directory and file names
-        self.file_path = f"{self.directory}/{file.text()}"
+        file_path = f"{self.live_scan_path}/{file_name.text()}"
 
-        # Reads image file and sets image
-        self.image = np.fliplr(tiff.imread(self.file_path))
+        # Reads image
+        self.image = np.fliplr(tiff.imread(file_path))
+
+        # Loads image into viewing window
         self.main_window.image_widget.displayImage(self.image, rect=None)
 
-        self.live_current_image_txtbox.setText(file.text())
+        # Sets file name as current image
+        self.live_current_image_txtbox.setText(file_name.text())
 
         # Enable options
         self.options_gbox.setEnabled(True)
+
+    # --------------------------------------------------------------------------
+
+    def postSetProject(self):
+        ...
 
     # --------------------------------------------------------------------------
 
