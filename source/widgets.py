@@ -37,7 +37,7 @@ class OptionsWidget(pg.LayoutWidget):
         their image viewing experience:
             - Mouse crosshair toggle
             - Mouse zoom/pan mode toggle
-            - Background color toggle
+            - bkgrd color toggle
             - ColorMap scale toggle/percentile slider
     """
 
@@ -101,165 +101,153 @@ class OptionsWidget(pg.LayoutWidget):
             - ub matrix & diffractometer angles should be read in from EPICS/spec
         """
 
-        self.live_browse_btn = QtGui.QPushButton("Browse")
-        self.live_clear_btn = QtGui.QPushButton("Clear")
-        self.live_file_list = QtGui.QListWidget()
-        self.live_current_file_lbl = QtGui.QLabel("Current Image:")
-        self.live_current_file_txtbox = QtGui.QLineEdit()
-        self.live_current_file_txtbox.setReadOnly(True)
-        self.live_plot_btn = QtGui.QPushButton("Simulate Live Plotting")
-        self.live_refresh_rate_lbl = QtGui.QLabel("Refresh Delay (s):")
-        self.live_refresh_rate_spinbox = QtGui.QDoubleSpinBox()
-        self.live_refresh_rate_spinbox.setSingleStep(0.01)
-        self.live_refresh_rate_spinbox.setRange(0.0, 1.0)
-        self.live_refresh_rate_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.live_refresh_rate_slider.setRange(0, 100)
-        self.live_refresh_rate = 0.0
+        # Live widgets
+        self.live_set_scan_btn = QtGui.QPushButton("Set Scan")
+        self.live_set_scan_txtbox = QtGui.QLineEdit()
+        self.live_set_scan_txtbox.setReadOnly(True)
+        self.live_xyz_rbtn = QtGui.QRadioButton("XYZ")
+        self.live_xyz_rbtn.setEnabled(False)
+        self.live_hkl_rbtn = QtGui.QRadioButton("HKL")
+        self.live_hkl_rbtn.setEnabled(False)
+        self.live_coords_group = QtGui.QButtonGroup()
+        self.live_coords_group.addButton(self.live_xyz_rbtn)
+        self.live_coords_group.addButton(self.live_hkl_rbtn)
+        self.live_hkl_params_btn = QtGui.QPushButton("Parameters")
+        self.live_hkl_params_btn.setEnabled(False)
+        self.live_image_list = QtGui.QListWidget()
+        self.live_current_image_lbl = QtGui.QLabel("Current Image:")
+        self.live_current_image_txtbox = QtGui.QLineEdit()
+        self.live_current_image_txtbox.setReadOnly(True)
 
-        # Create post mode widgets
-        self.post_data_source_btn = QtGui.QPushButton("Set Data Source")
-        self.post_data_source_list = QtGui.QListWidget()
-        self.post_current_directory_lbl = QtGui.QLabel("Current Scan:")
-        self.post_current_directory_txtbox = QtGui.QLineEdit()
-        self.post_current_directory_txtbox.setReadOnly(True)
-        self.post_direction_lbl = QtGui.QLabel("Slice Direction:")
-        self.post_direction_group = QtGui.QButtonGroup()
-        self.post_h_direction_rbtn = QtGui.QRadioButton("H")
-        self.post_h_direction_rbtn.setChecked(True)
-        self.post_k_direction_rbtn = QtGui.QRadioButton("K")
-        self.post_l_direction_rbtn = QtGui.QRadioButton("L")
-        self.post_direction_group.addButton(self.post_h_direction_rbtn)
-        self.post_direction_group.addButton(self.post_k_direction_rbtn)
-        self.post_direction_group.addButton(self.post_l_direction_rbtn)
-        self.post_h_slider_lbl = QtGui.QLabel("H Slice:")
-        self.post_h_spinbox = QtGui.QSpinBox()
-        self.post_h_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.post_h_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        self.post_k_slider_lbl = QtGui.QLabel("K Slice:")
-        self.post_k_spinbox = QtGui.QSpinBox()
-        self.post_k_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.post_k_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        self.post_k_slider.setEnabled(False)
-        self.post_l_slider_lbl = QtGui.QLabel("L Slice:")
-        self.post_l_spinbox = QtGui.QSpinBox()
-        self.post_l_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.post_l_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        self.post_l_slider.setEnabled(False)
+        # Live layout
+        self.live_image_layout.addWidget(self.live_set_scan_btn, 0, 0, 1, 3)
+        self.live_image_layout.addWidget(self.live_set_scan_txtbox, 0, 3, 1, 3)
+        self.live_image_layout.addWidget(self.live_xyz_rbtn, 1, 0)
+        self.live_image_layout.addWidget(self.live_hkl_rbtn, 1, 1)
+        self.live_image_layout.addWidget(self.live_hkl_params_btn, 1, 2, 1, 4)
+        self.live_image_layout.addWidget(self.live_image_list, 2, 0, 3, 6)
+        self.live_image_layout.addWidget(self.live_current_image_lbl, 5, 0, 1, 2)
+        self.live_image_layout.addWidget(self.live_current_image_txtbox, 5, 2, 1, 4)
 
-        # Create options widgets
-        self.roi_boxes_chkbox = QtGui.QCheckBox("ROI")
-        self.roi_color_btn = pg.ColorButton()
-        self.crosshair_mouse_chkbox = QtGui.QCheckBox("Crosshair")
-        self.crosshair_color_btn = pg.ColorButton()
-        self.mouse_mode_lbl = QtGui.QLabel("Mouse Mode:")
-        self.mouse_mode_group = QtGui.QButtonGroup()
-        self.mouse_pan_rbtn = QtGui.QRadioButton("Pan")
-        self.mouse_pan_rbtn.setChecked(True)
-        self.mouse_rect_rbtn = QtGui.QRadioButton("Rectangle")
-        self.mouse_mode_group.addButton(self.mouse_pan_rbtn)
-        self.mouse_mode_group.addButton(self.mouse_rect_rbtn)
-        self.background_color_lbl = QtGui.QLabel("Background Color:")
-        self.background_color_group = QtGui.QButtonGroup()
-        self.background_black_rbtn = QtGui.QRadioButton("Black")
-        self.background_black_rbtn.setChecked(True)
-        self.background_white_rbtn = QtGui.QRadioButton("White")
-        self.background_color_group.addButton(self.background_black_rbtn)
-        self.background_color_group.addButton(self.background_white_rbtn)
-        self.cmap_scale_lbl = QtGui.QLabel("CMap Scale:")
-        self.cmap_scale_group = QtGui.QButtonGroup()
-        self.cmap_linear_rbtn = QtGui.QRadioButton("Linear")
-        self.cmap_linear_rbtn.setChecked(True)
-        self.cmap_log_rbtn = QtGui.QRadioButton("Logarithmic")
-        self.cmap_scale_group.addButton(self.cmap_linear_rbtn)
-        self.cmap_scale_group.addButton(self.cmap_log_rbtn)
-        self.cmap_pctl_lbl = QtGui.QLabel("CMap Pctl:")
-        self.cmap_pctl_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.cmap_pctl_slider.setMinimum(1)
-        self.cmap_pctl_slider.setMaximum(100)
-        self.cmap_pctl_slider.setSingleStep(10)
-        self.cmap_pctl_slider.setTickInterval(10)
-        self.cmap_pctl_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        self.cmap_pctl_slider.setValue(100)
-        self.aspect_ratio_lbl = QtGui.QLabel("Aspect Ratio:")
-        self.aspect_ratio_group = QtGui.QButtonGroup()
-        self.aspect_ratio_auto_rbtn = QtGui.QRadioButton("Auto")
-        self.aspect_ratio_auto_rbtn.setChecked(True)
-        self.aspect_ratio_one_rbtn = QtGui.QRadioButton("1:1")
+        # Live widget connections
+        self.live_set_scan_btn.clicked.connect(self.openDirectory)
+        self.live_image_list.itemClicked.connect(self.loadLiveImage)
 
-        # Add widgets to GroupBoxes
-        self.live_image_layout.addWidget(self.live_browse_btn, 0, 0, 1, 2)
-        self.live_image_layout.addWidget(self.live_clear_btn, 0, 2, 1, 2)
-        self.live_image_layout.addWidget(self.live_file_list, 1, 0, 3, 4)
-        self.live_image_layout.addWidget(self.live_current_file_lbl, 4, 0)
-        self.live_image_layout.addWidget(self.live_current_file_txtbox, 4, 1, 1, 3)
-        self.live_image_layout.addWidget(self.live_plot_btn, 5, 0, 1, 2)
-        self.live_image_layout.addWidget(self.live_refresh_rate_lbl, 5, 2)
-        self.live_image_layout.addWidget(self.live_refresh_rate_spinbox, 5, 3)
-        self.post_image_layout.addWidget(self.post_data_source_btn, 0, 0, 1, 2)
-        self.post_image_layout.addWidget(self.post_data_source_list, 1, 0, 3, 5)
-        self.post_image_layout.addWidget(self.post_current_directory_lbl, 4, 0)
-        self.post_image_layout.addWidget(self.post_current_directory_txtbox, 4, 1, 1, 4)
-        self.post_image_layout.addWidget(self.post_direction_lbl, 5, 0)
-        self.post_image_layout.addWidget(self.post_h_direction_rbtn, 5, 1)
-        self.post_image_layout.addWidget(self.post_k_direction_rbtn, 5, 2)
-        self.post_image_layout.addWidget(self.post_l_direction_rbtn, 5, 3)
-        self.post_image_layout.addWidget(self.post_h_slider_lbl, 6, 0)
-        self.post_image_layout.addWidget(self.post_h_spinbox, 6, 1)
-        self.post_image_layout.addWidget(self.post_h_slider, 6, 2, 1, 3)
-        self.post_image_layout.addWidget(self.post_k_slider_lbl, 7, 0)
-        self.post_image_layout.addWidget(self.post_k_spinbox, 7, 1)
-        self.post_image_layout.addWidget(self.post_k_slider, 7, 2, 1, 3)
-        self.post_image_layout.addWidget(self.post_l_slider_lbl, 8, 0)
-        self.post_image_layout.addWidget(self.post_l_spinbox, 8, 1)
-        self.post_image_layout.addWidget(self.post_l_slider, 8, 2, 1, 3)
-        self.options_layout.addWidget(self.roi_boxes_chkbox, 0, 0)
-        self.options_layout.addWidget(self.crosshair_mouse_chkbox, 0, 1)
-        self.options_layout.addWidget(self.crosshair_color_btn, 0, 2)
-        self.options_layout.addWidget(self.mouse_mode_lbl, 2, 0)
-        self.options_layout.addWidget(self.mouse_pan_rbtn, 2, 1)
-        self.options_layout.addWidget(self.mouse_rect_rbtn, 2, 2)
-        self.options_layout.addWidget(self.background_color_lbl, 3, 0)
-        self.options_layout.addWidget(self.background_black_rbtn, 3, 1)
-        self.options_layout.addWidget(self.background_white_rbtn, 3, 2)
-        self.options_layout.addWidget(self.cmap_scale_lbl, 4, 0)
-        self.options_layout.addWidget(self.cmap_linear_rbtn, 4, 1)
-        self.options_layout.addWidget(self.cmap_log_rbtn, 4, 2)
-        self.options_layout.addWidget(self.cmap_pctl_lbl, 5, 0)
-        self.options_layout.addWidget(self.cmap_pctl_slider, 5, 1, 1, 2)
-        self.options_layout.addWidget(self.aspect_ratio_lbl, 6, 0)
-        self.options_layout.addWidget(self.aspect_ratio_auto_rbtn, 6, 1)
-        self.options_layout.addWidget(self.aspect_ratio_one_rbtn, 6, 2)
+        # Post widgets
+        self.post_set_project_btn = QtGui.QPushButton("Set Project")
+        self.post_set_project_txtbox = QtGui.QLineEdit()
+        self.post_set_project_txtbox.setReadOnly(True)
+        self.post_xyz_rbtn = QtGui.QRadioButton("XYZ")
+        self.post_xyz_rbtn.setEnabled(False)
+        self.post_hkl_rbtn = QtGui.QRadioButton("HKL")
+        self.post_hkl_rbtn.setEnabled(False)
+        self.post_coords_group = QtGui.QButtonGroup()
+        self.post_coords_group.addButton(self.post_xyz_rbtn)
+        self.post_coords_group.addButton(self.post_hkl_rbtn)
+        self.post_spec_config_btn = QtGui.QPushButton("Spec/Config Files")
+        self.post_spec_config_btn.setEnabled(False)
+        self.post_scan_list = QtGui.QListWidget()
+        self.post_current_scan_lbl = QtGui.QLabel("Current Scan:")
+        self.post_current_scan_txtbox = QtGui.QLineEdit()
+        self.post_current_scan_txtbox.setReadOnly(True)
+        self.post_slice_direction_lbl = QtGui.QLabel("Slice Direction:")
+        self.post_slice_direction_cbox = QtGui.QComboBox()
+        self.post_slice_direction_cbox.setEnabled(False)
+        self.post_slice_sbox = QtGui.QSpinBox()
+        self.post_slice_sbox.setEnabled(False)
+        self.post_slice_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.post_slice_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.post_slice_slider.setEnabled(False)
 
-        # Link widgets to actions
-        self.live_browse_btn.clicked.connect(self.openDirectory)
-        self.live_clear_btn.clicked.connect(self.clear)
-        self.live_file_list.itemClicked.connect(self.loadLiveImage)
-        self.live_plot_btn.clicked.connect(self.simLivePlotting)
-        self.live_refresh_rate_spinbox.valueChanged.connect(self.changeRefreshRate)
+        # Post Layout
+        self.post_image_layout.addWidget(self.post_set_project_btn, 0, 0, 1, 3)
+        self.post_image_layout.addWidget(self.post_set_project_txtbox, 0, 3, 1, 3)
+        self.post_image_layout.addWidget(self.post_xyz_rbtn, 1, 0)
+        self.post_image_layout.addWidget(self.post_hkl_rbtn, 1, 1)
+        self.post_image_layout.addWidget(self.post_spec_config_btn, 1, 2, 1, 4)
+        self.post_image_layout.addWidget(self.post_scan_list, 2, 0, 3, 6)
+        self.post_image_layout.addWidget(self.post_current_scan_lbl, 5, 0, 1, 2)
+        self.post_image_layout.addWidget(self.post_current_scan_txtbox, 5, 2, 1, 4)
+        self.post_image_layout.addWidget(self.post_slice_direction_lbl, 6, 0, 1, 2)
+        self.post_image_layout.addWidget(self.post_slice_direction_cbox, 6, 2, 1, 4)
+        self.post_image_layout.addWidget(self.post_slice_sbox, 7, 0, 1, 1)
+        self.post_image_layout.addWidget(self.post_slice_slider, 7, 1, 1, 5)
 
-        self.post_data_source_btn.clicked.connect(self.setDataSource)
-        self.post_data_source_list.itemClicked.connect(self.loadDataSource)
-        self.post_h_direction_rbtn.toggled.connect(self.toggleSliceDirection)
-        self.post_k_direction_rbtn.toggled.connect(self.toggleSliceDirection)
-        self.post_l_direction_rbtn.toggled.connect(self.toggleSliceDirection)
-        self.post_h_spinbox.valueChanged[int].connect(self.changeSliderValue)
-        self.post_k_spinbox.valueChanged[int].connect(self.changeSliderValue)
-        self.post_l_spinbox.valueChanged[int].connect(self.changeSliderValue)
-        self.post_h_slider.valueChanged.connect(self.loadPostImage)
-        self.post_k_slider.valueChanged.connect(self.loadPostImage)
-        self.post_l_slider.valueChanged.connect(self.loadPostImage)
-        self.roi_boxes_chkbox.stateChanged.connect(self.toggleROIBoxes)
-        self.crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
-        self.crosshair_color_btn.sigColorChanged.connect(self.changeCrosshairColor)
-        self.mouse_pan_rbtn.toggled.connect(self.toggleMouseMode)
-        self.mouse_rect_rbtn.toggled.connect(self.toggleMouseMode)
-        self.background_black_rbtn.toggled.connect(self.toggleBackgroundColor)
-        self.background_white_rbtn.toggled.connect(self.toggleBackgroundColor)
-        self.cmap_linear_rbtn.toggled.connect(self.toggleCmapScale)
-        self.cmap_log_rbtn.toggled.connect(self.toggleCmapScale)
-        self.cmap_pctl_slider.valueChanged.connect(self.changeCmapPctl)
-        self.aspect_ratio_auto_rbtn.toggled.connect(self.toggleAspectRatio)
-        self.aspect_ratio_one_rbtn.toggled.connect(self.toggleAspectRatio)
+        # Post widget connections
+        self.post_set_project_btn.clicked.connect(self.setDataSource)
+        self.post_scan_list.itemClicked.connect(self.loadDataSource)
+
+        # Options widgets
+        self.options_roi_chkbox = QtGui.QCheckBox("ROI")
+        self.options_crosshair_mouse_chkbox = QtGui.QCheckBox("Crosshair")
+        self.options_crosshair_color_btn = pg.ColorButton()
+        self.options_mouse_mode_lbl = QtGui.QLabel("Mouse Mode:")
+        self.options_mouse_mode_group = QtGui.QButtonGroup()
+        self.options_mouse_pan_rbtn = QtGui.QRadioButton("Pan")
+        self.options_mouse_pan_rbtn.setChecked(True)
+        self.options_mouse_rect_rbtn = QtGui.QRadioButton("Rectangle")
+        self.options_mouse_mode_group.addButton(self.options_mouse_pan_rbtn)
+        self.options_mouse_mode_group.addButton(self.options_mouse_rect_rbtn)
+        self.options_bkgrd_color_lbl = QtGui.QLabel("Bkgrd Color:")
+        self.options_bkgrd_color_group = QtGui.QButtonGroup()
+        self.options_bkgrd_black_rbtn = QtGui.QRadioButton("Black")
+        self.options_bkgrd_black_rbtn.setChecked(True)
+        self.options_bkgrd_white_rbtn = QtGui.QRadioButton("White")
+        self.options_bkgrd_color_group.addButton(self.options_bkgrd_black_rbtn)
+        self.options_bkgrd_color_group.addButton(self.options_bkgrd_white_rbtn)
+        self.options_cmap_scale_lbl = QtGui.QLabel("CMap Scale:")
+        self.options_cmap_scale_group = QtGui.QButtonGroup()
+        self.options_cmap_linear_rbtn = QtGui.QRadioButton("Linear")
+        self.options_cmap_linear_rbtn.setChecked(True)
+        self.options_cmap_log_rbtn = QtGui.QRadioButton("Logarithmic")
+        self.options_cmap_scale_group.addButton(self.options_cmap_linear_rbtn)
+        self.options_cmap_scale_group.addButton(self.options_cmap_log_rbtn)
+        self.options_cmap_pctl_lbl = QtGui.QLabel("CMap Pctl:")
+        self.options_cmap_pctl_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.options_cmap_pctl_slider.setMinimum(1)
+        self.options_cmap_pctl_slider.setMaximum(100)
+        self.options_cmap_pctl_slider.setSingleStep(10)
+        self.options_cmap_pctl_slider.setTickInterval(10)
+        self.options_cmap_pctl_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.options_cmap_pctl_slider.setValue(100)
+        self.options_aspect_ratio_lbl = QtGui.QLabel("Aspect Ratio:")
+        self.options_aspect_ratio_group = QtGui.QButtonGroup()
+        self.options_aspect_ratio_auto_rbtn = QtGui.QRadioButton("Auto")
+        self.options_aspect_ratio_auto_rbtn.setChecked(True)
+        self.options_aspect_ratio_one_rbtn = QtGui.QRadioButton("1:1")
+
+        # Options layout
+        self.options_layout.addWidget(self.options_roi_chkbox, 0, 0)
+        self.options_layout.addWidget(self.options_crosshair_mouse_chkbox, 0, 1)
+        self.options_layout.addWidget(self.options_crosshair_color_btn, 0, 2)
+        self.options_layout.addWidget(self.options_mouse_mode_lbl, 2, 0)
+        self.options_layout.addWidget(self.options_mouse_pan_rbtn, 2, 1)
+        self.options_layout.addWidget(self.options_mouse_rect_rbtn, 2, 2)
+        self.options_layout.addWidget(self.options_bkgrd_color_lbl, 3, 0)
+        self.options_layout.addWidget(self.options_bkgrd_black_rbtn, 3, 1)
+        self.options_layout.addWidget(self.options_bkgrd_white_rbtn, 3, 2)
+        self.options_layout.addWidget(self.options_cmap_scale_lbl, 4, 0)
+        self.options_layout.addWidget(self.options_cmap_linear_rbtn, 4, 1)
+        self.options_layout.addWidget(self.options_cmap_log_rbtn, 4, 2)
+        self.options_layout.addWidget(self.options_cmap_pctl_lbl, 5, 0)
+        self.options_layout.addWidget(self.options_cmap_pctl_slider, 5, 1, 1, 2)
+        self.options_layout.addWidget(self.options_aspect_ratio_lbl, 6, 0)
+        self.options_layout.addWidget(self.options_aspect_ratio_auto_rbtn, 6, 1)
+        self.options_layout.addWidget(self.options_aspect_ratio_one_rbtn, 6, 2)
+
+        # Options widget connections
+        self.options_roi_chkbox.stateChanged.connect(self.toggleROIBoxes)
+        self.options_crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
+        self.options_crosshair_color_btn.sigColorChanged.connect(self.changeCrosshairColor)
+        self.options_mouse_pan_rbtn.toggled.connect(self.toggleMouseMode)
+        self.options_mouse_rect_rbtn.toggled.connect(self.toggleMouseMode)
+        self.options_bkgrd_black_rbtn.toggled.connect(self.togglebkgrdColor)
+        self.options_bkgrd_white_rbtn.toggled.connect(self.togglebkgrdColor)
+        self.options_cmap_linear_rbtn.toggled.connect(self.toggleCmapScale)
+        self.options_cmap_log_rbtn.toggled.connect(self.toggleCmapScale)
+        self.options_cmap_pctl_slider.valueChanged.connect(self.changeCmapPctl)
+        self.options_aspect_ratio_auto_rbtn.toggled.connect(self.toggleAspectRatio)
+        self.options_aspect_ratio_one_rbtn.toggled.connect(self.toggleAspectRatio)
 
     # --------------------------------------------------------------------------
 
@@ -275,8 +263,8 @@ class OptionsWidget(pg.LayoutWidget):
         # (Alphabetically) Sorted list of files
         self.image_files = sorted(os.listdir(self.directory))
 
-        self.live_file_list.clear()
-        self.live_file_list.addItems(self.image_files)
+        self.live_image_list.clear()
+        self.live_image_list.addItems(self.image_files)
 
     # --------------------------------------------------------------------------
 
@@ -313,7 +301,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.image = np.fliplr(tiff.imread(self.file_path))
         self.main_window.image_widget.displayImage(self.image, rect=None)
 
-        self.live_current_file_txtbox.setText(file.text())
+        self.live_current_image_txtbox.setText(file.text())
 
         # Enable options
         self.options_gbox.setEnabled(True)
@@ -351,8 +339,8 @@ class OptionsWidget(pg.LayoutWidget):
                     scans = sorted(os.listdir(self.scan_directory))
 
                     # Clear current list items and add new list items
-                    self.post_data_source_list.clear()
-                    self.post_data_source_list.addItems(scans)
+                    self.post_scan_list.clear()
+                    self.post_scan_list.addItems(scans)
 
                     # Sets axis labels for image plot
                     self.main_window.image_widget.setLabel("left", "K")
@@ -560,7 +548,7 @@ class OptionsWidget(pg.LayoutWidget):
         Changes color for mouse crosshair.
         """
 
-        color = self.crosshair_color_btn.color()
+        color = self.options_crosshair_color_btn.color()
 
         self.main_window.image_widget.v_line.setPen(pg.mkPen(color))
         self.main_window.image_widget.h_line.setPen(pg.mkPen(color))
@@ -585,10 +573,10 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def toggleBackgroundColor(self):
+    def togglebkgrdColor(self):
 
         """
-        Toggles background color for image plot widget.
+        Toggles bkgrd color for image plot widget.
 
         - Options: black or white.
         """
@@ -613,10 +601,10 @@ class OptionsWidget(pg.LayoutWidget):
         button = self.sender()
 
         if button.text() == "Logarithmic":
-            self.main_window.image_widget.cmap_scale = "Log"
+            self.main_window.image_widget.options_cmap_scale = "Log"
             self.main_window.image_widget.displayImage(self.image)
         else:
-            self.main_window.image_widget.cmap_scale = "Linear"
+            self.main_window.image_widget.options_cmap_scale = "Linear"
             self.main_window.image_widget.displayImage(self.image)
 
     # --------------------------------------------------------------------------
@@ -658,9 +646,9 @@ class OptionsWidget(pg.LayoutWidget):
         """
 
         # Loops through images
-        for i in range(self.live_file_list.count()):
+        for i in range(self.live_image_list.count()):
             # Loads image to viewing window
-            self.loadLiveImage(self.live_file_list.item(i))
+            self.loadLiveImage(self.live_image_list.item(i))
             # Necessary to refresh UI
             QtGui.QApplication.processEvents()
             # Loop sleeps for set period (<1 second)
@@ -756,7 +744,7 @@ class AnalysisWidget(pg.LayoutWidget):
         self.image_max_intensity_lbl = QtGui.QLabel("Max:")
         self.image_max_intensity_txtbox = QtGui.QLineEdit()
         self.image_max_intensity_txtbox.setReadOnly(True)
-        self.image_cmap_pctl_lbl = QtGui.QLabel("CMap Pctl:")
+        self.image_options_cmap_pctl_lbl = QtGui.QLabel("CMap Pctl:")
         self.image_cmap_pctl_txtbox = QtGui.QLineEdit()
         self.image_cmap_pctl_txtbox.setReadOnly(True)
 
@@ -773,7 +761,7 @@ class AnalysisWidget(pg.LayoutWidget):
         self.image_layout.addWidget(self.image_height_txtbox, 1, 1)
         self.image_layout.addWidget(self.image_max_intensity_lbl, 2, 0)
         self.image_layout.addWidget(self.image_max_intensity_txtbox, 2, 1)
-        self.image_layout.addWidget(self.image_cmap_pctl_lbl, 3, 0)
+        self.image_layout.addWidget(self.image_options_cmap_pctl_lbl, 3, 0)
         self.image_layout.addWidget(self.image_cmap_pctl_txtbox, 3, 1)
 
 # ==============================================================================
@@ -788,7 +776,7 @@ class ImageWidget(pg.PlotWidget):
         super(ImageWidget, self).__init__(parent)
         self.main_window = parent
 
-        # Background initially set to black
+        # bkgrd initially set to black
         self.setBackground("default")
 
         self.view = self.getViewBox()
@@ -796,7 +784,7 @@ class ImageWidget(pg.PlotWidget):
         self.addItem(self.image_item)
 
         # Sets current cmap/cmap scaling
-        self.cmap_scale = "Linear"
+        self.options_cmap_scale = "Linear"
         self.cmap_pctl = 1.0
 
         # Creates and adds ROIWidgets
@@ -838,7 +826,7 @@ class ImageWidget(pg.PlotWidget):
         self.image = np.rot90(image, 3)
 
         # Checks colormap scale
-        if self.cmap_scale == "Log":
+        if self.options_cmap_scale == "Log":
             norm = colors.LogNorm(vmax=np.amax(self.image)*self.cmap_pctl)
         else:
             norm = colors.Normalize(vmax=np.amax(self.image)*self.cmap_pctl)
