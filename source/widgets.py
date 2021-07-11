@@ -155,6 +155,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_current_scan_txtbox.setReadOnly(True)
         self.post_slice_direction_lbl = QtGui.QLabel("Slice Direction:")
         self.post_slice_direction_cbox = QtGui.QComboBox()
+        self.post_slice_direction_cbox.addItems(["X(H)", "Y(K)", "Z(L)"])
         self.post_slice_direction_cbox.setEnabled(False)
         self.post_slice_sbox = QtGui.QSpinBox()
         self.post_slice_sbox.setEnabled(False)
@@ -177,8 +178,11 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_image_layout.addWidget(self.post_slice_slider, 7, 1, 1, 5)
 
         # Post widget connections
-        self.post_set_project_btn.clicked.connect(self.setDataSource)
-        self.post_scan_list.itemClicked.connect(self.loadDataSource)
+        self.post_set_project_btn.clicked.connect(self.postSetProject)
+        self.post_xyz_rbtn.toggled.connect(self.postToggleSpecConfigButton)
+        self.post_hkl_rbtn.toggled.connect(self.postToggleSpecConfigButton)
+        self.post_xyz_rbtn.toggled.connect(self.postSetScanList)
+        self.post_scan_list.itemClicked.connect(self.postLoadData)
 
         # Options widgets
         self.options_roi_chkbox = QtGui.QCheckBox("ROI")
@@ -262,8 +266,6 @@ class OptionsWidget(pg.LayoutWidget):
 
         # Clear scan image list and resets coordinate system radio buttons
         self.live_image_list.clear()
-        self.live_xyz_rbtn.setChecked(False)
-        self.live_xyz_rbtn.setChecked(False)
 
         # Directory path containing scan images
         self.live_scan_path = QtGui.QFileDialog.getExistingDirectory(self,
@@ -282,6 +284,10 @@ class OptionsWidget(pg.LayoutWidget):
         # Enables coordinate system radio buttons
         self.live_xyz_rbtn.setEnabled(True)
         self.live_hkl_rbtn.setEnabled(True)
+
+        # Sets scan image list is xyz is already selected
+        if self.live_xyz_rbtn.isChecked():
+            self.liveSetImageList()
 
     # --------------------------------------------------------------------------
 
@@ -342,27 +348,115 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def postSetProject(self):
-        ...
 
-    # --------------------------------------------------------------------------
+        """
 
-    def postSetScanList(self):
-        ...
+        """
+
+        self.post_scan_list.clear()
+
+        self.post_project_path = QtGui.QFileDialog.getExistingDirectory(self,
+            "Open Project Directory")
+
+        for item in os.listdir(self.post_project_path):
+            if item == "images":
+                break
+
+        # Separates path basename from path to display in txtbox
+        self.post_project_path_base = os.path.basename(self.post_project_path)
+        self.post_set_project_txtbox.setText(self.post_project_path_base)
+
+        # Sets correct scan path
+        self.post_images_path = os.path.join(self.post_project_path, "images")
+        self.post_scans_path = f"{self.post_images_path}/{os.listdir(self.post_images_path)[0]}"
+        self.post_scan_folders = sorted(os.listdir(self.post_scans_path))
+
+        # Enables coordinate system radio buttons
+        self.post_xyz_rbtn.setEnabled(True)
+        self.post_hkl_rbtn.setEnabled(True)
+
+        # Sets scan list is xyz is already selected
+        if self.post_xyz_rbtn.isChecked():
+            self.liveSetImageList()
 
     # --------------------------------------------------------------------------
 
     def postToggleSpecConfigButton(self):
-        ...
+
+        """
+
+        """
+
+        if self.post_hkl_rbtn.isChecked():
+            self.post_spec_config_btn.setEnabled(True)
+        else:
+            self.post_spec_config_btn.setEnabled(False)
+
+        self.post_scan_list.clear()
 
     # --------------------------------------------------------------------------
 
     def postSetSpecConfigFiles(self):
         ...
-    
+
+    # --------------------------------------------------------------------------
+
+    def postSetScanList(self):
+
+        """
+
+        """
+
+        self.post_scan_list.clear()
+        self.post_scan_list.addItems(self.post_scan_folders)
+
+    # --------------------------------------------------------------------------
+
+    def postLoadData(self, scan):
+
+        """
+
+        """
+
+        self.dataset = []
+        scan_path = os.path.join(self.post_scans_path, scan.text())
+        self.post_image_files = sorted(os.listdir(scan_path))
+
+        for i in range(1, len(self.post_image_files)):
+            # Creates 2d image from file path
+            file_path = f"{scan_path}/{self.post_image_files[i]}"
+            image = ndimage.rotate(tiff.imread(file_path), 90)
+            # Appends image to list of images
+            self.dataset.append(image)
+
+        self.dataset = np.stack(self.dataset)
+        self.dataset = np.swapaxes(self.dataset, 0, 2)
+
+        self.x_h_axis = [0, self.dataset.shape[0]]
+        self.y_k_axis = [0, self.dataset.shape[1]]
+        self.z_l_axis = [0, self.dataset.shape[2]]
+
+        self.main_window.roi_plots_widget.displayROIPlots(self.dataset)
+
+        self.postLoadImage()
+
     # --------------------------------------------------------------------------
 
     def postLoadImage(self):
-        ...
+
+        """
+
+        """
+        
+        x_h_min, x_h_max = self.h_axis
+        y_k_min, y_k_max = self.k_axis
+        z_l_min, z_l_max = self.l_axis
+
+        if self.post_slice_direction_cbox.currentText() == "X(H)":
+
+        elif self.post_slice_direction_cbox.currentText() == "Y(K)":
+
+        elif self.post_slice_direction_cbox.currentText() == "Z(L)":
 
     # --------------------------------------------------------------------------
 
