@@ -182,6 +182,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_xyz_rbtn.toggled.connect(self.postToggleSpecConfigButton)
         self.post_hkl_rbtn.toggled.connect(self.postToggleSpecConfigButton)
         self.post_xyz_rbtn.toggled.connect(self.postSetScanList)
+        self.post_spec_config_btn.clicked.connect(self.postSetSpecConfigFiles)
         self.post_scan_list.itemClicked.connect(self.postLoadData)
         self.post_slice_direction_cbox.currentTextChanged.connect(self.postLoadImage)
         self.post_slice_sbox.valueChanged.connect(self.postChangeSliderValue)
@@ -400,7 +401,19 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def postSetSpecConfigFiles(self):
-        ...
+
+        """
+        Opens data source dialog.
+        """
+
+        # See DataSourceDialogWidget class for more info
+        dialog = DataSourceDialogWidget()
+
+        self.post_spec_path = dialog.spec_name
+        self.post_detector_path = dialog.detector_config_name
+        self.post_instrument_path = dialog.instrument_config_name
+
+        self.postSetScanList()
 
     # --------------------------------------------------------------------------
 
@@ -425,41 +438,41 @@ class OptionsWidget(pg.LayoutWidget):
         scan_path = os.path.join(self.post_scans_path, scan.text())
         self.post_image_files = sorted(os.listdir(scan_path))
 
-        for i in range(1, len(self.post_image_files)):
-            # Creates 2d image from file path
-            file_path = f"{scan_path}/{self.post_image_files[i]}"
-            image = ndimage.rotate(tiff.imread(file_path), 90)
-            # Appends image to list of images
-            self.dataset.append(image)
+        if self.post_xyz_rbtn.isChecked():
+            for i in range(1, len(self.post_image_files)):
+                # Creates 2d image from file path
+                file_path = f"{scan_path}/{self.post_image_files[i]}"
+                image = ndimage.rotate(tiff.imread(file_path), 90)
+                # Appends image to list of images
+                self.dataset.append(image)
 
-        self.dataset = np.stack(self.dataset)
-        self.dataset = np.swapaxes(self.dataset, 0, 2)
+            self.dataset = np.stack(self.dataset)
+            self.dataset = np.swapaxes(self.dataset, 0, 2)
 
-        self.x_h_axis = [0, self.dataset.shape[0]]
-        self.y_k_axis = [0, self.dataset.shape[1]]
-        self.z_l_axis = [0, self.dataset.shape[2]]
+            self.x_h_axis = [0, self.dataset.shape[0]]
+            self.y_k_axis = [0, self.dataset.shape[1]]
+            self.z_l_axis = [0, self.dataset.shape[2]]
+
+        elif self.post_hkl_rbtn.isChecked():
+            scan_number = scan.text()[1:]
+
+            # Creates vti file
+            vti_file = DataProcessing.createVTIFile(self.post_project_path, self.post_spec_path,
+                self.post_detector_path, self.post_instrument_path, scan_number)
+
+            # Converts vti file into 3D array with proper axes
+            self.axes, self.dataset = DataProcessing.loadData(vti_file)
+            self.x_h_axis = [self.axes[0][0], self.axes[0][-1]]
+            self.y_k_axis = [self.axes[1][0], self.axes[1][-1]]
+            self.z_l_axis = [self.axes[2][0], self.axes[2][-1]]
+
+            self.main_window.roi_plots_widget.clearROIPlots()
+
+        self.post_current_scan_txtbox.setText(scan.text())
 
         self.main_window.roi_plots_widget.displayROIPlots(self.dataset)
 
         self.postLoadImage()
-
-    # --------------------------------------------------------------------------
-
-    def postSetSliceRanges(self):
-
-        """
-
-        """
-
-        if self.post_slice_direction_cbox.currentText() == "X(H)":
-            self.post_slice_slider.setRange(self.x_h_axis[0], self.x_h_axis[1] - 1)
-            self.post_slice_sbox.setRange(self.x_h_axis[0], self.x_h_axis[1] - 1)
-        elif self.post_slice_direction_cbox.currentText() == "Y(K)":
-            self.post_slice_slider.setRange(self.y_k_axis[0], self.y_k_axis[1] - 1)
-            self.post_slice_sbox.setRange(self.y_k_axis[0], self.y_k_axis[1] - 1)
-        elif self.post_slice_direction_cbox.currentText() == "Z(L)":
-            self.post_slice_slider.setRange(self.z_l_axis[0], self.z_l_axis[1] - 1)
-            self.post_slice_sbox.setRange(self.z_l_axis[0], self.z_l_axis[1] - 1)
 
     # --------------------------------------------------------------------------
 
@@ -505,146 +518,21 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def setDataSource(self):
+    def postSetSliceRanges(self):
 
         """
-        - Opens data source dialog
-        - If directory is valid, scan subdirectories are shown in the list widget
-        """
-
-        # See DataSourceDialogWidget class for more info
-        dialog = DataSourceDialogWidget()
-
-        # If dialog return value == True
-        if dialog:
-            self.project = dialog.project_name
-            self.spec = dialog.spec_name
-            self.detector = dialog.detector_config_name
-            self.instrument = dialog.instrument_config_name
-            self.process_data = dialog.process_data
-
-            # If project direcory is given
-            if not self.project == "":
-
-                # If project directory has image subdirectory
-                if os.path.exists(os.path.join(self.project, "images")):
-                    image_directory = os.path.join(self.project, "images")
-                    # Image directory should only have one subdirectory
-                    # Subdirectory should share name with .spec file
-                    self.scan_directory = os.path.join(image_directory, os.listdir(image_directory)[0])
-                    # Sorted alphabetically
-                    scans = sorted(os.listdir(self.scan_directory))
-
-                    # Clear current list items and add new list items
-                    self.post_scan_list.clear()
-                    self.post_scan_list.addItems(scans)
-
-                    # Sets axis labels for image plot
-                    self.main_window.image_widget.setLabel("left", "K")
-                    self.main_window.image_widget.setLabel("bottom", "L")
-
-    # --------------------------------------------------------------------------
-
-    def loadDataSource(self, scan):
 
         """
-        - Creates 3D array of data from given scan directory
-        - Sets spinbox/slider limits based on array's dimensions
-        """
 
-        # Placeholder list for 3D array
-        self.dataset = []
-
-        # If spec and config directories were given (processed data)
-        if not "" in [self.spec, self.detector, self.instrument]:
-            # Last two chars (should be digits) of scan name
-            scan = scan.text()[1:]
-
-            # Creates vti file
-            vti_file = DataProcessing.createVTIFile(self.project, self.spec, self.detector,
-                self.instrument, scan)
-
-            # Converts vti file into 3D array with proper axes
-            self.axes, self.dataset = DataProcessing.loadData(vti_file)
-            self.h_axis = [self.axes[0][0], self.axes[0][-1]]
-            self.k_axis = [self.axes[1][0], self.axes[1][-1]]
-            self.l_axis = [self.axes[2][0], self.axes[2][-1]]
-
-            self.main_window.roi_plots_widget.clearROIPlots()
-
-        # If only project directory was given (unprocessed data)
-        else:
-            # (Alphabetically) Sorted list of scan images
-            scan_path = os.path.join(self.scan_directory, scan.text())
-            self.image_files = sorted(os.listdir(scan_path))
-
-            for i in range(len(self.image_files)):
-                if self.image_files[i] != "alignment.tif":
-                    # Creates 2d image from file path
-                    file_path = f"{scan_path}/{self.image_files[i]}"
-                    image = ndimage.rotate(tiff.imread(file_path), 90)
-                    # Appends image to list of images
-                    self.dataset.append(image)
-            self.dataset = np.stack(self.dataset)
-            self.dataset = np.swapaxes(self.dataset, 0, 2)
-
-            # Axes go from 0 to shape of array in each direction
-            self.h_axis = [0, self.dataset.shape[0]]
-            self.k_axis = [0, self.dataset.shape[1]]
-            self.l_axis = [0, self.dataset.shape[2]]
-
-            self.main_window.roi_plots_widget.displayROIPlots(self.dataset)
-
-        self.post_h_slider.setMaximum(self.dataset.shape[0] - 1)
-        self.post_h_spinbox.setRange(0, self.dataset.shape[0] - 1)
-        self.post_k_slider.setMaximum(self.dataset.shape[1] - 1)
-        self.post_k_spinbox.setRange(0, self.dataset.shape[1] - 1)
-        self.post_l_slider.setMaximum(self.dataset.shape[2] - 1)
-        self.post_l_spinbox.setRange(0, self.dataset.shape[2] - 1)
-
-        self.loadPostImage()
-
-    # --------------------------------------------------------------------------
-
-    def loadPostImage(self):
-
-        """
-        Loads image to viewing window.
-        """
-
-        # Splits axis into min/max
-        h_min, h_max = self.h_axis
-        k_min, k_max = self.k_axis
-        l_min, l_max = self.l_axis
-
-        # h direction
-        if self.post_h_direction_rbtn.isChecked():
-            # Syncs slider and spinbox
-            self.post_h_spinbox.setValue(int(self.post_h_slider.value()))
-            # Creates rectangle for array to be plotted inside of
-            rect = QtCore.QRectF(l_min, k_min, l_max - l_min, k_max - k_min)
-            h_slice = int(self.post_h_slider.value())
-            self.image = self.dataset[h_slice, :, :]
-
-        # k direction
-        elif self.post_k_direction_rbtn.isChecked():
-            self.post_k_spinbox.setValue(int(self.post_k_slider.value()))
-            rect = QtCore.QRectF(l_min, h_min, l_max - l_min, h_max - h_min)
-            k_slice = int(self.post_k_slider.value())
-            self.image = self.dataset[:, k_slice, :]
-
-        # l direction
-        else:
-            self.post_l_spinbox.setValue(int(self.post_l_slider.value()))
-            rect = QtCore.QRectF(k_min, h_min, k_max - k_min, h_max - h_min)
-            l_slice = int(self.post_l_slider.value())
-            self.image = self.dataset[:, :, l_slice]
-
-        # Sets image in viewing window
-        self.main_window.image_widget.displayImage(self.image, rect=rect)
-
-        # Enable options
-        self.options_gbox.setEnabled(True)
+        if self.post_slice_direction_cbox.currentText() == "X(H)":
+            self.post_slice_slider.setRange(0, self.dataset.shape[0] - 1)
+            self.post_slice_sbox.setRange(self.x_h_axis[0], self.x_h_axis[1] - 1)
+        elif self.post_slice_direction_cbox.currentText() == "Y(K)":
+            self.post_slice_slider.setRange(0, self.dataset.shape[1] - 1)
+            self.post_slice_sbox.setRange(self.y_k_axis[0], self.y_k_axis[1] - 1)
+        elif self.post_slice_direction_cbox.currentText() == "Z(L)":
+            self.post_slice_slider.setRange(0, self.dataset.shape[2] - 1)
+            self.post_slice_sbox.setRange(self.z_l_axis[0], self.z_l_axis[1] - 1)
 
     # --------------------------------------------------------------------------
 
@@ -655,9 +543,6 @@ class OptionsWidget(pg.LayoutWidget):
         """
 
         self.post_slice_slider.setValue(value)
-
-        # No need to call loadPostImage()
-        # Connected with valueChanged signal that calls loadPostImage()
 
     # --------------------------------------------------------------------------
 
@@ -678,8 +563,6 @@ class OptionsWidget(pg.LayoutWidget):
             self.main_window.image_widget.roi2.hide()
             self.main_window.image_widget.roi3.hide()
             self.main_window.image_widget.roi4.hide()
-
-
 
     # --------------------------------------------------------------------------
 
@@ -1259,34 +1142,25 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.setWindowModality(QtCore.Qt.ApplicationModal)
 
         # Holds values from textboxes/checkbox
-        self.project_name = ""
         self.spec_name = ""
         self.detector_config_name = ""
         self.instrument_config_name = ""
         self.process_data = False
         self.ok = False
 
-        # Creates subwidgets
-        self.process_data_chkbox = QtGui.QCheckBox("Process Data")
-        self.project_lbl = QtGui.QLabel("Project:")
-        self.project_txtbox = QtGui.QLineEdit()
-        self.project_txtbox.setReadOnly(True)
-        self.project_btn = QtGui.QPushButton("Browse")
+        # Creates widgets
         self.spec_lbl = QtGui.QLabel("spec File:")
         self.spec_txtbox = QtGui.QLineEdit()
         self.spec_txtbox.setReadOnly(True)
         self.spec_btn = QtGui.QPushButton("Browse")
-        self.spec_btn.setEnabled(False)
         self.detector_lbl = QtGui.QLabel("Det. Config:")
         self.detector_txtbox = QtGui.QLineEdit()
         self.detector_txtbox.setReadOnly(True)
         self.detector_btn = QtGui.QPushButton("Browse")
-        self.detector_btn.setEnabled(False)
         self.instrument_lbl = QtGui.QLabel("Instr. Config:")
         self.instrument_txtbox = QtGui.QLineEdit()
         self.instrument_txtbox.setReadOnly(True)
         self.instrument_btn = QtGui.QPushButton("Browse")
-        self.instrument_btn.setEnabled(False)
         self.dialog_btnbox = QtGui.QDialogButtonBox()
         self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
 
@@ -1294,38 +1168,25 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.setLayout(self.layout)
 
         # Adds widgets to layout
-        self.layout.addWidget(self.project_lbl, 0, 0)
-        self.layout.addWidget(self.project_txtbox, 0, 1, 1, 3)
-        self.layout.addWidget(self.project_btn, 0, 4)
-        self.layout.addWidget(self.spec_lbl, 1, 0)
-        self.layout.addWidget(self.spec_txtbox, 1, 1, 1, 3)
-        self.layout.addWidget(self.spec_btn, 1, 4)
-        self.layout.addWidget(self.detector_lbl, 2, 0)
-        self.layout.addWidget(self.detector_txtbox, 2, 1, 1, 3)
-        self.layout.addWidget(self.detector_btn, 2, 4)
-        self.layout.addWidget(self.instrument_lbl, 3, 0)
-        self.layout.addWidget(self.instrument_txtbox, 3, 1, 1, 3)
-        self.layout.addWidget(self.instrument_btn, 3, 4)
-        self.layout.addWidget(self.process_data_chkbox, 4, 0)
-        self.layout.addWidget(self.dialog_btnbox, 4, 3, 1, 2)
+        self.layout.addWidget(self.spec_lbl, 0, 0)
+        self.layout.addWidget(self.spec_txtbox, 0, 1, 1, 3)
+        self.layout.addWidget(self.spec_btn, 0, 4)
+        self.layout.addWidget(self.detector_lbl, 1, 0)
+        self.layout.addWidget(self.detector_txtbox, 1, 1, 1, 3)
+        self.layout.addWidget(self.detector_btn, 1, 4)
+        self.layout.addWidget(self.instrument_lbl, 2, 0)
+        self.layout.addWidget(self.instrument_txtbox, 2, 1, 1, 3)
+        self.layout.addWidget(self.instrument_btn, 2, 4)
+        self.layout.addWidget(self.dialog_btnbox, 3, 3, 1, 2)
 
         # Connects widgets to functions
-        self.project_btn.clicked.connect(self.selectProject)
         self.spec_btn.clicked.connect(self.selectSpecFile)
         self.detector_btn.clicked.connect(self.selectDetectorConfigFile)
         self.instrument_btn.clicked.connect(self.selectInstrumentConfigFile)
-        self.process_data_chkbox.stateChanged.connect(self.setDataProcessingStatus)
         self.dialog_btnbox.accepted.connect(self.accept)
 
         # Runs dialog widget
         self.exec_()
-
-    # --------------------------------------------------------------------------
-
-    def selectProject(self):
-        project = QtGui.QFileDialog.getExistingDirectory(self)
-        self.project_name = project
-        self.project_txtbox.setText(project)
 
     # --------------------------------------------------------------------------
 
