@@ -8,7 +8,7 @@ See LICENSE file.
 from pyqtgraph.Qt import QtGui
 from pyqtgraph.dockarea import *
 
-from source.widgets import * # Local
+from source.gui_widgets import * # Local
 
 # ==============================================================================
 
