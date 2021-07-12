@@ -111,3 +111,33 @@ class DataSourceDialogWidget(QtGui.QDialog):
             self.instrument_btn.setEnabled(False)
 
 # ==============================================================================
+
+class ConversionParametersDialogWidget(QtGui.QDialog):
+
+    def __init__ (self):
+        super().__init__()
+
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+
+        self.detector_direction_1 = ""
+        self.detector_direction_2 = ""
+        self.cch_1 = 0.0
+        self.cch_2 = 0.0
+        self.nch_1 = 0
+        self.nch_2 = 0
+        self.distance = 0.0
+        self.p_width_1 = 0.0
+        self.p_width_2 = 0.0
+        self.chpdeg_1 = 0.0
+        self.chpdeg_2 = 0.0
+        self.detrot = 0.0
+        self.tiltazimuth = 0.0
+        self.tilt = 0.0
+        self.nav = []
+        self.roi = []
+        self.ub_matrix = []
+
+
+
+        # Runs dialog widget
+        self.exec_()
