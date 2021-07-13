@@ -383,10 +383,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_xyz_rbtn.setEnabled(True)
         self.post_hkl_rbtn.setEnabled(True)
 
-        # Sets scan list is xyz is already selected
-        if self.post_xyz_rbtn.isChecked():
-            self.liveSetImageList()
-
     # --------------------------------------------------------------------------
 
     def postToggleSpecConfigButton(self):
@@ -474,8 +470,6 @@ class OptionsWidget(pg.LayoutWidget):
 
         self.post_current_scan_txtbox.setText(scan.text())
 
-        self.main_window.roi_plots_widget.displayROIPlots(self.dataset)
-
         self.postLoadImage()
 
     # --------------------------------------------------------------------------
@@ -492,26 +486,33 @@ class OptionsWidget(pg.LayoutWidget):
         y_k_min, y_k_max = self.y_k_axis
         z_l_min, z_l_max = self.z_l_axis
 
+        slice_direction = self.post_slice_direction_cbox.currentText()
+
         self.post_slice_sbox.setValue(int(self.post_slice_slider.value()))
 
-        if self.post_slice_direction_cbox.currentText() == "X(H)":
+        if slice_direction == "X(H)":
             # Creates rectangle for array to be plotted inside of
             rect = QtCore.QRectF(z_l_min, y_k_min, z_l_max - z_l_min, y_k_max - y_k_min)
             x_h_slice = int(self.post_slice_slider.value())
             self.image = self.dataset[x_h_slice, :, :]
 
-        elif self.post_slice_direction_cbox.currentText() == "Y(K)":
+        elif slice_direction == "Y(K)":
             rect = QtCore.QRectF(z_l_min, x_h_min, z_l_max - z_l_min, x_h_max - x_h_min)
             y_k_slice = int(self.post_slice_slider.value())
             self.image = self.dataset[:, y_k_slice, :]
 
-        elif self.post_slice_direction_cbox.currentText() == "Z(L)":
+        elif slice_direction == "Z(L)":
             rect = QtCore.QRectF(y_k_min, x_h_min, y_k_max - y_k_min, x_h_max - x_h_min)
             z_l_slice = int(self.post_slice_slider.value())
             self.image = self.dataset[ :, :, z_l_slice]
 
         # Sets image in viewing window
         self.main_window.image_widget.displayImage(self.image, rect=rect)
+
+        if self.post_xyz_rbtn.isChecked():
+            self.main_window.roi_plots_widget.displayROIPlots(self.dataset, slice_direction)
+        elif self.post_hkl_rbtn.isChecked():
+            self.main_window.roi_plots_widget.clearROIPlots()
 
         # Enable options
         self.options_gbox.setEnabled(True)
@@ -946,17 +947,17 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def displayROIPlots(self, data):
+    def displayROIPlots(self, data, slice_direction):
 
         """
         Uses data to display avg intensities in all ROI plots. This function is
         only used for the initial display when a new dataset is loaded.
         """
 
-        self.main_window.image_widget.roi1.plotAverageIntensity(data)
-        self.main_window.image_widget.roi2.plotAverageIntensity(data)
-        self.main_window.image_widget.roi3.plotAverageIntensity(data)
-        self.main_window.image_widget.roi4.plotAverageIntensity(data)
+        self.main_window.image_widget.roi1.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi2.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi3.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi4.plotAverageIntensity(data, slice_direction)
 
     # --------------------------------------------------------------------------
 
@@ -985,9 +986,10 @@ class ROIWidget(pg.ROI):
         self.layout = layout
         self.roi_plot = plot
         self.data = []
+        self.slice_direction = ""
 
         self.roi_plot.setLabel("left", "Avg Intensity")
-        self.roi_plot.setLabel("bottom", "L Slice")
+        self.roi_plot.setLabel("bottom", "Slice")
 
         self.pen = pg.mkPen(width=3)
         self.setPen(self.pen)
@@ -1060,7 +1062,7 @@ class ROIWidget(pg.ROI):
             self.height_spinbox.setValue(self.size()[1])
             self.updating = ""
 
-        self.plotAverageIntensity(self.data)
+        self.plotAverageIntensity(self.data, self.slice_direction)
 
     # --------------------------------------------------------------------------
 
@@ -1108,26 +1110,54 @@ class ROIWidget(pg.ROI):
 
     # --------------------------------------------------------------------------
 
-    def plotAverageIntensity(self, data):
+    def plotAverageIntensity(self, data, slice_direction):
 
         """
         Creates list of avg pixel intensities from ROI through set of images.
         """
 
         self.data = data
+        self.slice_direction = slice_direction
 
         if self.data != []:
-            x_min = int(self.pos()[0])
-            x_max = int(self.pos()[0] + self.size()[0])
-            y_min = int(self.pos()[1])
-            y_max = int(self.pos()[1] + self.size()[1])
+            if self.slice_direction == "X(H)":
+                x_min = int(self.pos()[0])
+                x_max = int(self.pos()[0] + self.size()[0])
+                y_min = int(self.pos()[1])
+                y_max = int(self.pos()[1] + self.size()[1])
 
-            data_roi = self.data[y_min:y_max, x_min:x_max, :]
-            avg_intensity = []
+                data_roi = self.data[:, y_min:y_max, x_min:x_max]
+                avg_intensity = []
 
-            for i in range(data_roi.shape[2]):
-                avg = np.mean(data_roi[:, :, i])
-                avg_intensity.append(avg)
+                for i in range(data_roi.shape[0]):
+                    avg = np.mean(data_roi[i, :, :])
+                    avg_intensity.append(avg)
+
+            elif self.slice_direction == "Y(K)":
+                x_min = int(self.pos()[0])
+                x_max = int(self.pos()[0] + self.size()[0])
+                y_min = int(self.pos()[1])
+                y_max = int(self.pos()[1] + self.size()[1])
+
+                data_roi = self.data[y_min:y_max, :, x_min:x_max]
+                avg_intensity = []
+
+                for i in range(data_roi.shape[1]):
+                    avg = np.mean(data_roi[:, i, :])
+                    avg_intensity.append(avg)
+
+            elif self.slice_direction == "Z(L)":
+                x_min = int(self.pos()[0])
+                x_max = int(self.pos()[0] + self.size()[0])
+                y_min = int(self.pos()[1])
+                y_max = int(self.pos()[1] + self.size()[1])
+
+                data_roi = self.data[y_min:y_max, x_min:x_max, :]
+                avg_intensity = []
+
+                for i in range(data_roi.shape[2]):
+                    avg = np.mean(data_roi[:, :, i])
+                    avg_intensity.append(avg)
 
             self.roi_plot.plot(avg_intensity, clear=True)
 
