@@ -136,6 +136,12 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.nav = [1, 1]
         self.roi = []
         self.ub_matrix = []
+        self.mu = 0.0
+        self.eta = 0.0
+        self.chi = 0.0
+        self.phi = 0.0
+        self.nu = 0.0
+        self.delta = 0.0
 
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
@@ -148,13 +154,18 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.detector_dir_2_cbox.addItems(["x+", "x-", "y+", "y-", "z+", "z-"])
         self.center_pixel_lbl = QtGui.QLabel("Center Pixel:")
         self.center_pixel_1_sbox = QtGui.QDoubleSpinBox()
+        self.center_pixel_1_sbox.setRange(-10000.0, 10000.0)
         self.center_pixel_2_sbox = QtGui.QDoubleSpinBox()
+        self.center_pixel_2_sbox.setRange(-10000.0, 10000.0)
         self.number_pixels_1_lbl = QtGui.QLabel("# Pixels (Direction 1):")
         self.number_pixels_1_sbox = QtGui.QSpinBox()
+        self.number_pixels_1_sbox.setMaximum(10000)
         self.number_pixels_2_lbl = QtGui.QLabel("# Pixels (Direction 2):")
         self.number_pixels_2_sbox = QtGui.QSpinBox()
+        self.number_pixels_2_sbox.setMaximum(10000)
         self.distance_lbl = QtGui.QLabel("Distance:")
         self.distance_sbox = QtGui.QDoubleSpinBox()
+        self.distance_sbox.setMaximum(10000.0)
         self.pixel_size_lbl = QtGui.QLabel("Pixel Size:")
         self.pixel_width_1_sbox = QtGui.QDoubleSpinBox()
         self.pixel_width_2_sbox = QtGui.QDoubleSpinBox()
@@ -164,10 +175,13 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.channels_per_degree_2_sbox = QtGui.QDoubleSpinBox()
         self.detector_rotation_angle_lbl = QtGui.QLabel("Detector Rotation Angle (deg):")
         self.detector_rotation_angle_sbox = QtGui.QDoubleSpinBox()
+        self.detector_rotation_angle_sbox.setMaximum(360.0)
         self.tilt_azimuth_angle_lbl = QtGui.QLabel("Azimuth Angle (deg):")
         self.tilt_azimuth_angle_sbox = QtGui.QDoubleSpinBox()
+        self.tilt_azimuth_angle_sbox.setMaximum(360.0)
         self.tilt_angle_lbl = QtGui.QLabel("Tilt Angle (deg):")
         self.tilt_angle_sbox = QtGui.QDoubleSpinBox()
+        self.tilt_angle_sbox.setMaximum(360.0)
         self.nav_lbl = QtGui.QLabel("Nav (Tuple/Array):")
         self.nav_txtbox = QtGui.QLineEdit()
         self.roi_lbl = QtGui.QLabel("ROI (Tuple/Array):")
@@ -176,16 +190,22 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.ub_matrix_txtedit = QtGui.QPlainTextEdit()
         self.mu_lbl = QtGui.QLabel("Mu (deg):")
         self.mu_sbox = QtGui.QDoubleSpinBox()
+        self.mu_sbox.setMaximum(360.0)
         self.eta_lbl = QtGui.QLabel("Eta (deg):")
         self.eta_sbox = QtGui.QDoubleSpinBox()
+        self.eta_sbox.setMaximum(360.0)
         self.chi_lbl = QtGui.QLabel("Chi (deg):")
         self.chi_sbox = QtGui.QDoubleSpinBox()
+        self.chi_sbox.setMaximum(360.0)
         self.phi_lbl = QtGui.QLabel("Phi (deg):")
         self.phi_sbox = QtGui.QDoubleSpinBox()
+        self.phi_sbox.setMaximum(360.0)
         self.nu_lbl = QtGui.QLabel("Nu (deg):")
         self.nu_sbox = QtGui.QDoubleSpinBox()
+        self.nu_sbox.setMaximum(360.0)
         self.delta_lbl = QtGui.QLabel("Delta (deg):")
         self.delta_sbox = QtGui.QDoubleSpinBox()
+        self.delta_sbox.setMaximum(360.0)
         self.import_btn = QtGui.QPushButton("Import UB Matrix/Diff. Angles")
         self.dialog_btnbox = QtGui.QDialogButtonBox()
         self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
@@ -264,9 +284,15 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.detrot = self.detector_rotation_angle_sbox.value()
         self.tiltazimuth = self.tilt_azimuth_angle_sbox.value()
         self.tilt = self.tilt_angle_sbox.value()
-        self.nav = [1, 1]
-        self.roi = []
-        self.ub_matrix = []
+        self.nav = self.nav_txtbox.text()
+        self.roi = self.roi_txtbox.text()
+        self.ub_matrix = self.ub_matrix_txtedit.text()
+        self.mu = self.mu_sbox.value()
+        self.eta = self.eta_sbox.value()
+        self.chi = self.chi_sbox.value()
+        self.phi = self.phi_sbox.value()
+        self.nu = self.nu_sbox.value()
+        self.delta = self.delta_sbox.value() 
 
         print("ACCEPTED")
 
