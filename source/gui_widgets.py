@@ -136,6 +136,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_xyz_rbtn.toggled.connect(self.liveToggleHKLParametersButton)
         self.live_hkl_rbtn.toggled.connect(self.liveToggleHKLParametersButton)
         self.live_xyz_rbtn.toggled.connect(self.liveSetImageList)
+        self.live_hkl_params_btn.clicked.connect(self.liveSetHKLParameters)
         self.live_image_list.itemClicked.connect(self.liveLoadImage)
 
         # Post widgets
@@ -314,7 +315,8 @@ class OptionsWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def liveSetHKLParameters(self):
-        ...
+
+        dialog = ConversionParametersDialogWidget()
 
     # --------------------------------------------------------------------------
 

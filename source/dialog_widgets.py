@@ -119,8 +119,8 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
 
         self.setWindowModality(QtCore.Qt.ApplicationModal)
 
-        self.detector_direction_1 = ""
-        self.detector_direction_2 = ""
+        self.detector_dir_1 = ""
+        self.detector_dir_2 = ""
         self.cch_1 = 0.0
         self.cch_2 = 0.0
         self.nch_1 = 0
@@ -133,11 +133,102 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.detrot = 0.0
         self.tiltazimuth = 0.0
         self.tilt = 0.0
-        self.nav = []
+        self.nav = [1, 1]
         self.roi = []
         self.ub_matrix = []
 
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
 
+        self.detector_dir_1_lbl = QtGui.QLabel("Detector Direction 1:")
+        self.detector_dir_1_cbox = QtGui.QComboBox()
+        self.detector_dir_1_cbox.addItems(["x+", "x-", "y+", "y-", "z+", "z-"])
+        self.detector_dir_2_lbl = QtGui.QLabel("Detector Direction 2:")
+        self.detector_dir_2_cbox = QtGui.QComboBox()
+        self.detector_dir_2_cbox.addItems(["x+", "x-", "y+", "y-", "z+", "z-"])
+        self.center_pixel_lbl = QtGui.QLabel("Center Pixel:")
+        self.center_pixel_1_sbox = QtGui.QDoubleSpinBox()
+        self.center_pixel_2_sbox = QtGui.QDoubleSpinBox()
+        self.number_pixels_1_lbl = QtGui.QLabel("# Pixels (Direction 1):")
+        self.number_pixels_1_sbox = QtGui.QSpinBox()
+        self.number_pixels_2_lbl = QtGui.QLabel("# Pixels (Direction 2):")
+        self.number_pixels_2_sbox = QtGui.QSpinBox()
+        self.pixel_size_lbl = QtGui.QLabel("Pixel Size:")
+        self.pixel_width_1_sbox = QtGui.QDoubleSpinBox()
+        self.pixel_width_2_sbox = QtGui.QDoubleSpinBox()
+        self.channels_per_degree_1_lbl = QtGui.QLabel("Channels/Degree (Direction 1):")
+        self.channels_per_degree_1_sbox = QtGui.QDoubleSpinBox()
+        self.channels_per_degree_2_lbl = QtGui.QLabel("Channels/Degree (Direction 2):")
+        self.channels_per_degree_2_sbox = QtGui.QDoubleSpinBox()
+        self.detector_rotation_angle_lbl = QtGui.QLabel("Detector Rotation Angle (deg):")
+        self.detector_rotation_angle_sbox = QtGui.QDoubleSpinBox()
+        self.tilt_azimuth_angle_lbl = QtGui.QLabel("Azimuth Angle (deg):")
+        self.tilt_azimuth_angle_sbox = QtGui.QDoubleSpinBox()
+        self.tilt_angle_lbl = QtGui.QLabel("Tilt Angle (deg):")
+        self.tilt_angle_sbox = QtGui.QDoubleSpinBox()
+        self.nav_lbl = QtGui.QLabel("Nav (Tuple/Array):")
+        self.nav_txtbox = QtGui.QLineEdit()
+        self.roi_lbl = QtGui.QLabel("ROI (Tuple/Array):")
+        self.roi_txtbox = QtGui.QLineEdit()
+        self.ub_matrix_lbl = QtGui.QLabel("UB Matrix:")
+        self.ub_matrix_txtedit = QtGui.QPlainTextEdit()
+        self.mu_lbl = QtGui.QLabel("Mu (deg):")
+        self.mu_sbox = QtGui.QDoubleSpinBox()
+        self.eta_lbl = QtGui.QLabel("Eta (deg):")
+        self.eta_sbox = QtGui.QDoubleSpinBox()
+        self.chi_lbl = QtGui.QLabel("Chi (deg):")
+        self.chi_sbox = QtGui.QDoubleSpinBox()
+        self.phi_lbl = QtGui.QLabel("Phi (deg):")
+        self.phi_sbox = QtGui.QDoubleSpinBox()
+        self.nu_lbl = QtGui.QLabel("Nu (deg):")
+        self.nu_sbox = QtGui.QDoubleSpinBox()
+        self.delta_lbl = QtGui.QLabel("Delta (deg):")
+        self.delta_sbox = QtGui.QDoubleSpinBox()
+        self.import_btn = QtGui.QPushButton("Import UB Matrix/Diff. Angles")
+
+        self.layout.addWidget(self.detector_dir_1_lbl, 0, 0, 1, 2)
+        self.layout.addWidget(self.detector_dir_1_cbox, 0, 2)
+        self.layout.addWidget(self.detector_dir_2_lbl, 1, 0, 1, 2)
+        self.layout.addWidget(self.detector_dir_2_cbox, 1, 2)
+        self.layout.addWidget(self.center_pixel_lbl, 2, 0)
+        self.layout.addWidget(self.center_pixel_1_sbox, 2, 1)
+        self.layout.addWidget(self.center_pixel_2_sbox, 2, 2)
+        self.layout.addWidget(self.number_pixels_1_lbl, 3, 0, 1, 2)
+        self.layout.addWidget(self.number_pixels_1_sbox, 3, 2)
+        self.layout.addWidget(self.number_pixels_2_lbl, 4, 0, 1, 2)
+        self.layout.addWidget(self.number_pixels_2_sbox, 4, 2)
+        self.layout.addWidget(self.pixel_size_lbl, 5, 0)
+        self.layout.addWidget(self.pixel_width_1_sbox, 5, 1)
+        self.layout.addWidget(self.pixel_width_2_sbox, 5, 2)
+        self.layout.addWidget(self.channels_per_degree_1_lbl, 6, 0, 1, 2)
+        self.layout.addWidget(self.channels_per_degree_1_sbox, 6, 2)
+        self.layout.addWidget(self.channels_per_degree_2_lbl, 7, 0, 1, 2)
+        self.layout.addWidget(self.channels_per_degree_2_sbox, 7, 2)
+        self.layout.addWidget(self.detector_rotation_angle_lbl, 8, 0, 1, 2)
+        self.layout.addWidget(self.detector_rotation_angle_sbox, 8, 2)
+        self.layout.addWidget(self.tilt_azimuth_angle_lbl, 9, 0, 1, 2)
+        self.layout.addWidget(self.tilt_azimuth_angle_sbox, 9, 2)
+        self.layout.addWidget(self.tilt_angle_lbl, 10, 0, 1, 2)
+        self.layout.addWidget(self.tilt_angle_sbox, 10, 2)
+        self.layout.addWidget(self.nav_lbl, 11, 0)
+        self.layout.addWidget(self.nav_txtbox, 11, 1, 1, 2)
+        self.layout.addWidget(self.roi_lbl, 12, 0)
+        self.layout.addWidget(self.roi_txtbox, 12, 1, 1, 2)
+        self.layout.addWidget(self.ub_matrix_lbl, 13, 0)
+        self.layout.addWidget(self.ub_matrix_txtedit, 13, 1, 1, 2)
+        self.layout.addWidget(self.mu_lbl, 14, 0)
+        self.layout.addWidget(self.mu_sbox, 14, 1, 1, 2)
+        self.layout.addWidget(self.eta_lbl, 15, 0)
+        self.layout.addWidget(self.eta_sbox, 15, 1, 1, 2)
+        self.layout.addWidget(self.chi_lbl, 16, 0)
+        self.layout.addWidget(self.chi_sbox, 16, 1, 1, 2)
+        self.layout.addWidget(self.phi_lbl, 17, 0)
+        self.layout.addWidget(self.phi_sbox, 17, 1, 1, 2)
+        self.layout.addWidget(self.nu_lbl, 18, 0)
+        self.layout.addWidget(self.nu_sbox, 18, 1, 1, 2)
+        self.layout.addWidget(self.delta_lbl, 19, 0)
+        self.layout.addWidget(self.delta_sbox, 19, 1, 1, 2)
+        self.layout.addWidget(self.import_btn, 20, 0)
 
         # Runs dialog widget
         self.exec_()
