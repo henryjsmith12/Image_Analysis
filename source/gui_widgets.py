@@ -318,6 +318,8 @@ class OptionsWidget(pg.LayoutWidget):
 
         dialog = ConversionParametersDialogWidget()
 
+        print("PAST DIALOG")
+
     # --------------------------------------------------------------------------
 
     def liveSetImageList(self):
