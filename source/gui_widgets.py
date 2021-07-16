@@ -162,6 +162,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_slice_direction_cbox.setEnabled(False)
         self.post_slice_sbox = QtGui.QDoubleSpinBox()
         self.post_slice_sbox.setEnabled(False)
+        self.post_slice_sbox.setDecimals(5)
         self.post_slice_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self.post_slice_slider.setTickPosition(QtGui.QSlider.TicksBothSides)
         self.post_slice_slider.setEnabled(False)
@@ -188,7 +189,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_spec_config_btn.clicked.connect(self.postSetSpecConfigFiles)
         self.post_scan_list.itemClicked.connect(self.postLoadData)
         self.post_slice_direction_cbox.currentTextChanged.connect(self.postLoadImage)
-        self.post_slice_sbox.valueChanged.connect(self.postChangeSliderValue)
+        #self.post_slice_sbox.valueChanged.connect(self.postChangeSliderValue)
         self.post_slice_slider.valueChanged.connect(self.postLoadImage)
 
         # Options widgets
@@ -490,23 +491,26 @@ class OptionsWidget(pg.LayoutWidget):
 
         slice_direction = self.post_slice_direction_cbox.currentText()
 
-        self.post_slice_sbox.setValue(int(self.post_slice_slider.value()))
-
         if slice_direction == "X(H)":
             # Creates rectangle for array to be plotted inside of
             rect = QtCore.QRectF(z_l_min, y_k_min, z_l_max - z_l_min, y_k_max - y_k_min)
-            x_h_slice = int(self.post_slice_slider.value())
+            x_h_slice = self.post_slice_slider.value()
+            slice_value = (x_h_max - x_h_min) * (x_h_slice + 1) / self.dataset.shape[0] + x_h_min
             self.image = self.dataset[x_h_slice, :, :]
 
         elif slice_direction == "Y(K)":
             rect = QtCore.QRectF(z_l_min, x_h_min, z_l_max - z_l_min, x_h_max - x_h_min)
-            y_k_slice = int(self.post_slice_slider.value())
+            y_k_slice = self.post_slice_slider.value()
+            slice_value = (y_k_max - y_k_min) * (y_k_slice + 1) / self.dataset.shape[1] + y_k_min
             self.image = self.dataset[:, y_k_slice, :]
 
         elif slice_direction == "Z(L)":
             rect = QtCore.QRectF(y_k_min, x_h_min, y_k_max - y_k_min, x_h_max - x_h_min)
-            z_l_slice = int(self.post_slice_slider.value())
+            z_l_slice = self.post_slice_slider.value()
+            slice_value = (z_l_max - z_l_min) * (z_l_slice + 1) / self.dataset.shape[2] + z_l_min
             self.image = self.dataset[ :, :, z_l_slice]
+
+        self.post_slice_sbox.setValue(slice_value)
 
         # Sets image in viewing window
         self.main_window.image_widget.displayImage(self.image, rect=rect)
@@ -520,7 +524,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_gbox.setEnabled(True)
 
         self.post_slice_direction_cbox.setEnabled(True)
-        self.post_slice_sbox.setEnabled(True)
         self.post_slice_slider.setEnabled(True)
 
     # --------------------------------------------------------------------------
@@ -533,23 +536,23 @@ class OptionsWidget(pg.LayoutWidget):
 
         if self.post_slice_direction_cbox.currentText() == "X(H)":
             self.post_slice_slider.setRange(0, self.dataset.shape[0] - 1)
-            self.post_slice_sbox.setRange(self.x_h_axis[0], self.x_h_axis[1] - 1)
+            self.post_slice_sbox.setRange(self.x_h_axis[0], self.x_h_axis[1])
         elif self.post_slice_direction_cbox.currentText() == "Y(K)":
             self.post_slice_slider.setRange(0, self.dataset.shape[1] - 1)
-            self.post_slice_sbox.setRange(self.y_k_axis[0], self.y_k_axis[1] - 1)
+            self.post_slice_sbox.setRange(self.y_k_axis[0], self.y_k_axis[1])
         elif self.post_slice_direction_cbox.currentText() == "Z(L)":
             self.post_slice_slider.setRange(0, self.dataset.shape[2] - 1)
-            self.post_slice_sbox.setRange(self.z_l_axis[0], self.z_l_axis[1] - 1)
+            self.post_slice_sbox.setRange(self.z_l_axis[0], self.z_l_axis[1])
 
     # --------------------------------------------------------------------------
 
     def postChangeSliderValue(self, value):
 
         """
-        Toggles data slice for post mode plotting.
+
         """
 
-        self.post_slice_slider.setValue(value)
+        self.post_slice_slider.setValue(int(value))
 
     # --------------------------------------------------------------------------
 
@@ -845,9 +848,9 @@ class ImageWidget(pg.PlotWidget):
         roi_3_plot = self.main_window.roi_plots_widget.roi_3_plot
         roi_4_plot = self.main_window.roi_plots_widget.roi_4_plot
         self.roi1 = ROIWidget([200, 100], [40, 40], roi_1_layout, roi_1_plot)
-        self.roi2 = ROIWidget([210, 110], [30, 30], roi_2_layout, roi_2_plot)
-        self.roi3 = ROIWidget([220, 120], [20, 20], roi_3_layout, roi_3_plot)
-        self.roi4 = ROIWidget([230, 130], [10, 10], roi_4_layout, roi_4_plot)
+        self.roi2 = ROIWidget([205, 105], [30, 30], roi_2_layout, roi_2_plot)
+        self.roi3 = ROIWidget([210, 110], [20, 20], roi_3_layout, roi_3_plot)
+        self.roi4 = ROIWidget([215, 115], [10, 10], roi_4_layout, roi_4_plot)
         self.addItem(self.roi1)
         self.addItem(self.roi2)
         self.addItem(self.roi3)
