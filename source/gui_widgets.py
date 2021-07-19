@@ -14,6 +14,7 @@ import os
 from scipy import ndimage
 import tifffile as tiff
 import time
+import warnings
 
 # Local
 from source.data_processing import *
@@ -345,7 +346,7 @@ class OptionsWidget(pg.LayoutWidget):
         file_path = f"{self.live_scan_path}/{file_name.text()}"
 
         # Reads image
-        self.image = np.fliplr(tiff.imread(file_path))
+        self.image = np.rot90(tiff.imread(file_path), 2)
 
         # Loads image into viewing window
         self.main_window.image_widget.displayImage(self.image, rect=None)
@@ -507,14 +508,16 @@ class OptionsWidget(pg.LayoutWidget):
             slice_value = (z_l_max - z_l_min) * (z_l_slice + 1) / self.dataset.shape[2] + z_l_min
             self.image = self.dataset[ :, :, z_l_slice]
 
+        self.image = np.flipud(self.image)
+
         self.post_slice_sbox.setValue(slice_value)
 
         # Sets image in viewing window
         self.main_window.image_widget.displayImage(self.image, rect=rect)
 
-        if self.post_xyz_rbtn.isChecked():
+        if self.post_xyz_rbtn.isChecked() and self.options_roi_chkbox.isChecked():
             self.main_window.roi_plots_widget.displayROIPlots(self.dataset, slice_direction)
-        elif self.post_hkl_rbtn.isChecked():
+        else:
             self.main_window.roi_plots_widget.clearROIPlots()
 
         # Enable options
@@ -825,6 +828,8 @@ class ImageWidget(pg.PlotWidget):
 
         # bkgrd initially set to black
         self.setBackground("default")
+
+        self.invertY(True)
 
         self.view = self.getViewBox()
         self.image_item = pg.ImageItem()
