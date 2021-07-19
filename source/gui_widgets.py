@@ -5,12 +5,13 @@ See LICENSE file.
 
 # ==============================================================================
 
-import pyqtgraph as pg
+import math
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
-from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
 import os
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtGui, QtCore
 from scipy import ndimage
 import tifffile as tiff
 import time
@@ -522,7 +523,6 @@ class OptionsWidget(pg.LayoutWidget):
 
         # Enable options
         self.options_gbox.setEnabled(True)
-
         self.post_slice_direction_cbox.setEnabled(True)
         self.post_slice_slider.setEnabled(True)
 
@@ -543,16 +543,6 @@ class OptionsWidget(pg.LayoutWidget):
         elif self.post_slice_direction_cbox.currentText() == "Z(L)":
             self.post_slice_slider.setRange(0, self.dataset.shape[2] - 1)
             self.post_slice_sbox.setRange(self.z_l_axis[0], self.z_l_axis[1])
-
-    # --------------------------------------------------------------------------
-
-    def postChangeSliderValue(self, value):
-
-        """
-
-        """
-
-        self.post_slice_slider.setValue(int(value))
 
     # --------------------------------------------------------------------------
 
@@ -876,15 +866,17 @@ class ImageWidget(pg.PlotWidget):
 
         # Rotates image 270 degrees
         self.image = np.rot90(image, 3)
+        c_map_max = math.ceil(np.amax(self.image) * self.cmap_pctl)
 
         # Checks colormap scale
         if self.options_cmap_scale == "Log":
-            norm = colors.LogNorm(vmax=np.amax(self.image)*self.cmap_pctl)
+            norm = colors.LogNorm(vmax=c_map_max)
         else:
-            norm = colors.Normalize(vmax=np.amax(self.image)*self.cmap_pctl)
+            norm = colors.Normalize(vmax=c_map_max)
 
         # Normalizes image
         norm_image = norm(self.image)
+
         # Adds colormap to image
         color_image = plt.cm.jet(norm_image)
         # Sets image
