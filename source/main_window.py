@@ -46,15 +46,21 @@ class MainWindow(QtGui.QMainWindow):
         self.options_dock = Dock("Options", size=(100, 300), hideTitle=True)
         self.analysis_dock = Dock("Analysis", size=(300, 100), hideTitle=True)
         self.image_dock = Dock("Image", size=(300, 300))
-        self.roi_plots_dock = Dock("ROI Plots", size=(300, 300))
+        self.roi_plots_dock = Dock("ROI", size=(300, 300))
+        self.advanced_roi_plot_dock = Dock("Advanced ROI", size=(300, 300))
 
         # Add/organize docks
         self.dock_area.addDock(self.options_dock, "left")
         self.dock_area.addDock(self.image_dock, "right", self.options_dock)
         self.dock_area.addDock(self.roi_plots_dock, "right", self.options_dock)
+        self.dock_area.addDock(self.advanced_roi_plot_dock, "right", self.options_dock)
         self.dock_area.addDock(self.analysis_dock, "bottom", self.image_dock)
         self.dock_area.moveDock(self.analysis_dock, "bottom", self.roi_plots_dock)
+        self.dock_area.moveDock(self.analysis_dock, "bottom", self.advanced_roi_plot_dock)
+        self.dock_area.moveDock(self.image_dock, "above", self.advanced_roi_plot_dock)
+        self.dock_area.moveDock(self.roi_plots_dock, "above", self.advanced_roi_plot_dock)
         self.dock_area.moveDock(self.image_dock, "above", self.roi_plots_dock)
+
 
     # --------------------------------------------------------------------------
 
@@ -65,13 +71,15 @@ class MainWindow(QtGui.QMainWindow):
         self.analysis_widget = AnalysisWidget(self) # Image analysis/info widget
         self.analysis_widget.setupComponents() # Analysis (sub)widgets
         self.roi_plots_widget = ROIPlotsWidget(self)
+        self.advanced_roi_plot_widget = AdvancedROIPlotWidget(self)
         self.image_widget = ImageWidget(self) # Image widget with sample image
-
 
         # Add widgets to dock objects
         self.options_dock.addWidget(self.options_widget)
         self.analysis_dock.addWidget(self.analysis_widget)
         self.image_dock.addWidget(self.image_widget)
         self.roi_plots_dock.addWidget(self.roi_plots_widget)
+        self.advanced_roi_plot_dock.addWidget(self.advanced_roi_plot_widget)
+
 
 # ==============================================================================
