@@ -231,6 +231,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_aspect_ratio_auto_rbtn = QtGui.QRadioButton("Auto")
         self.options_aspect_ratio_auto_rbtn.setChecked(True)
         self.options_aspect_ratio_one_rbtn = QtGui.QRadioButton("1:1")
+        self.options_advanced_roi_btn = QtGui.QPushButton("Advanced ROI")
+        self.options_advanced_roi_txtbox = QtGui.QLineEdit()
+        self.options_advanced_roi_txtbox.setReadOnly(True)
 
         # Options layout
         self.options_layout.addWidget(self.options_roi_chkbox, 0, 0)
@@ -250,6 +253,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_layout.addWidget(self.options_aspect_ratio_lbl, 6, 0)
         self.options_layout.addWidget(self.options_aspect_ratio_auto_rbtn, 6, 1)
         self.options_layout.addWidget(self.options_aspect_ratio_one_rbtn, 6, 2)
+        self.options_layout.addWidget(self.options_advanced_roi_btn, 7, 0)
+        self.options_layout.addWidget(self.options_advanced_roi_txtbox, 7, 1, 1, 2)
 
         # Options widget connections
         self.options_roi_chkbox.stateChanged.connect(self.toggleROIBoxes)
@@ -264,6 +269,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_cmap_pctl_slider.valueChanged.connect(self.changeCmapPctl)
         self.options_aspect_ratio_auto_rbtn.toggled.connect(self.toggleAspectRatio)
         self.options_aspect_ratio_one_rbtn.toggled.connect(self.toggleAspectRatio)
+        self.options_advanced_roi_btn.clicked.connect(self.setAdvancedROI)
 
     # --------------------------------------------------------------------------
 
@@ -455,8 +461,6 @@ class OptionsWidget(pg.LayoutWidget):
             self.y_k_axis = [0, self.dataset.shape[1]]
             self.z_l_axis = [0, self.dataset.shape[2]]
 
-            self.main_window.roi_plots_widget.enableROIPlots()
-
         elif self.post_hkl_rbtn.isChecked():
             scan_number = scan.text()[1:]
 
@@ -471,7 +475,6 @@ class OptionsWidget(pg.LayoutWidget):
             self.z_l_axis = [self.axes[2][0], self.axes[2][-1]]
 
             self.main_window.roi_plots_widget.clearROIPlots()
-            self.main_window.roi_plots_widget.disableROIPlots()
 
         self.post_current_scan_txtbox.setText(scan.text())
 
@@ -679,6 +682,23 @@ class OptionsWidget(pg.LayoutWidget):
             self.main_window.image_widget.setAspectLocked(False)
         else:
             self.main_window.image_widget.setAspectLocked(True, ratio=1)
+
+    # --------------------------------------------------------------------------
+
+    def setAdvancedROI(self):
+
+        dialog = AdvancedROIDialogWidget()
+
+        first_roi = dialog.first_roi
+        operator = dialog.operator
+        second_roi = dialog.second_roi
+
+        if not "" in [first_roi, operator, second_roi]:
+            self.options_advanced_roi_txtbox.setText(f"{first_roi} {operator} {second_roi}")
+
+            # Calculate adv roi
+
+
 
     # --------------------------------------------------------------------------
 
@@ -936,76 +956,6 @@ class ImageWidget(pg.PlotWidget):
 
 # ==============================================================================
 
-class ROIPlotsWidget(pg.GraphicsLayoutWidget):
-
-    """
-    Contains average intensity plots for ROI's. Plots only work with post mode.
-    """
-
-    def __init__ (self, parent, title="Average Intensity"):
-        super(ROIPlotsWidget, self).__init__(parent)
-        self.main_window = parent
-
-        self.roi_1_plot = self.addPlot(title="ROI 1")
-        self.roi_2_plot = self.addPlot(title="ROI 2")
-        self.nextRow()
-        self.roi_3_plot = self.addPlot(title="ROI 3")
-        self.roi_4_plot = self.addPlot(title="ROI 4")
-
-    # --------------------------------------------------------------------------
-
-    def displayROIPlots(self, data, slice_direction):
-
-        """
-        Uses data to display avg intensities in all ROI plots. This function is
-        only used for the initial display when a new dataset is loaded.
-        """
-
-        warnings.filterwarnings("ignore", category=RuntimeWarning)
-
-        self.main_window.image_widget.roi1.plotAverageIntensity(data, slice_direction)
-        self.main_window.image_widget.roi2.plotAverageIntensity(data, slice_direction)
-        self.main_window.image_widget.roi3.plotAverageIntensity(data, slice_direction)
-        self.main_window.image_widget.roi4.plotAverageIntensity(data, slice_direction)
-
-    # --------------------------------------------------------------------------
-
-    def clearROIPlots(self):
-
-        """
-        Clears all ROI plots.
-        """
-        self.roi_1_plot.clear()
-        self.roi_2_plot.clear()
-        self.roi_3_plot.clear()
-        self.roi_4_plot.clear()
-
-    # --------------------------------------------------------------------------
-
-    def enableROIPlots(self):
-
-        """
-        Enables all ROI plots.
-        """
-        self.roi_1_plot.setEnabled(True)
-        self.roi_2_plot.setEnabled(True)
-        self.roi_3_plot.setEnabled(True)
-        self.roi_4_plot.setEnabled(True)
-
-    # --------------------------------------------------------------------------
-
-    def disableROIPlots(self):
-
-        """
-        Disables all ROI plots.
-        """
-        self.roi_1_plot.setEnabled(False)
-        self.roi_2_plot.setEnabled(False)
-        self.roi_3_plot.setEnabled(False)
-        self.roi_4_plot.setEnabled(False)
-
-# ==============================================================================
-
 class ROIWidget(pg.ROI):
 
     """
@@ -1195,3 +1145,79 @@ class ROIWidget(pg.ROI):
             self.roi_plot.plot(avg_intensity, clear=True)
 
 # ==============================================================================
+
+class ROIPlotsWidget(pg.GraphicsLayoutWidget):
+
+    """
+    Contains average intensity plots for ROI's. Plots only work with post mode.
+    """
+
+    def __init__ (self, parent, title="Average Intensity"):
+        super(ROIPlotsWidget, self).__init__(parent)
+        self.main_window = parent
+
+        self.roi_1_plot = self.addPlot(title="ROI 1")
+        self.roi_2_plot = self.addPlot(title="ROI 2")
+        self.nextRow()
+        self.roi_3_plot = self.addPlot(title="ROI 3")
+        self.roi_4_plot = self.addPlot(title="ROI 4")
+
+    # --------------------------------------------------------------------------
+
+    def displayROIPlots(self, data, slice_direction):
+
+        """
+        Uses data to display avg intensities in all ROI plots. This function is
+        only used for the initial display when a new dataset is loaded.
+        """
+
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+        self.main_window.image_widget.roi1.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi2.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi3.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi4.plotAverageIntensity(data, slice_direction)
+
+    # --------------------------------------------------------------------------
+
+    def clearROIPlots(self):
+
+        """
+        Clears all ROI plots.
+        """
+        self.roi_1_plot.clear()
+        self.roi_2_plot.clear()
+        self.roi_3_plot.clear()
+        self.roi_4_plot.clear()
+
+    # --------------------------------------------------------------------------
+
+    def enableROIPlots(self):
+
+        """
+        Enables all ROI plots.
+        """
+        self.roi_1_plot.setEnabled(True)
+        self.roi_2_plot.setEnabled(True)
+        self.roi_3_plot.setEnabled(True)
+        self.roi_4_plot.setEnabled(True)
+
+    # --------------------------------------------------------------------------
+
+    def disableROIPlots(self):
+
+        """
+        Disables all ROI plots.
+        """
+        self.roi_1_plot.setEnabled(False)
+        self.roi_2_plot.setEnabled(False)
+        self.roi_3_plot.setEnabled(False)
+        self.roi_4_plot.setEnabled(False)
+
+# ==============================================================================
+
+class AdvancedROIPlotWidget(pg.PlotWidget):
+
+    def __init__ (self, parent):
+        super(AdvancedROIPlotWidget, self).__init__(parent)
+        self.main_window = parent

@@ -292,8 +292,51 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.chi = self.chi_sbox.value()
         self.phi = self.phi_sbox.value()
         self.nu = self.nu_sbox.value()
-        self.delta = self.delta_sbox.value() 
+        self.delta = self.delta_sbox.value()
+        self.close()
 
-        print("ACCEPTED")
+# ==============================================================================
+
+class AdvancedROIDialogWidget(QtGui.QDialog):
+
+    def __init__ (self):
+        super().__init__()
+
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+
+        self.first_roi = ""
+        self.operator = ""
+        self.second_roi = ""
+
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+
+        self.first_roi_cbox = QtGui.QComboBox()
+        self.first_roi_cbox.addItems(["", "ROI 1", "ROI 2", "ROI 3", "ROI 4"])
+        self.operator_cbox = QtGui.QComboBox()
+        self.operator_cbox.addItems(["-"])
+        self.second_roi_cbox = QtGui.QComboBox()
+        self.second_roi_cbox.addItems(["", "ROI 1", "ROI 2", "ROI 3", "ROI 4"])
+        self.dialog_btnbox = QtGui.QDialogButtonBox()
+        self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
+
+        self.layout.addWidget(self.first_roi_cbox, 0, 0)
+        self.layout.addWidget(self.operator_cbox, 0, 1)
+        self.layout.addWidget(self.second_roi_cbox, 0, 2)
+        self.layout.addWidget(self.dialog_btnbox, 1, 2)
+
+        self.dialog_btnbox.accepted.connect(self.accept)
+
+        # Runs dialog widget
+        self.exec_()
+
+    # --------------------------------------------------------------------------
+
+    def accept(self):
+        self.first_roi = self.first_roi_cbox.currentText()
+        self.operator = self.operator_cbox.currentText()
+        self.second_roi = self.second_roi_cbox.currentText()
+        self.close()
+
 
 # ==============================================================================
