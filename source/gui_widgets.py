@@ -189,7 +189,6 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_spec_config_btn.clicked.connect(self.postSetSpecConfigFiles)
         self.post_scan_list.itemClicked.connect(self.postLoadData)
         self.post_slice_direction_cbox.currentTextChanged.connect(self.postLoadImage)
-        #self.post_slice_sbox.valueChanged.connect(self.postChangeSliderValue)
         self.post_slice_slider.valueChanged.connect(self.postLoadImage)
 
         # Options widgets
@@ -279,23 +278,24 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_scan_path = QtGui.QFileDialog.getExistingDirectory(self,
             "Open Scan Directory")
 
-        # Checks if directory only contains image files
-        for file_name in os.listdir(self.live_scan_path):
-            if not file_name.endswith((".tif", ".tiff")):
-                return
+        if self.live_scan_path != "":
+            # Checks if directory only contains image files
+            for file_name in os.listdir(self.live_scan_path):
+                if not file_name.endswith((".tif", ".tiff")):
+                    return
 
-        # Separates path basename from path to display in txtbox
-        self.live_scan_path_base = os.path.basename(self.live_scan_path)
-        self.live_set_scan_txtbox.setText(self.live_scan_path_base)
-        self.live_image_files = sorted(os.listdir(self.live_scan_path))
+            # Separates path basename from path to display in txtbox
+            self.live_scan_path_base = os.path.basename(self.live_scan_path)
+            self.live_set_scan_txtbox.setText(self.live_scan_path_base)
+            self.live_image_files = sorted(os.listdir(self.live_scan_path))
 
-        # Enables coordinate system radio buttons
-        self.live_xyz_rbtn.setEnabled(True)
-        self.live_hkl_rbtn.setEnabled(True)
+            # Enables coordinate system radio buttons
+            self.live_xyz_rbtn.setEnabled(True)
+            self.live_hkl_rbtn.setEnabled(True)
 
-        # Sets scan image list is xyz is already selected
-        if self.live_xyz_rbtn.isChecked():
-            self.liveSetImageList()
+            # Sets scan image list is xyz is already selected
+            if self.live_xyz_rbtn.isChecked():
+                self.liveSetImageList()
 
     # --------------------------------------------------------------------------
 
@@ -369,22 +369,19 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_project_path = QtGui.QFileDialog.getExistingDirectory(self,
             "Open Project Directory")
 
-        for item in os.listdir(self.post_project_path):
-            if item == "images":
-                break
+        if self.post_project_path != "" and "images" in os.listdir(self.post_project_path):
+            # Separates path basename from path to display in txtbox
+            self.post_project_path_base = os.path.basename(self.post_project_path)
+            self.post_set_project_txtbox.setText(self.post_project_path_base)
 
-        # Separates path basename from path to display in txtbox
-        self.post_project_path_base = os.path.basename(self.post_project_path)
-        self.post_set_project_txtbox.setText(self.post_project_path_base)
+            # Sets correct scan path
+            self.post_images_path = os.path.join(self.post_project_path, "images")
+            self.post_scans_path = f"{self.post_images_path}/{os.listdir(self.post_images_path)[0]}"
+            self.post_scan_folders = sorted(os.listdir(self.post_scans_path))
 
-        # Sets correct scan path
-        self.post_images_path = os.path.join(self.post_project_path, "images")
-        self.post_scans_path = f"{self.post_images_path}/{os.listdir(self.post_images_path)[0]}"
-        self.post_scan_folders = sorted(os.listdir(self.post_scans_path))
-
-        # Enables coordinate system radio buttons
-        self.post_xyz_rbtn.setEnabled(True)
-        self.post_hkl_rbtn.setEnabled(True)
+            # Enables coordinate system radio buttons
+            self.post_xyz_rbtn.setEnabled(True)
+            self.post_hkl_rbtn.setEnabled(True)
 
     # --------------------------------------------------------------------------
 
