@@ -455,6 +455,8 @@ class OptionsWidget(pg.LayoutWidget):
             self.y_k_axis = [0, self.dataset.shape[1]]
             self.z_l_axis = [0, self.dataset.shape[2]]
 
+            self.main_window.roi_plots_widget.enableROIPlots()
+
         elif self.post_hkl_rbtn.isChecked():
             scan_number = scan.text()[1:]
 
@@ -469,6 +471,7 @@ class OptionsWidget(pg.LayoutWidget):
             self.z_l_axis = [self.axes[2][0], self.axes[2][-1]]
 
             self.main_window.roi_plots_widget.clearROIPlots()
+            self.main_window.roi_plots_widget.disableROIPlots()
 
         self.post_current_scan_txtbox.setText(scan.text())
 
@@ -754,6 +757,8 @@ class AnalysisWidget(pg.LayoutWidget):
         self.roi3_gbox.setLayout(self.roi_3_layout)
         self.roi4_gbox.setLayout(self.roi_4_layout)
 
+        self.setEnabled(False)
+
     # --------------------------------------------------------------------------
 
     def setupComponents(self):
@@ -866,7 +871,7 @@ class ImageWidget(pg.PlotWidget):
 
         # Rotates image 270 degrees
         self.image = np.rot90(image, 3)
-        c_map_max = math.ceil(np.amax(self.image) * self.cmap_pctl)
+        c_map_max = np.amax(self.image) * self.cmap_pctl
 
         # Checks colormap scale
         if self.options_cmap_scale == "Log":
@@ -889,6 +894,7 @@ class ImageWidget(pg.PlotWidget):
         self.rect = rect
 
         # Update analysis textboxes
+        self.main_window.analysis_widget.setEnabled(True)
         self.main_window.analysis_widget.image_width_txtbox.setText(str(self.image.shape[0]))
         self.main_window.analysis_widget.image_height_txtbox.setText(str(self.image.shape[1]))
         self.main_window.analysis_widget.image_max_intensity_txtbox.setText(str(round(np.amax(self.image))))
@@ -896,6 +902,8 @@ class ImageWidget(pg.PlotWidget):
 
         # Update crosshair information
         self.view.scene().sigMouseMoved.connect(self.updateMouseCrosshair)
+
+
 
     # --------------------------------------------------------------------------
 
@@ -960,8 +968,6 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
         self.main_window.image_widget.roi3.plotAverageIntensity(data, slice_direction)
         self.main_window.image_widget.roi4.plotAverageIntensity(data, slice_direction)
 
-
-
     # --------------------------------------------------------------------------
 
     def clearROIPlots(self):
@@ -973,6 +979,30 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
         self.roi_2_plot.clear()
         self.roi_3_plot.clear()
         self.roi_4_plot.clear()
+
+    # --------------------------------------------------------------------------
+
+    def enableROIPlots(self):
+
+        """
+        Enables all ROI plots.
+        """
+        self.roi_1_plot.setEnabled(True)
+        self.roi_2_plot.setEnabled(True)
+        self.roi_3_plot.setEnabled(True)
+        self.roi_4_plot.setEnabled(True)
+
+    # --------------------------------------------------------------------------
+
+    def disableROIPlots(self):
+
+        """
+        Disables all ROI plots.
+        """
+        self.roi_1_plot.setEnabled(False)
+        self.roi_2_plot.setEnabled(False)
+        self.roi_3_plot.setEnabled(False)
+        self.roi_4_plot.setEnabled(False)
 
 # ==============================================================================
 
