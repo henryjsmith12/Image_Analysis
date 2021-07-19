@@ -560,15 +560,15 @@ class OptionsWidget(pg.LayoutWidget):
 
         # 2 = checked
         if state == 2:
-            self.main_window.image_widget.roi1.show()
-            self.main_window.image_widget.roi2.show()
-            self.main_window.image_widget.roi3.show()
-            self.main_window.image_widget.roi4.show()
+            self.main_window.image_widget.roi_1.show()
+            self.main_window.image_widget.roi_2.show()
+            self.main_window.image_widget.roi_3.show()
+            self.main_window.image_widget.roi_4.show()
         else:
-            self.main_window.image_widget.roi1.hide()
-            self.main_window.image_widget.roi2.hide()
-            self.main_window.image_widget.roi3.hide()
-            self.main_window.image_widget.roi4.hide()
+            self.main_window.image_widget.roi_1.hide()
+            self.main_window.image_widget.roi_2.hide()
+            self.main_window.image_widget.roi_3.hide()
+            self.main_window.image_widget.roi_4.hide()
 
     # --------------------------------------------------------------------------
 
@@ -693,11 +693,12 @@ class OptionsWidget(pg.LayoutWidget):
         operator = dialog.operator
         second_roi = dialog.second_roi
 
+        str_title = f"{first_roi} {operator} {second_roi}"
         if not "" in [first_roi, operator, second_roi]:
-            self.options_advanced_roi_txtbox.setText(f"{first_roi} {operator} {second_roi}")
+            self.options_advanced_roi_txtbox.setText(str_title)
 
-            # Calculate adv roi
-
+            self.main_window.advanced_roi_plot_widget.getRegions(first_roi, operator,
+                second_roi, str_title)
 
 
     # --------------------------------------------------------------------------
@@ -750,18 +751,18 @@ class AnalysisWidget(pg.LayoutWidget):
         # Create GroupBoxes
         self.mouse_gbox = QtGui.QGroupBox("Mouse")
         self.image_gbox = QtGui.QGroupBox("Image")
-        self.roi1_gbox = QtGui.QGroupBox("ROI 1")
-        self.roi2_gbox = QtGui.QGroupBox("ROI 2")
-        self.roi3_gbox = QtGui.QGroupBox("ROI 3")
-        self.roi4_gbox = QtGui.QGroupBox("ROI 4")
+        self.roi_1_gbox = QtGui.QGroupBox("ROI 1")
+        self.roi_2_gbox = QtGui.QGroupBox("ROI 2")
+        self.roi_3_gbox = QtGui.QGroupBox("ROI 3")
+        self.roi_4_gbox = QtGui.QGroupBox("ROI 4")
 
         # Add GroupBoxes to widget
         self.addWidget(self.mouse_gbox, row=0, col=0, rowspan=1)
         self.addWidget(self.image_gbox, row=1, col=0, rowspan=1)
-        self.addWidget(self.roi1_gbox, row=0, col=1, rowspan=2)
-        self.addWidget(self.roi2_gbox, row=0, col=2, rowspan=2)
-        self.addWidget(self.roi3_gbox, row=0, col=3, rowspan=2)
-        self.addWidget(self.roi4_gbox, row=0, col=4, rowspan=2)
+        self.addWidget(self.roi_1_gbox, row=0, col=1, rowspan=2)
+        self.addWidget(self.roi_2_gbox, row=0, col=2, rowspan=2)
+        self.addWidget(self.roi_3_gbox, row=0, col=3, rowspan=2)
+        self.addWidget(self.roi_4_gbox, row=0, col=4, rowspan=2)
 
         # Create/add layouts
         self.mouse_layout = QtGui.QGridLayout()
@@ -772,10 +773,10 @@ class AnalysisWidget(pg.LayoutWidget):
         self.roi_4_layout = QtGui.QGridLayout()
         self.mouse_gbox.setLayout(self.mouse_layout)
         self.image_gbox.setLayout(self.image_layout)
-        self.roi1_gbox.setLayout(self.roi_1_layout)
-        self.roi2_gbox.setLayout(self.roi_2_layout)
-        self.roi3_gbox.setLayout(self.roi_3_layout)
-        self.roi4_gbox.setLayout(self.roi_4_layout)
+        self.roi_1_gbox.setLayout(self.roi_1_layout)
+        self.roi_2_gbox.setLayout(self.roi_2_layout)
+        self.roi_3_gbox.setLayout(self.roi_3_layout)
+        self.roi_4_gbox.setLayout(self.roi_4_layout)
 
         self.setEnabled(False)
 
@@ -864,14 +865,14 @@ class ImageWidget(pg.PlotWidget):
         roi_2_plot = self.main_window.roi_plots_widget.roi_2_plot
         roi_3_plot = self.main_window.roi_plots_widget.roi_3_plot
         roi_4_plot = self.main_window.roi_plots_widget.roi_4_plot
-        self.roi1 = ROIWidget([200, 100], [40, 40], roi_1_layout, roi_1_plot)
-        self.roi2 = ROIWidget([205, 105], [30, 30], roi_2_layout, roi_2_plot)
-        self.roi3 = ROIWidget([210, 110], [20, 20], roi_3_layout, roi_3_plot)
-        self.roi4 = ROIWidget([215, 115], [10, 10], roi_4_layout, roi_4_plot)
-        self.addItem(self.roi1)
-        self.addItem(self.roi2)
-        self.addItem(self.roi3)
-        self.addItem(self.roi4)
+        self.roi_1 = ROIWidget([200, 100], [40, 40], roi_1_layout, roi_1_plot)
+        self.roi_2 = ROIWidget([205, 105], [30, 30], roi_2_layout, roi_2_plot)
+        self.roi_3 = ROIWidget([210, 110], [20, 20], roi_3_layout, roi_3_plot)
+        self.roi_4 = ROIWidget([215, 115], [10, 10], roi_4_layout, roi_4_plot)
+        self.addItem(self.roi_1)
+        self.addItem(self.roi_2)
+        self.addItem(self.roi_3)
+        self.addItem(self.roi_4)
 
         # Creates mouse crosshair
         self.v_line = pg.InfiniteLine(angle=90, movable=False)
@@ -922,8 +923,6 @@ class ImageWidget(pg.PlotWidget):
 
         # Update crosshair information
         self.view.scene().sigMouseMoved.connect(self.updateMouseCrosshair)
-
-
 
     # --------------------------------------------------------------------------
 
@@ -1142,6 +1141,7 @@ class ROIWidget(pg.ROI):
                     avg = np.mean(data_roi[:, :, i])
                     avg_intensity.append(avg)
 
+            self.avg_intensity = avg_intensity
             self.roi_plot.plot(avg_intensity, clear=True)
 
 # ==============================================================================
@@ -1173,10 +1173,10 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
 
         warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-        self.main_window.image_widget.roi1.plotAverageIntensity(data, slice_direction)
-        self.main_window.image_widget.roi2.plotAverageIntensity(data, slice_direction)
-        self.main_window.image_widget.roi3.plotAverageIntensity(data, slice_direction)
-        self.main_window.image_widget.roi4.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi_1.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi_2.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi_3.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi_4.plotAverageIntensity(data, slice_direction)
 
     # --------------------------------------------------------------------------
 
@@ -1221,3 +1221,49 @@ class AdvancedROIPlotWidget(pg.PlotWidget):
     def __init__ (self, parent):
         super(AdvancedROIPlotWidget, self).__init__(parent)
         self.main_window = parent
+
+        self.setLabel("left", "Avg Intensity")
+        self.setLabel("bottom", "Slice")
+
+        self.first_roi = None
+        self.operator = None
+        self.second_roi = None
+
+        self.main_window.image_widget.roi_1.sigRegionChanged.connect(self.plotData)
+        self.main_window.image_widget.roi_2.sigRegionChanged.connect(self.plotData)
+        self.main_window.image_widget.roi_3.sigRegionChanged.connect(self.plotData)
+        self.main_window.image_widget.roi_4.sigRegionChanged.connect(self.plotData)
+
+    # --------------------------------------------------------------------------
+
+    def getRegions(self, first_roi_name, operator, second_roi_name, title):
+        self.first_roi = self.getCorrespondingROI(first_roi_name)
+        self.operator = operator
+        self.second_roi = self.getCorrespondingROI(second_roi_name)
+
+        self.plotData()
+        self.setTitle(title)
+
+    # --------------------------------------------------------------------------
+
+    def plotData(self):
+        if not None in [self.first_roi, self.operator, self.second_roi]:
+            first_avg_intensity = np.array(self.first_roi.avg_intensity)
+            second_avg_intensity = np.array(self.second_roi.avg_intensity)
+
+            if self.operator == "-":
+                avg_intensity = np.subtract(first_avg_intensity, second_avg_intensity)
+
+            self.plot(avg_intensity, clear=True)
+
+    # --------------------------------------------------------------------------
+
+    def getCorrespondingROI(self, roi_name):
+        roi_dict = {
+            "ROI 1" : self.main_window.image_widget.roi_1,
+            "ROI 2" : self.main_window.image_widget.roi_2,
+            "ROI 3" : self.main_window.image_widget.roi_3,
+            "ROI 4" : self.main_window.image_widget.roi_4
+        }
+
+        return roi_dict[roi_name]

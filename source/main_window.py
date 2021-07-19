@@ -71,8 +71,8 @@ class MainWindow(QtGui.QMainWindow):
         self.analysis_widget = AnalysisWidget(self) # Image analysis/info widget
         self.analysis_widget.setupComponents() # Analysis (sub)widgets
         self.roi_plots_widget = ROIPlotsWidget(self)
-        self.advanced_roi_plot_widget = AdvancedROIPlotWidget(self)
         self.image_widget = ImageWidget(self) # Image widget with sample image
+        self.advanced_roi_plot_widget = AdvancedROIPlotWidget(self)
 
         # Add widgets to dock objects
         self.options_dock.addWidget(self.options_widget)
