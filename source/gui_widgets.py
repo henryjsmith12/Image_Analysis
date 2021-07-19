@@ -956,10 +956,14 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
         only used for the initial display when a new dataset is loaded.
         """
 
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+
         self.main_window.image_widget.roi1.plotAverageIntensity(data, slice_direction)
         self.main_window.image_widget.roi2.plotAverageIntensity(data, slice_direction)
         self.main_window.image_widget.roi3.plotAverageIntensity(data, slice_direction)
         self.main_window.image_widget.roi4.plotAverageIntensity(data, slice_direction)
+
+
 
     # --------------------------------------------------------------------------
 
