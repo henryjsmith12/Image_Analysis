@@ -52,7 +52,7 @@ class DataProcessing:
         scan_range = srange(scan).list()
         data_source = Sector33SpecDataSource(project_dir, spec_name, spec_ext,
             instrument_config_name, detector_config_name, roi=roi, pixelsToAverage=bin,
-            scanList= scan_range, appConfig=app_config)
+            scanList=scan_range, appConfig=app_config)
         data_source.setCurrentDetector(detector_name)
         data_source.setProgressUpdater(updateDataSourceProgress)
         data_source.loadSource(mapHKL=True)
@@ -60,8 +60,9 @@ class DataProcessing:
         image_tbu = data_source.getImageToBeUsed()
         image_size = np.prod(data_source.getDetectorDimensions())
 
-        grid_mapper = QGridMapper(data_source, output_file_name, outputType=BINARY_OUTPUT,
-            transform=UnityTransform3D(), gridWriter=VTIGridWriter(), appConfig=app_config)
+        grid_mapper = QGridMapper(data_source, output_file_name, nx=250, ny=250, nz=250,
+            outputType=BINARY_OUTPUT, transform=UnityTransform3D(),
+            gridWriter=VTIGridWriter(), appConfig=app_config)
         grid_mapper.setProgressUpdater(updateMapperProgress)
         grid_mapper.doMap()
 
@@ -80,10 +81,11 @@ class DataProcessing:
 
         data = reader.GetOutput()
         dim = data.GetDimensions()
-    #    print ("dim" + str(dim))
+        print ("dim" + str(dim))
 
         vec = list(dim )
-    #    print ("vec: %s" % vec)
+
+        print ("vec: %s" % vec)
         vec = [i for i in dim]
         vec.reverse()
 
