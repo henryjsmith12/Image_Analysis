@@ -190,7 +190,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_xyz_rbtn.toggled.connect(self.postSetScanList)
         self.post_spec_config_btn.clicked.connect(self.postSetSpecConfigFiles)
         self.post_scan_list.itemClicked.connect(self.postLoadData)
+        self.post_scan_list.itemClicked.connect(self.postSetAxes)
         self.post_slice_direction_cbox.currentTextChanged.connect(self.postLoadImage)
+        self.post_slice_direction_cbox.currentTextChanged.connect(self.postSetAxes)
         self.post_slice_slider.valueChanged.connect(self.postLoadImage)
 
         # Options widgets
@@ -549,6 +551,29 @@ class OptionsWidget(pg.LayoutWidget):
         elif self.post_slice_direction_cbox.currentText() == "Z(L)":
             self.post_slice_slider.setRange(0, self.dataset.shape[2] - 1)
             self.post_slice_sbox.setRange(self.z_l_axis[0], self.z_l_axis[1])
+
+    # --------------------------------------------------------------------------
+
+    def postSetAxes(self):
+
+        """
+
+        """
+
+        if self.post_hkl_rbtn.isChecked():
+            if self.post_slice_direction_cbox.currentText() == "X(H)":
+                self.main_window.image_widget.setLabel("left", "K")
+                self.main_window.image_widget.setLabel("bottom", "L")
+            elif self.post_slice_direction_cbox.currentText() == "Y(K)":
+                self.main_window.image_widget.setLabel("left", "H")
+                self.main_window.image_widget.setLabel("bottom", "L")
+            else:
+                self.main_window.image_widget.setLabel("left", "H")
+                self.main_window.image_widget.setLabel("bottom", "K")
+        else:
+            self.main_window.image_widget.setLabel("left", "")
+            self.main_window.image_widget.setLabel("bottom", "")
+
 
     # --------------------------------------------------------------------------
 
