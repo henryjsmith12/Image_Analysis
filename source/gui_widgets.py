@@ -799,6 +799,15 @@ class AnalysisWidget(pg.LayoutWidget):
         self.mouse_intensity_lbl = QtGui.QLabel("Intensity:")
         self.mouse_intensity_txtbox = QtGui.QLineEdit()
         self.mouse_intensity_txtbox.setReadOnly(True)
+        self.mouse_h_lbl = QtGui.QLabel("H")
+        self.mouse_h_txtbox = QtGui.QLineEdit()
+        self.mouse_h_txtbox.setReadOnly(True)
+        self.mouse_k_lbl = QtGui.QLabel("K")
+        self.mouse_k_txtbox = QtGui.QLineEdit()
+        self.mouse_k_txtbox.setReadOnly(True)
+        self.mouse_l_lbl = QtGui.QLabel("L")
+        self.mouse_l_txtbox = QtGui.QLineEdit()
+        self.mouse_l_txtbox.setReadOnly(True)
 
         # Create image widgets
         self.image_width_lbl = QtGui.QLabel("Width:")
@@ -821,6 +830,13 @@ class AnalysisWidget(pg.LayoutWidget):
         self.mouse_layout.addWidget(self.mouse_y_txtbox, 1, 1)
         self.mouse_layout.addWidget(self.mouse_intensity_lbl, 2, 0)
         self.mouse_layout.addWidget(self.mouse_intensity_txtbox, 2, 1)
+        self.mouse_layout.addWidget(self.mouse_h_lbl, 0, 2)
+        self.mouse_layout.addWidget(self.mouse_h_txtbox, 0, 3)
+        self.mouse_layout.addWidget(self.mouse_k_lbl, 1, 2)
+        self.mouse_layout.addWidget(self.mouse_k_txtbox, 1, 3)
+        self.mouse_layout.addWidget(self.mouse_l_lbl, 2, 2)
+        self.mouse_layout.addWidget(self.mouse_l_txtbox, 2, 3)
+
         self.image_layout.addWidget(self.image_width_lbl, 0, 0)
         self.image_layout.addWidget(self.image_width_txtbox, 0, 1)
         self.image_layout.addWidget(self.image_height_lbl, 1, 0)
@@ -923,6 +939,7 @@ class ImageWidget(pg.PlotWidget):
 
         # Update crosshair information
         self.view.scene().sigMouseMoved.connect(self.updateMouseCrosshair)
+        self.view.scene().sigMouseMoved.connect(self.updateHKLTextboxes)
 
     # --------------------------------------------------------------------------
 
@@ -952,6 +969,33 @@ class ImageWidget(pg.PlotWidget):
         if self.image.shape[0] >= x >= 0 and self.image.shape[1] >= y >= 0:
             intensity = round(self.image[int(x), int(y)])
             self.main_window.analysis_widget.mouse_intensity_txtbox.setText(str(intensity))
+
+    # --------------------------------------------------------------------------
+
+    def updateHKLTextboxes(self, scene_point):
+
+        if self.main_window.options_widget.post_hkl_rbtn.isChecked():
+            view_point = self.view.mapSceneToView(scene_point)
+
+            x, y = view_point.x(), view_point.y()
+            z = self.main_window.options_widget.post_slice_sbox.value()
+
+            if self.main_window.options_widget.post_slice_direction_cbox.currentText() == "X(H)":
+                self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(z, 5)))
+                self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(y, 5)))
+                self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(x, 5)))
+            elif self.main_window.options_widget.post_slice_direction_cbox.currentText() == "Y(K)":
+                self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(y, 5)))
+                self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(z, 5)))
+                self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(x, 5)))
+            else:
+                self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(y, 5)))
+                self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(x, 5)))
+                self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(z, 5)))
+        else:
+            self.main_window.analysis_widget.mouse_h_txtbox.setText("")
+            self.main_window.analysis_widget.mouse_k_txtbox.setText("")
+            self.main_window.analysis_widget.mouse_l_txtbox.setText("")
 
 # ==============================================================================
 
