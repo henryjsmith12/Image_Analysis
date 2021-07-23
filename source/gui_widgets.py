@@ -158,6 +158,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_current_scan_lbl = QtGui.QLabel("Current Scan:")
         self.post_current_scan_txtbox = QtGui.QLineEdit()
         self.post_current_scan_txtbox.setReadOnly(True)
+        self.post_process_scan_btn = QtGui.QPushButton("Process Scan")
         self.post_slice_direction_lbl = QtGui.QLabel("Slice Direction:")
         self.post_slice_direction_cbox = QtGui.QComboBox()
         self.post_slice_direction_cbox.addItems(["X(H)", "Y(K)", "Z(L)"])
@@ -178,10 +179,11 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_image_layout.addWidget(self.post_scan_list, 2, 0, 3, 6)
         self.post_image_layout.addWidget(self.post_current_scan_lbl, 5, 0, 1, 2)
         self.post_image_layout.addWidget(self.post_current_scan_txtbox, 5, 2, 1, 4)
-        self.post_image_layout.addWidget(self.post_slice_direction_lbl, 6, 0, 1, 2)
-        self.post_image_layout.addWidget(self.post_slice_direction_cbox, 6, 2, 1, 4)
-        self.post_image_layout.addWidget(self.post_slice_sbox, 7, 0, 1, 1)
-        self.post_image_layout.addWidget(self.post_slice_slider, 7, 1, 1, 5)
+        self.post_image_layout.addWidget(self.post_process_scan_btn, 6, 0, 1, 6)
+        self.post_image_layout.addWidget(self.post_slice_direction_lbl, 7, 0, 1, 2)
+        self.post_image_layout.addWidget(self.post_slice_direction_cbox, 7, 2, 1, 4)
+        self.post_image_layout.addWidget(self.post_slice_sbox, 8, 0, 1, 1)
+        self.post_image_layout.addWidget(self.post_slice_slider, 8, 1, 1, 5)
 
         # Post widget connections
         self.post_set_project_btn.clicked.connect(self.postSetProject)
@@ -189,8 +191,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_hkl_rbtn.toggled.connect(self.postToggleSpecConfigButton)
         self.post_xyz_rbtn.toggled.connect(self.postSetScanList)
         self.post_spec_config_btn.clicked.connect(self.postSetSpecConfigFiles)
-        self.post_scan_list.itemClicked.connect(self.postLoadData)
-        self.post_scan_list.itemClicked.connect(self.postSetAxes)
+        self.post_process_scan_btn.clicked.connect(self.postProcessScan)
+        self.post_process_scan_btn.clicked.connect(self.postSetAxes)
         self.post_slice_direction_cbox.currentTextChanged.connect(self.postLoadImage)
         self.post_slice_direction_cbox.currentTextChanged.connect(self.postSetAxes)
         self.post_slice_slider.valueChanged.connect(self.postLoadImage)
@@ -422,6 +424,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_spec_path = dialog.spec_name
         self.post_detector_path = dialog.detector_config_name
         self.post_instrument_path = dialog.instrument_config_name
+        self.post_pixel_count_nx = dialog.pixel_count_nx
+        self.post_pixel_count_ny = dialog.pixel_count_ny
+        self.post_pixel_count_nz = dialog.pixel_count_nz
 
         self.postSetScanList()
 
@@ -436,6 +441,16 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_scan_list.clear()
         self.post_scan_list.addItems(self.post_scan_folders)
 
+    # --------------------------------------------------------------------------
+
+    def postProcessScan(self):
+
+        """
+
+        """
+        scan = self.post_scan_list.currentItem()
+        if not scan == None:
+            self.postLoadData(scan)
     # --------------------------------------------------------------------------
 
     def postLoadData(self, scan):
@@ -468,7 +483,8 @@ class OptionsWidget(pg.LayoutWidget):
 
             # Creates vti file
             vti_file = DataProcessing.createVTIFile(self.post_project_path, self.post_spec_path,
-                self.post_detector_path, self.post_instrument_path, scan_number)
+                self.post_detector_path, self.post_instrument_path, scan_number,
+                self.post_pixel_count_nx, self.post_pixel_count_ny, self.post_pixel_count_nz)
 
             # Converts vti file into 3D array with proper axes
             self.axes, self.dataset = DataProcessing.loadData(vti_file)
