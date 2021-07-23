@@ -26,7 +26,8 @@ class DataProcessing:
     Various methods to convert and process data before displaying.
     """
 
-    def createVTIFile(project_dir, spec_file, detector_config_name, instrument_config_name, scan):
+    def createVTIFile(project_dir, spec_file, detector_config_name, instrument_config_name,
+        scan, nx, ny, nz):
         # Necessary subfunctions for function to run smoothly
         # See rsMap3D source code
         def updateDataSourceProgress(value1, value2):
@@ -60,7 +61,7 @@ class DataProcessing:
         image_tbu = data_source.getImageToBeUsed()
         image_size = np.prod(data_source.getDetectorDimensions())
 
-        grid_mapper = QGridMapper(data_source, output_file_name, nx=250, ny=250, nz=250,
+        grid_mapper = QGridMapper(data_source, output_file_name, nx=nx, ny=ny, nz=nz,
             outputType=BINARY_OUTPUT, transform=UnityTransform3D(),
             gridWriter=VTIGridWriter(), appConfig=app_config)
         grid_mapper.setProgressUpdater(updateMapperProgress)

@@ -25,8 +25,10 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.spec_name = ""
         self.detector_config_name = ""
         self.instrument_config_name = ""
-        self.process_data = False
-        self.ok = False
+        self.pixel_count_nx = ""
+        self.pixel_count_ny = ""
+        self.pixel_count_nz = ""
+
 
         # Creates widgets
         self.spec_lbl = QtGui.QLabel("spec File:")
@@ -41,6 +43,14 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.instrument_txtbox = QtGui.QLineEdit()
         self.instrument_txtbox.setReadOnly(True)
         self.instrument_btn = QtGui.QPushButton("Browse")
+        self.pixel_count_lbl = QtGui.QLabel("Pixel Count:")
+        self.pixel_count_nx_sbox = QtGui.QSpinBox(maximum=1000, minimum=1)
+        self.pixel_count_nx_sbox.setValue(200)
+        self.pixel_count_ny_sbox = QtGui.QSpinBox(maximum=1000, minimum=1)
+        self.pixel_count_ny_sbox.setValue(200)
+        self.pixel_count_nz_sbox = QtGui.QSpinBox(maximum=1000, minimum=1)
+        self.pixel_count_nz_sbox.setValue(200)
+
         self.dialog_btnbox = QtGui.QDialogButtonBox()
         self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
 
@@ -57,7 +67,11 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.layout.addWidget(self.instrument_lbl, 2, 0)
         self.layout.addWidget(self.instrument_txtbox, 2, 1, 1, 3)
         self.layout.addWidget(self.instrument_btn, 2, 4)
-        self.layout.addWidget(self.dialog_btnbox, 3, 3, 1, 2)
+        self.layout.addWidget(self.pixel_count_lbl, 3, 0)
+        self.layout.addWidget(self.pixel_count_nx_sbox, 3, 1)
+        self.layout.addWidget(self.pixel_count_ny_sbox, 3, 2)
+        self.layout.addWidget(self.pixel_count_nz_sbox, 3, 3)
+        self.layout.addWidget(self.dialog_btnbox, 4, 3, 1, 2)
 
         # Connects widgets to functions
         self.spec_btn.clicked.connect(self.selectSpecFile)
@@ -91,24 +105,11 @@ class DataSourceDialogWidget(QtGui.QDialog):
 
     # --------------------------------------------------------------------------
 
-    def setDataProcessingStatus(self):
-
-        """
-        Changes the enabled status of certain widgets based on the checkbox's state.
-        """
-
-        checkbox = self.sender()
-
-        if checkbox.checkState():
-            self.process_data = True
-            self.spec_btn.setEnabled(True)
-            self.detector_btn.setEnabled(True)
-            self.instrument_btn.setEnabled(True)
-        else:
-            self.process_data = False
-            self.spec_btn.setEnabled(False)
-            self.detector_btn.setEnabled(False)
-            self.instrument_btn.setEnabled(False)
+    def accept(self):
+        self.pixel_count_nx = self.pixel_count_nx_sbox.value()
+        self.pixel_count_ny = self.pixel_count_ny_sbox.value()
+        self.pixel_count_nz = self.pixel_count_nz_sbox.value()
+        self.close()
 
 # ==============================================================================
 
