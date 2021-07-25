@@ -266,8 +266,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_crosshair_color_btn.sigColorChanged.connect(self.changeCrosshairColor)
         self.options_mouse_pan_rbtn.toggled.connect(self.toggleMouseMode)
         self.options_mouse_rect_rbtn.toggled.connect(self.toggleMouseMode)
-        self.options_bkgrd_black_rbtn.toggled.connect(self.togglebkgrdColor)
-        self.options_bkgrd_white_rbtn.toggled.connect(self.togglebkgrdColor)
+        self.options_bkgrd_black_rbtn.toggled.connect(self.toggleBkgrdColor)
+        self.options_bkgrd_white_rbtn.toggled.connect(self.toggleBkgrdColor)
         self.options_cmap_linear_rbtn.toggled.connect(self.toggleCmapScale)
         self.options_cmap_log_rbtn.toggled.connect(self.toggleCmapScale)
         self.options_cmap_pctl_slider.valueChanged.connect(self.changeCmapPctl)
@@ -540,8 +540,8 @@ class OptionsWidget(pg.LayoutWidget):
         # Sets image in viewing window
         self.main_window.image_widget.displayImage(self.image, rect=rect)
 
-        if self.post_xyz_rbtn.isChecked() and self.options_roi_chkbox.isChecked():
-            self.main_window.roi_plots_widget.displayROIPlots(self.dataset, slice_direction)
+        if self.options_roi_chkbox.isChecked():
+            self.main_window.roi_plots_widget.displayROIPlots(self.dataset, slice_direction, rect)
         else:
             self.main_window.roi_plots_widget.clearROIPlots()
 
@@ -660,7 +660,7 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def togglebkgrdColor(self):
+    def toggleBkgrdColor(self):
 
         """
         Toggles bkgrd color for image plot widget.
@@ -931,6 +931,8 @@ class ImageWidget(pg.PlotWidget):
         self.addItem(self.roi_3)
         self.addItem(self.roi_4)
 
+        #print(self.view.)
+
         # Creates mouse crosshair
         self.v_line = pg.InfiniteLine(angle=90, movable=False)
         self.h_line = pg.InfiniteLine(angle=0, movable=False)
@@ -1054,6 +1056,7 @@ class ROIWidget(pg.ROI):
         self.roi_plot = plot
         self.data = []
         self.slice_direction = ""
+        self.rect = None
 
         self.roi_plot.setLabel("left", "Avg Intensity")
         self.roi_plot.setLabel("bottom", "Slice")
@@ -1074,18 +1077,22 @@ class ROIWidget(pg.ROI):
         self.x_spinbox = QtGui.QDoubleSpinBox()
         self.x_spinbox.setMinimum(0)
         self.x_spinbox.setMaximum(1000)
+        self.x_spinbox.setDecimals(5)
         self.y_lbl = QtGui.QLabel("y Pos:")
         self.y_spinbox = QtGui.QDoubleSpinBox()
         self.y_spinbox.setMinimum(0)
         self.y_spinbox.setMaximum(1000)
+        self.y_spinbox.setDecimals(5)
         self.width_lbl = QtGui.QLabel("Width:")
         self.width_spinbox = QtGui.QDoubleSpinBox()
         self.width_spinbox.setMinimum(0)
         self.width_spinbox.setMaximum(1000)
+        self.width_spinbox.setDecimals(5)
         self.height_lbl = QtGui.QLabel("Height:")
         self.height_spinbox = QtGui.QDoubleSpinBox()
         self.height_spinbox.setMinimum(0)
         self.height_spinbox.setMaximum(1000)
+        self.height_spinbox.setDecimals(5)
         self.color_btn = pg.ColorButton()
 
         # Adds subwidgets to layout
@@ -1129,7 +1136,7 @@ class ROIWidget(pg.ROI):
             self.height_spinbox.setValue(self.size()[1])
             self.updating = ""
 
-        self.plotAverageIntensity(self.data, self.slice_direction)
+        self.plotAverageIntensity(self.data, self.slice_direction, self.rect)
 
     # --------------------------------------------------------------------------
 
@@ -1177,7 +1184,7 @@ class ROIWidget(pg.ROI):
 
     # --------------------------------------------------------------------------
 
-    def plotAverageIntensity(self, data, slice_direction):
+    def plotAverageIntensity(self, data, slice_direction, rect):
 
         """
         Creates list of avg pixel intensities from ROI through set of images.
@@ -1185,14 +1192,16 @@ class ROIWidget(pg.ROI):
 
         self.data = data
         self.slice_direction = slice_direction
+        self.rect = rect
 
-        if self.data != []:
+        if self.data != [] and self.rect != None:
+
+            x_min = int((self.pos()[0] - self.rect.x()) * self.data.shape[0] / self.rect.width())
+            x_max = int((self.pos()[0] + self.size()[0] - self.rect.x()) * self.data.shape[0] / self.rect.width())
+            y_min = int((self.pos()[1] - self.rect.y()) * self.data.shape[1] / self.rect.height())
+            y_max = int((self.pos()[1] + self.size()[1] - self.rect.y()) * self.data.shape[1] / self.rect.height())
+
             if self.slice_direction == "X(H)":
-                x_min = int(self.pos()[0])
-                x_max = int(self.pos()[0] + self.size()[0])
-                y_min = int(self.pos()[1])
-                y_max = int(self.pos()[1] + self.size()[1])
-
                 data_roi = self.data[:, y_min:y_max, x_min:x_max]
                 avg_intensity = []
 
@@ -1201,11 +1210,6 @@ class ROIWidget(pg.ROI):
                     avg_intensity.append(avg)
 
             elif self.slice_direction == "Y(K)":
-                x_min = int(self.pos()[0])
-                x_max = int(self.pos()[0] + self.size()[0])
-                y_min = int(self.pos()[1])
-                y_max = int(self.pos()[1] + self.size()[1])
-
                 data_roi = self.data[y_min:y_max, :, x_min:x_max]
                 avg_intensity = []
 
@@ -1214,11 +1218,6 @@ class ROIWidget(pg.ROI):
                     avg_intensity.append(avg)
 
             elif self.slice_direction == "Z(L)":
-                x_min = int(self.pos()[0])
-                x_max = int(self.pos()[0] + self.size()[0])
-                y_min = int(self.pos()[1])
-                y_max = int(self.pos()[1] + self.size()[1])
-
                 data_roi = self.data[y_min:y_max, x_min:x_max, :]
                 avg_intensity = []
 
@@ -1249,7 +1248,7 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def displayROIPlots(self, data, slice_direction):
+    def displayROIPlots(self, data, slice_direction, rect):
 
         """
         Uses data to display avg intensities in all ROI plots. This function is
@@ -1258,10 +1257,10 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
 
         warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-        self.main_window.image_widget.roi_1.plotAverageIntensity(data, slice_direction)
-        self.main_window.image_widget.roi_2.plotAverageIntensity(data, slice_direction)
-        self.main_window.image_widget.roi_3.plotAverageIntensity(data, slice_direction)
-        self.main_window.image_widget.roi_4.plotAverageIntensity(data, slice_direction)
+        self.main_window.image_widget.roi_1.plotAverageIntensity(data, slice_direction, rect)
+        self.main_window.image_widget.roi_2.plotAverageIntensity(data, slice_direction, rect)
+        self.main_window.image_widget.roi_3.plotAverageIntensity(data, slice_direction, rect)
+        self.main_window.image_widget.roi_4.plotAverageIntensity(data, slice_direction, rect)
 
     # --------------------------------------------------------------------------
 
