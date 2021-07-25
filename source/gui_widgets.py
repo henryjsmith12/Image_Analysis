@@ -1094,6 +1094,7 @@ class ROIWidget(pg.ROI):
         self.height_spinbox.setMaximum(1000)
         self.height_spinbox.setDecimals(5)
         self.color_btn = pg.ColorButton()
+        self.center_btn = QtGui.QPushButton("Center ROI")
 
         # Adds subwidgets to layout
         self.layout.addWidget(self.x_lbl, 0, 0)
@@ -1105,6 +1106,7 @@ class ROIWidget(pg.ROI):
         self.layout.addWidget(self.height_lbl, 3, 0)
         self.layout.addWidget(self.height_spinbox, 3, 1)
         self.layout.addWidget(self.color_btn, 4, 0, 1, 2)
+        self.layout.addWidget(self.center_btn, 5, 0, 1, 2)
 
         # Connects subwidgets to signals
         self.sigRegionChanged.connect(self.updateAnalysis)
@@ -1114,6 +1116,7 @@ class ROIWidget(pg.ROI):
         self.x_spinbox.valueChanged.connect(self.updatePosition)
         self.y_spinbox.valueChanged.connect(self.updatePosition)
         self.color_btn.sigColorChanged.connect(self.changeColor)
+        self.center_btn.clicked.connect(self.center)
 
         # Keeps track of whether textboxes or roi was updated last
         # Helps avoid infinite loop of updating
@@ -1227,6 +1230,14 @@ class ROIWidget(pg.ROI):
 
             self.avg_intensity = avg_intensity
             self.roi_plot.plot(avg_intensity, clear=True)
+
+    # --------------------------------------------------------------------------
+
+    def center(self):
+
+        if self.rect != None:
+            self.setPos(self.rect.x(), self.rect.y())
+            self.setSize(self.rect.width(), self.rect.height())
 
 # ==============================================================================
 
