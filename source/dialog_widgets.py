@@ -287,7 +287,7 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.tilt = self.tilt_angle_sbox.value()
         self.nav = self.nav_txtbox.text()
         self.roi = self.roi_txtbox.text()
-        self.ub_matrix = self.ub_matrix_txtedit.text()
+        self.ub_matrix = self.ub_matrix_txtedit.plainText()
         self.mu = self.mu_sbox.value()
         self.eta = self.eta_sbox.value()
         self.chi = self.chi_sbox.value()

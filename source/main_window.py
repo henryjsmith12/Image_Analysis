@@ -32,8 +32,8 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.dock_area)
 
         # Window attributes
-        self.setMinimumSize(1250, 800)
-        self.setGeometry(50, 50, 1350, 800)
+        self.setMinimumSize(1450, 800)
+        self.setGeometry(0, 50, 1450, 800)
         self.setWindowTitle("Image Analysis")
 
         self.createDocks()
@@ -44,10 +44,10 @@ class MainWindow(QtGui.QMainWindow):
     def createDocks(self):
         # Docked widgets for main window
         self.options_dock = Dock("Options", size=(100, 300), hideTitle=True)
-        self.analysis_dock = Dock("Analysis", size=(300, 100), hideTitle=True)
-        self.image_dock = Dock("Image", size=(300, 300))
-        self.roi_plots_dock = Dock("ROI", size=(300, 300))
-        self.advanced_roi_plot_dock = Dock("Advanced ROI", size=(300, 300))
+        self.analysis_dock = Dock("Analysis", size=(300, 50), hideTitle=True)
+        self.image_dock = Dock("Image", size=(300, 350))
+        self.roi_plots_dock = Dock("ROI", size=(300, 350))
+        self.advanced_roi_plot_dock = Dock("Advanced ROI", size=(300, 350))
 
         # Add/organize docks
         self.dock_area.addDock(self.options_dock, "left")
