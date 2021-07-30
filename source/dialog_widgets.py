@@ -12,8 +12,7 @@ from pyqtgraph.Qt import QtGui, QtCore
 class DataSourceDialogWidget(QtGui.QDialog):
 
     """
-    Creates modal dialog widget for the user to choose directories and files as
-    their data source.
+    Creates modal dialog widget where the user can select data source files.
     """
 
     def __init__ (self):
@@ -21,7 +20,6 @@ class DataSourceDialogWidget(QtGui.QDialog):
 
         self.setWindowModality(QtCore.Qt.ApplicationModal)
 
-        # Holds values from textboxes/checkbox
         self.spec_name = ""
         self.detector_config_name = ""
         self.instrument_config_name = ""
@@ -29,8 +27,7 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.pixel_count_ny = ""
         self.pixel_count_nz = ""
 
-
-        # Creates widgets
+        # Create widgets
         self.spec_lbl = QtGui.QLabel("spec File:")
         self.spec_txtbox = QtGui.QLineEdit()
         self.spec_txtbox.setReadOnly(True)
@@ -50,14 +47,14 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.pixel_count_ny_sbox.setValue(200)
         self.pixel_count_nz_sbox = QtGui.QSpinBox(maximum=1000, minimum=1)
         self.pixel_count_nz_sbox.setValue(200)
-
         self.dialog_btnbox = QtGui.QDialogButtonBox()
         self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
 
+        # Create layout
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
-        # Adds widgets to layout
+        # Add widgets to layout
         self.layout.addWidget(self.spec_lbl, 0, 0)
         self.layout.addWidget(self.spec_txtbox, 0, 1, 1, 3)
         self.layout.addWidget(self.spec_btn, 0, 4)
@@ -73,39 +70,59 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.layout.addWidget(self.pixel_count_nz_sbox, 3, 3)
         self.layout.addWidget(self.dialog_btnbox, 4, 3, 1, 2)
 
-        # Connects widgets to functions
+        # Connect widgets to functions
         self.spec_btn.clicked.connect(self.selectSpecFile)
         self.detector_btn.clicked.connect(self.selectDetectorConfigFile)
         self.instrument_btn.clicked.connect(self.selectInstrumentConfigFile)
         self.dialog_btnbox.accepted.connect(self.accept)
 
-        # Runs dialog widget
+        # Run dialog widget
         self.exec_()
 
     # --------------------------------------------------------------------------
 
     def selectSpecFile(self):
+
+        """
+        Allows user to select .spec file.
+        """
+
         spec = QtGui.QFileDialog.getOpenFileName(self, "", "", "spec Files (*.spec)")
-        self.spec_name = spec[0]
         self.spec_txtbox.setText(spec[0])
 
     # --------------------------------------------------------------------------
 
     def selectDetectorConfigFile(self):
+
+        """
+        Allows user to select a detector configuration .xml file.
+        """
+
         detector = QtGui.QFileDialog.getOpenFileName(self, "", "", "xml Files (*.xml)")
-        self.detector_config_name = detector[0]
         self.detector_txtbox.setText(detector[0])
 
     # --------------------------------------------------------------------------
 
     def selectInstrumentConfigFile(self):
+
+        """
+        Allows user to select an instrument configuration .xml file.
+        """
+
         instrument = QtGui.QFileDialog.getOpenFileName(self, "", "", "xml Files (*.xml)")
-        self.instrument_config_name = instrument[0]
         self.instrument_txtbox.setText(instrument[0])
 
     # --------------------------------------------------------------------------
 
     def accept(self):
+
+        """
+        Sets class variables to values in dialog and closes the dialog window.
+        """
+
+        self.spec_name = self.spec_txtbox.text()
+        self.detector_config_name = self.detector_txtbox.text()
+        self.instrument_config_name = self.instrument_txtbox.text()
         self.pixel_count_nx = self.pixel_count_nx_sbox.value()
         self.pixel_count_ny = self.pixel_count_ny_sbox.value()
         self.pixel_count_nz = self.pixel_count_nz_sbox.value()
@@ -114,6 +131,10 @@ class DataSourceDialogWidget(QtGui.QDialog):
 # ==============================================================================
 
 class ConversionParametersDialogWidget(QtGui.QDialog):
+
+    """
+    Creates modal dialog widget where the user can select hkl conversion parameters.
+    """
 
     def __init__ (self):
         super().__init__()
@@ -144,9 +165,7 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.nu = 0.0
         self.delta = 0.0
 
-        self.layout = QtGui.QGridLayout()
-        self.setLayout(self.layout)
-
+        # Create widgets
         self.detector_dir_1_lbl = QtGui.QLabel("Detector Direction 1:")
         self.detector_dir_1_cbox = QtGui.QComboBox()
         self.detector_dir_1_cbox.addItems(["x+", "x-", "y+", "y-", "z+", "z-"])
@@ -211,6 +230,11 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.dialog_btnbox = QtGui.QDialogButtonBox()
         self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
 
+        # Create layout
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+
+        # Add widgets to layout
         self.layout.addWidget(self.detector_dir_1_lbl, 0, 0, 1, 2)
         self.layout.addWidget(self.detector_dir_1_cbox, 0, 2)
         self.layout.addWidget(self.detector_dir_2_lbl, 1, 0, 1, 2)
@@ -258,6 +282,7 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.layout.addWidget(self.import_btn, 21, 0)
         self.layout.addWidget(self.dialog_btnbox, 21, 2)
 
+        # Connect widgets to functions
         self.dialog_btnbox.accepted.connect(self.accept)
 
         # Runs dialog widget
@@ -268,7 +293,7 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
     def accept(self):
 
         """
-        Overrides (built-in) PyQt5 function.
+        Sets class variables to values in dialog and closes the dialog window.
         """
 
         self.detector_dir_1 = self.detector_dir_1_cbox.currentText()

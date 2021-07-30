@@ -7,7 +7,7 @@ See LICENSE file.
 
 import pyqtgraph as pg
 
-from source.main_window import MainWindow # Local
+from source.main_window import MainWindow
 
 # ==============================================================================
 

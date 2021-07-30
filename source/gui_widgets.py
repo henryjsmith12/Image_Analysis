@@ -17,7 +17,6 @@ import tifffile as tiff
 import time
 import warnings
 
-# Local
 from source.data_processing import *
 from source.dialog_widgets import *
 
@@ -49,7 +48,7 @@ class OptionsWidget(pg.LayoutWidget):
         super(OptionsWidget, self).__init__(parent)
         self.main_window = parent
 
-        # Create GroupBoxes/TabWidget for GroupBoxes
+        # Create GroupBoxes/TabWidget for GroupBox
         self.image_mode_tabs = QtGui.QTabWidget()
         self.live_image_gbox = QtGui.QGroupBox("Live")
         self.post_image_gbox = QtGui.QGroupBox("Post")
@@ -78,31 +77,7 @@ class OptionsWidget(pg.LayoutWidget):
     def setupComponents(self):
 
         """
-        - Creates subwidgets
-        - Adds subwidgets to widget
-        - Connects subwidgets to functions
-        """
-
-        # Create live mode widgets
-
-        """
-        ** TODO: HKL conversion parameter dialog (+ button to open dialog) for live
-            plotting. Contains:
-
-            - detectorDir1 (str)
-            - detectorDir2 (str)
-            - cch1/2 (float)
-            - Nch1/2 (int)
-            - distance (float) (optional)
-            - pwidth1/2 (float) (optional)
-            - chpdeg1/2 (float) (optional)
-            - detrot (float) (optional)
-            - tiltazimuth (float) (optional)
-            - tilt (float) (optional)
-            - Nav (tuple or list) (optional)
-            - roi (tuple or list) (optional)
-
-            - ub matrix & diffractometer angles should be read in from EPICS/spec
+        Creates widgets and adds widgets to layout.
         """
 
         # Live widgets
@@ -134,12 +109,12 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_image_layout.addWidget(self.live_current_image_txtbox, 5, 2, 1, 4)
 
         # Live widget connections
-        self.live_set_scan_btn.clicked.connect(self.liveSetScan)
-        self.live_xyz_rbtn.toggled.connect(self.liveToggleHKLParametersButton)
-        self.live_hkl_rbtn.toggled.connect(self.liveToggleHKLParametersButton)
-        self.live_xyz_rbtn.toggled.connect(self.liveSetImageList)
-        self.live_hkl_params_btn.clicked.connect(self.liveSetHKLParameters)
-        self.live_image_list.itemClicked.connect(self.liveLoadImage)
+        self.live_set_scan_btn.clicked.connect(self.setLiveScan)
+        self.live_xyz_rbtn.toggled.connect(self.toggleLiveHKLParametersButton)
+        self.live_hkl_rbtn.toggled.connect(self.toggleLiveHKLParametersButton)
+        self.live_xyz_rbtn.toggled.connect(self.setLiveImageList)
+        self.live_hkl_params_btn.clicked.connect(self.setLiveHKLParameters)
+        self.live_image_list.itemClicked.connect(self.loadLiveImage)
 
         # Post widgets
         self.post_set_project_btn = QtGui.QPushButton("Set Project")
@@ -186,12 +161,12 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_image_layout.addWidget(self.post_slice_slider, 8, 1, 1, 5)
 
         # Post widget connections
-        self.post_set_project_btn.clicked.connect(self.postSetProject)
-        self.post_xyz_rbtn.toggled.connect(self.postToggleSpecConfigButton)
-        self.post_hkl_rbtn.toggled.connect(self.postToggleSpecConfigButton)
-        self.post_xyz_rbtn.toggled.connect(self.postSetScanList)
-        self.post_spec_config_btn.clicked.connect(self.postSetSpecConfigFiles)
-        self.post_process_scan_btn.clicked.connect(self.postProcessScan)
+        self.post_set_project_btn.clicked.connect(self.setPostProject)
+        self.post_xyz_rbtn.toggled.connect(self.togglePostSpecConfigButton)
+        self.post_hkl_rbtn.toggled.connect(self.togglePostSpecConfigButton)
+        self.post_xyz_rbtn.toggled.connect(self.setPostScanList)
+        self.post_spec_config_btn.clicked.connect(self.setPostSpecConfigFiles)
+        self.post_process_scan_btn.clicked.connect(self.processPostScan)
         self.post_process_scan_btn.clicked.connect(self.postSetAxes)
         self.post_slice_direction_cbox.currentTextChanged.connect(self.postLoadImage)
         self.post_slice_direction_cbox.currentTextChanged.connect(self.postSetAxes)
@@ -277,7 +252,7 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def liveSetScan(self):
+    def setLiveScan(self):
 
         """
         Selects scan directory for live mode.
@@ -290,32 +265,35 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_scan_path = QtGui.QFileDialog.getExistingDirectory(self,
             "Open Scan Directory")
 
+        # Check if path was selected in dialog
         if self.live_scan_path != "":
-            # Checks if directory only contains image files
+
+            # Check if directory only contains .tif/.tiff image files
             for file_name in os.listdir(self.live_scan_path):
+
                 if not file_name.endswith((".tif", ".tiff")):
+                    # Leave function if directory contains invalid file (non-.tif(f))
                     return
 
-            # Separates path basename from path to display in txtbox
+            # Separate path basename from path to display in txtbox
             self.live_scan_path_base = os.path.basename(self.live_scan_path)
             self.live_set_scan_txtbox.setText(self.live_scan_path_base)
             self.live_image_files = sorted(os.listdir(self.live_scan_path))
 
-            # Enables coordinate system radio buttons
+            # Enable coordinate system radio buttons
             self.live_xyz_rbtn.setEnabled(True)
             self.live_hkl_rbtn.setEnabled(True)
 
-            # Sets scan image list is xyz is already selected
+            # Sets scan image list if xyz is already selected (no extra params needed)
             if self.live_xyz_rbtn.isChecked():
-                self.liveSetImageList()
+                self.setLiveImageList()
 
     # --------------------------------------------------------------------------
 
-    def liveToggleHKLParametersButton(self):
+    def toggleLiveHKLParametersButton(self):
 
         """
-        - Enables/disables HKL conversion parameters button.
-        - Clears scan image list
+        Enables/disables HKL conversion parameters button and clears scan image list.
         """
 
         if self.live_hkl_rbtn.isChecked():
@@ -327,15 +305,21 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def liveSetHKLParameters(self):
+    def setLiveHKLParameters(self):
+
+        """
+        Opens HKL conversion parameter dialog.
+        """
 
         dialog = ConversionParametersDialogWidget()
 
-        print("PAST DIALOG")
+        """
+        ** TODO: Connect dialog to new rect-altering/image-creating functions
+        """
 
     # --------------------------------------------------------------------------
 
-    def liveSetImageList(self):
+    def setLiveImageList(self):
 
         """
         Displays scan image directory contents in list widget.
@@ -346,11 +330,10 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def liveLoadImage(self, file_name):
+    def loadLiveImage(self, file_name):
 
         """
-        - Reads image from file path.
-        - Calls displayImage to load image into viewing window.
+        Reads image from file path and calls displayImage() to load image into viewing window.
         """
 
         # Concatenates directory and file names
@@ -359,29 +342,33 @@ class OptionsWidget(pg.LayoutWidget):
         # Reads image
         self.image = np.rot90(tiff.imread(file_path), 2)
 
-        # Loads image into viewing window
-        self.main_window.image_widget.displayImage(self.image, rect=None)
-
         # Sets file name as current image
         self.live_current_image_txtbox.setText(file_name.text())
 
         # Enable options
         self.options_gbox.setEnabled(True)
 
+        # Loads image into viewing window
+        self.main_window.image_widget.displayImage(self.image, rect=None)
+
     # --------------------------------------------------------------------------
 
-    def postSetProject(self):
+    def setPostProject(self):
 
         """
-
+        Selects project directory for post mode.
         """
 
+        # Clear scan list and reset coordinate system radio buttons
         self.post_scan_list.clear()
 
+        # Select project directory
         self.post_project_path = QtGui.QFileDialog.getExistingDirectory(self,
             "Open Project Directory")
 
+        # Check if project directory was selected and an "images" subdirectory exists
         if self.post_project_path != "" and "images" in os.listdir(self.post_project_path):
+
             # Separates path basename from path to display in txtbox
             self.post_project_path_base = os.path.basename(self.post_project_path)
             self.post_set_project_txtbox.setText(self.post_project_path_base)
@@ -397,10 +384,10 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def postToggleSpecConfigButton(self):
+    def togglePostSpecConfigButton(self):
 
         """
-
+        Enables/disables Spec/Config button and clears scan list.
         """
 
         if self.post_hkl_rbtn.isChecked():
@@ -412,10 +399,10 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def postSetSpecConfigFiles(self):
+    def setPostSpecConfigFiles(self):
 
         """
-        Opens data source dialog.
+        Opens data source dialog and calls fucntion to set the scan list.
         """
 
         # See DataSourceDialogWidget class for more info
@@ -428,14 +415,14 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_pixel_count_ny = dialog.pixel_count_ny
         self.post_pixel_count_nz = dialog.pixel_count_nz
 
-        self.postSetScanList()
+        self.setPostScanList()
 
     # --------------------------------------------------------------------------
 
-    def postSetScanList(self):
+    def setPostScanList(self):
 
         """
-
+        Clears current scan list and adds new scan list.
         """
 
         self.post_scan_list.clear()
@@ -443,56 +430,71 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def postProcessScan(self):
+    def processPostScan(self):
 
         """
-
+        Calls data loading function, using currently selected scan as an argument.
         """
+
         scan = self.post_scan_list.currentItem()
         if not scan == None:
-            self.postLoadData(scan)
+            self.loadPostData(scan)
+
     # --------------------------------------------------------------------------
 
-    def postLoadData(self, scan):
+    def loadPostData(self, scan):
 
         """
-
+        Creates/prepares dataset to be displayed.
         """
 
+        # Placeholder list
         self.dataset = []
+
+        # Create and sort scan directory
         scan_path = os.path.join(self.post_scans_path, scan.text())
         self.post_image_files = sorted(os.listdir(scan_path))
 
+        # XYZ
         if self.post_xyz_rbtn.isChecked():
+
+            # Loop through each image in scan directory
             for i in range(1, len(self.post_image_files)):
-                # Creates 2d image from file path
+
+                # Read image from file path
                 file_path = f"{scan_path}/{self.post_image_files[i]}"
                 image = ndimage.rotate(tiff.imread(file_path), 90)
-                # Appends image to list of images
+
+                # Append image to list of images
                 self.dataset.append(image)
 
+            # Convert list to numpy array
             self.dataset = np.stack(self.dataset)
+
+            # Swap x and z axes
             self.dataset = np.swapaxes(self.dataset, 0, 2)
 
+            # Create axes with same bounds as shape of dataset
             self.x_h_axis = [0, self.dataset.shape[0]]
             self.y_k_axis = [0, self.dataset.shape[1]]
             self.z_l_axis = [0, self.dataset.shape[2]]
 
+        # HKL
         elif self.post_hkl_rbtn.isChecked():
+
+            # Scans usually have the naming convention of "S###"
             scan_number = scan.text()[1:]
 
-            # Creates vti file
+            # Create vti file
             vti_file = DataProcessing.createVTIFile(self.post_project_path, self.post_spec_path,
                 self.post_detector_path, self.post_instrument_path, scan_number,
                 self.post_pixel_count_nx, self.post_pixel_count_ny, self.post_pixel_count_nz)
 
-            # Converts vti file into 3D array with proper axes
+            # Convert vti file into 3D array with proper axes
             self.axes, self.dataset = DataProcessing.loadData(vti_file)
             self.x_h_axis = [self.axes[0][0], self.axes[0][-1]]
             self.y_k_axis = [self.axes[1][0], self.axes[1][-1]]
             self.z_l_axis = [self.axes[2][0], self.axes[2][-1]]
-
-            self.main_window.roi_plots_widget.clearROIPlots()
 
         self.post_current_scan_txtbox.setText(scan.text())
 

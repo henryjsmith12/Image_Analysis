@@ -7,14 +7,14 @@ See LICENSE file.
 
 import numpy as np
 import os
+from rsMap3D.config.rsmap3dconfigparser import RSMap3DConfigParser
 from rsMap3D.datasource.Sector33SpecDataSource import Sector33SpecDataSource
 from rsMap3D.datasource.DetectorGeometryForXrayutilitiesReader import DetectorGeometryForXrayutilitiesReader as detReader
-from rsMap3D.utils.srange import srange
-from rsMap3D.config.rsmap3dconfigparser import RSMap3DConfigParser
-from rsMap3D.mappers.gridmapper import QGridMapper
 from rsMap3D.gui.rsm3dcommonstrings import BINARY_OUTPUT
-from rsMap3D.transforms.unitytransform3d import UnityTransform3D
+from rsMap3D.mappers.gridmapper import QGridMapper
 from rsMap3D.mappers.output.vtigridwriter import VTIGridWriter
+from rsMap3D.transforms.unitytransform3d import UnityTransform3D
+from rsMap3D.utils.srange import srange
 import vtk
 from vtk.util import numpy_support as npSup
 
@@ -23,11 +23,16 @@ from vtk.util import numpy_support as npSup
 class DataProcessing:
 
     """
-    Various methods to convert and process data before displaying.
+    Various functions to convert, read, and process data before displaying.
     """
 
     def createVTIFile(project_dir, spec_file, detector_config_name, instrument_config_name,
         scan, nx, ny, nz):
+
+        """
+        Creates a .vti file which can be read by VTK and converted into an array.
+        """
+
         # Necessary subfunctions for function to run smoothly
         # See rsMap3D source code
         def updateDataSourceProgress(value1, value2):
@@ -44,7 +49,7 @@ class DataProcessing:
         bin = [1,1]
 
         spec_name, spec_ext = os.path.splitext(os.path.basename(spec_file))
-        # Sets destination file for grid mapper
+        # Set destination file for gridmapper
         output_file_name = os.path.join(project_dir, spec_name + "_" + scan + ".vti")
 
         app_config = RSMap3DConfigParser()
@@ -74,19 +79,18 @@ class DataProcessing:
     def loadData(vti_file):
 
         """
-        Converts information from vti file into a 3d array with proper axes.
+        Converts information from .vti file into an array in HKL.
         """
+
         reader = vtk.vtkXMLImageDataReader()
         reader.SetFileName(vti_file)
         reader.Update()
 
         data = reader.GetOutput()
         dim = data.GetDimensions()
-        print ("dim" + str(dim))
 
         vec = list(dim )
 
-        print ("vec: %s" % vec)
         vec = [i for i in dim]
         vec.reverse()
 
@@ -107,16 +111,13 @@ class DataProcessing:
         x = []
         y = []
         z = []
+
         for point in range(extent[0], extent[1] + 1):
             x.append(origin[0] + point * spacing[0])
         for point in range(extent[2], extent[3] + 1):
             y.append(origin[1] + point * spacing[1])
         for point in range(extent[4], extent[5] + 1):
             z.append(origin[2] + point * spacing[2])
-
-        print ("H (" + str(x[0]) + ", " + str(x[-1]) + ")")
-        print ("K (" + str(y[0]) + ", " + str(y[-1]) + ")")
-        print ("L (" + str(z[0]) + ", " + str(z[-1]) + ")")
 
         axes = [x, y, z]
 
