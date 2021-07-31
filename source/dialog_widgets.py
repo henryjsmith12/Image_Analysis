@@ -226,10 +226,34 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.layout.addWidget(self.dialog_btnbox, 9, 2)
 
         # Connect widgets to functions
+        self.detector_btn.clicked.connect(self.selectDetectorConfigFile)
+        self.instrument_btn.clicked.connect(self.selectInstrumentConfigFile)
         self.dialog_btnbox.accepted.connect(self.accept)
 
         # Runs dialog widget
         self.exec_()
+
+    # --------------------------------------------------------------------------
+
+    def selectDetectorConfigFile(self):
+
+        """
+        Allows user to select a detector configuration .xml file.
+        """
+
+        detector = QtGui.QFileDialog.getOpenFileName(self, "", "", "xml Files (*.xml)")
+        self.detector_txtbox.setText(detector[0])
+
+    # --------------------------------------------------------------------------
+
+    def selectInstrumentConfigFile(self):
+
+        """
+        Allows user to select an instrument configuration .xml file.
+        """
+
+        instrument = QtGui.QFileDialog.getOpenFileName(self, "", "", "xml Files (*.xml)")
+        self.instrument_txtbox.setText(instrument[0])
 
     # --------------------------------------------------------------------------
 
@@ -239,6 +263,8 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         Sets class variables to values in dialog and closes the dialog window.
         """
 
+        self.detector_config_name = self.detector_txtbox.text()
+        self.instrument_config_name = self.instrument_txtbox.text()
         self.ub_matrix = self.ub_matrix_txtedit.plainText()
         self.mu = self.mu_sbox.value()
         self.eta = self.eta_sbox.value()
