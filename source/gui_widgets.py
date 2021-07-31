@@ -167,10 +167,10 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_xyz_rbtn.toggled.connect(self.setPostScanList)
         self.post_spec_config_btn.clicked.connect(self.setPostSpecConfigFiles)
         self.post_process_scan_btn.clicked.connect(self.processPostScan)
-        self.post_process_scan_btn.clicked.connect(self.postSetAxes)
-        self.post_slice_direction_cbox.currentTextChanged.connect(self.postLoadImage)
-        self.post_slice_direction_cbox.currentTextChanged.connect(self.postSetAxes)
-        self.post_slice_slider.valueChanged.connect(self.postLoadImage)
+        self.post_process_scan_btn.clicked.connect(self.setPostAxes)
+        self.post_slice_direction_cbox.currentTextChanged.connect(self.loadPostImage)
+        self.post_slice_direction_cbox.currentTextChanged.connect(self.setPostAxes)
+        self.post_slice_slider.valueChanged.connect(self.loadPostImage)
 
         # Options widgets
         self.options_roi_chkbox = QtGui.QCheckBox("ROI")
@@ -498,50 +498,79 @@ class OptionsWidget(pg.LayoutWidget):
 
         self.post_current_scan_txtbox.setText(scan.text())
 
-        self.postLoadImage()
+        self.loadPostImage()
 
     # --------------------------------------------------------------------------
 
-    def postLoadImage(self):
+    def loadPostImage(self):
 
         """
-
+        Fits slice of dataset to axis limits and calls displayImage().
         """
 
-        self.postSetSliceRanges()
+        # Set min/max for slider widget
+        self.setPostSliceRanges()
 
+        # Limits for each axis
         x_h_min, x_h_max = self.x_h_axis
         y_k_min, y_k_max = self.y_k_axis
         z_l_min, z_l_max = self.z_l_axis
 
+        # Get slice direction from combobox
         slice_direction = self.post_slice_direction_cbox.currentText()
 
+        # Checks slice direction
         if slice_direction == "X(H)":
-            # Creates rectangle for array to be plotted inside of
+
+            # Create rectangle for array to be fit inside of
             rect = QtCore.QRectF(z_l_min, y_k_min, z_l_max - z_l_min, y_k_max - y_k_min)
+
+            # Integer value of slice (0 - shape)
             x_h_slice = self.post_slice_slider.value()
+
+            # Coordinate system value of slice (same as value above if in xyz)
             slice_value = (x_h_max - x_h_min) * (x_h_slice + 1) / self.dataset.shape[0] + x_h_min
+
+            # Dataset slice
             self.image = self.dataset[x_h_slice, :, :]
 
         elif slice_direction == "Y(K)":
+
+            # Create rectangle for array to be fit inside of
             rect = QtCore.QRectF(z_l_min, x_h_min, z_l_max - z_l_min, x_h_max - x_h_min)
+
+            # Integer value of slice (0 - shape)
             y_k_slice = self.post_slice_slider.value()
+
+            # Coordinate system value of slice (same as value above if in xyz)
             slice_value = (y_k_max - y_k_min) * (y_k_slice + 1) / self.dataset.shape[1] + y_k_min
+
+            # Dataset slice
             self.image = self.dataset[:, y_k_slice, :]
 
         elif slice_direction == "Z(L)":
+
+            # Create rectangle for array to be fit inside of
             rect = QtCore.QRectF(y_k_min, x_h_min, y_k_max - y_k_min, x_h_max - x_h_min)
+
+            # Integer value of slice (0 - shape)
             z_l_slice = self.post_slice_slider.value()
+
+            # Coordinate system value of slice (same as value above if in xyz)
             slice_value = (z_l_max - z_l_min) * (z_l_slice + 1) / self.dataset.shape[2] + z_l_min
+
+            # Dataset slice
             self.image = self.dataset[ :, :, z_l_slice]
 
+        # Flip image along x-axis (up-down)
         self.image = np.flipud(self.image)
 
         self.post_slice_sbox.setValue(slice_value)
 
-        # Sets image in viewing window
+        # Set image in viewing window
         self.main_window.image_widget.displayImage(self.image, rect=rect)
 
+        # Check if ROI's are in use
         if self.options_roi_chkbox.isChecked():
             self.main_window.roi_plots_widget.displayROIPlots(self.dataset, slice_direction, rect)
         else:
@@ -554,12 +583,13 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def postSetSliceRanges(self):
+    def setPostSliceRanges(self):
 
         """
-
+        Sets minimum/maximum values for accompanying widgets
         """
 
+        # Checks slice direction
         if self.post_slice_direction_cbox.currentText() == "X(H)":
             self.post_slice_slider.setRange(0, self.dataset.shape[0] - 1)
             self.post_slice_sbox.setRange(self.x_h_axis[0], self.x_h_axis[1])
@@ -572,12 +602,13 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def postSetAxes(self):
+    def setPostAxes(self):
 
         """
-
+        Changes image widget axes to reflect the slice in view.
         """
 
+        # Check coordinate system radio button
         if self.post_hkl_rbtn.isChecked():
             if self.post_slice_direction_cbox.currentText() == "X(H)":
                 self.main_window.image_widget.setLabel("left", "K")
@@ -730,19 +761,24 @@ class OptionsWidget(pg.LayoutWidget):
 
     def setAdvancedROI(self):
 
+        """
+        Creates new average intensity plot based on ROI's selected in dialog.
+        """
+
         dialog = AdvancedROIDialogWidget()
 
         first_roi = dialog.first_roi
         operator = dialog.operator
         second_roi = dialog.second_roi
 
+        # Set textbox
         str_title = f"{first_roi} {operator} {second_roi}"
         if not "" in [first_roi, operator, second_roi]:
             self.options_advanced_roi_txtbox.setText(str_title)
 
+            # Create new advanced ROI
             self.main_window.advanced_roi_plot_widget.getRegions(first_roi, operator,
                 second_roi, str_title)
-
 
     # --------------------------------------------------------------------------
 
@@ -879,7 +915,6 @@ class AnalysisWidget(pg.LayoutWidget):
         self.mouse_layout.addWidget(self.mouse_k_txtbox, 4, 1)
         self.mouse_layout.addWidget(self.mouse_l_lbl, 5, 0)
         self.mouse_layout.addWidget(self.mouse_l_txtbox, 5, 1)
-
         self.image_layout.addWidget(self.image_width_lbl, 0, 0)
         self.image_layout.addWidget(self.image_width_txtbox, 0, 1)
         self.image_layout.addWidget(self.image_height_lbl, 1, 0)
@@ -904,17 +939,21 @@ class ImageWidget(pg.PlotWidget):
         # bkgrd initially set to black
         self.setBackground("default")
 
+        # Larger y-values towards bottom
         self.invertY(True)
 
+        # Viewbox for image widget
         self.view = self.getViewBox()
+
+        # Image within image widget
         self.image_item = pg.ImageItem()
         self.addItem(self.image_item)
 
-        # Sets current cmap/cmap scaling
+        # Set current cmap/cmap scaling
         self.options_cmap_scale = "Linear"
         self.cmap_pctl = 1.0
 
-        # Creates and adds ROIWidgets
+        # Create and add ROIWidgets
         # See ROIWidget class for more information
         roi_1_layout = self.main_window.analysis_widget.roi_1_layout
         roi_2_layout = self.main_window.analysis_widget.roi_2_layout
@@ -933,9 +972,7 @@ class ImageWidget(pg.PlotWidget):
         self.addItem(self.roi_3)
         self.addItem(self.roi_4)
 
-        #print(self.view.)
-
-        # Creates mouse crosshair
+        # Create and add mouse crosshair
         self.v_line = pg.InfiniteLine(angle=90, movable=False)
         self.h_line = pg.InfiniteLine(angle=0, movable=False)
         self.v_line.setVisible(False)
@@ -951,27 +988,33 @@ class ImageWidget(pg.PlotWidget):
         Adds image to plot window with correct options.
         """
 
-        # Rotates image 270 degrees
+        # Rotate image 270 degrees
         self.image = np.rot90(image, 3)
+
+        # Maximum value for colormap
         c_map_max = np.amax(self.image) * self.cmap_pctl
 
-        # Checks colormap scale
+        # Check colormap scale
         if self.options_cmap_scale == "Log":
             norm = colors.LogNorm(vmax=c_map_max)
         else:
             norm = colors.Normalize(vmax=c_map_max)
 
-        # Normalizes image
+        # Normalize image
         norm_image = norm(self.image)
 
-        # Adds colormap to image
+        # Add colormap to image
         color_image = plt.cm.jet(norm_image)
-        # Sets image
+
+        # Set image
         self.image_item.setImage(color_image)
 
+        # Rectangle == None in live plotting
         if rect == None:
             rect = QtCore.QRect(0, 0, self.image.shape[0], self.image.shape[1])
 
+        # Set rectangle for image item
+        # Image will be plotted within bounds of rectangle
         self.image_item.setRect(rect)
         self.rect = rect
 
@@ -997,9 +1040,10 @@ class ImageWidget(pg.PlotWidget):
         # View coordinates to plot coordinates
         view_point = self.view.mapSceneToView(scene_point)
 
+        # x and y values of mouse
         x, y = view_point.x(), view_point.y()
 
-        # Changes position of crosshair
+        # Change position of crosshair
         self.v_line.setPos(x)
         self.h_line.setPos(y)
 
@@ -1007,6 +1051,7 @@ class ImageWidget(pg.PlotWidget):
         self.main_window.analysis_widget.mouse_x_txtbox.setText(str(round(x, 5)))
         self.main_window.analysis_widget.mouse_y_txtbox.setText(str(round(y, 5)))
 
+        # Mouse coordinates in terms of pixels
         x = (x - self.rect.x()) * self.image.shape[0] / self.rect.width()
         y = (y - self.rect.y()) * self.image.shape[1] / self.rect.height()
 
@@ -1019,12 +1064,18 @@ class ImageWidget(pg.PlotWidget):
 
     def updateHKLTextboxes(self, scene_point):
 
+        """
+        Updates analysis widget textboxes for HKL values with new mouse/slice info.
+        """
+
+        # Only updates values if in HKL
         if self.main_window.options_widget.post_hkl_rbtn.isChecked():
             view_point = self.view.mapSceneToView(scene_point)
 
             x, y = view_point.x(), view_point.y()
             z = self.main_window.options_widget.post_slice_sbox.value()
 
+            # Check slice direction
             if self.main_window.options_widget.post_slice_direction_cbox.currentText() == "X(H)":
                 self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(z, 5)))
                 self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(y, 5)))
@@ -1037,6 +1088,8 @@ class ImageWidget(pg.PlotWidget):
                 self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(y, 5)))
                 self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(x, 5)))
                 self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(z, 5)))
+
+        # Textboxes updated to be blank if in XYZ
         else:
             self.main_window.analysis_widget.mouse_h_txtbox.setText("")
             self.main_window.analysis_widget.mouse_k_txtbox.setText("")
@@ -1060,9 +1113,11 @@ class ROIWidget(pg.ROI):
         self.slice_direction = ""
         self.rect = None
 
+        # Plot labels
         self.roi_plot.setLabel("left", "Avg Intensity")
         self.roi_plot.setLabel("bottom", "Slice")
 
+        # Outline of ROI
         self.pen = pg.mkPen(width=3)
         self.setPen(self.pen)
 
@@ -1074,7 +1129,7 @@ class ROIWidget(pg.ROI):
         # Intially hide the ROI
         self.hide()
 
-        # Creates subwidgets for groupbox
+        # Create subwidgets for groupbox
         self.x_lbl = QtGui.QLabel("x Pos:")
         self.x_spinbox = QtGui.QDoubleSpinBox()
         self.x_spinbox.setMinimum(0)
@@ -1098,7 +1153,7 @@ class ROIWidget(pg.ROI):
         self.color_btn = pg.ColorButton()
         self.center_btn = QtGui.QPushButton("Center ROI")
 
-        # Adds subwidgets to layout
+        # Add subwidgets to layout
         self.layout.addWidget(self.x_lbl, 0, 0)
         self.layout.addWidget(self.x_spinbox, 0, 1)
         self.layout.addWidget(self.y_lbl, 1, 0)
@@ -1110,7 +1165,7 @@ class ROIWidget(pg.ROI):
         self.layout.addWidget(self.color_btn, 4, 0, 1, 2)
         self.layout.addWidget(self.center_btn, 5, 0, 1, 2)
 
-        # Connects subwidgets to signals
+        # Connect subwidgets to signals
         self.sigRegionChanged.connect(self.updateAnalysis)
         self.visibleChanged.connect(self.updateAnalysis)
         self.width_spinbox.valueChanged.connect(self.updateSize)
@@ -1120,7 +1175,7 @@ class ROIWidget(pg.ROI):
         self.color_btn.sigColorChanged.connect(self.changeColor)
         self.center_btn.clicked.connect(self.center)
 
-        # Keeps track of whether textboxes or roi was updated last
+        # Keep track of whether textboxes or roi was updated last
         # Helps avoid infinite loop of updating
         # Acts like a semaphore of sorts
         self.updating = ""
@@ -1198,55 +1253,76 @@ class ROIWidget(pg.ROI):
         self.data = data
         self.slice_direction = slice_direction
         self.rect = rect
+        avg_intensity = []
 
+        # Check if data and rectangle have been set
         if self.data != [] and self.rect != None:
 
+            # Pixel minimum/maximum of ROI area
             x_min = int((self.pos()[0] - self.rect.x()) * self.data.shape[0] / self.rect.width())
             x_max = int((self.pos()[0] + self.size()[0] - self.rect.x()) * self.data.shape[0] / self.rect.width())
             y_min = int((self.pos()[1] - self.rect.y()) * self.data.shape[1] / self.rect.height())
             y_max = int((self.pos()[1] + self.size()[1] - self.rect.y()) * self.data.shape[1] / self.rect.height())
 
+            # Checks slice direction
             if self.slice_direction == "X(H)":
-                data_roi = self.data[:, y_min:y_max, x_min:x_max]
-                avg_intensity = []
 
+                # Region throughout all slice in a direction
+                data_roi = self.data[:, y_min:y_max, x_min:x_max]
+
+                # Takes average intensity of all slices and creates a list
                 for i in range(data_roi.shape[0]):
                     avg = np.mean(data_roi[i, :, :])
                     avg_intensity.append(avg)
 
             elif self.slice_direction == "Y(K)":
-                data_roi = self.data[y_min:y_max, :, x_min:x_max]
-                avg_intensity = []
 
+                # Region throughout all slice in a direction
+                data_roi = self.data[y_min:y_max, :, x_min:x_max]
+
+                # Takes average intensity of all slices and creates a list
                 for i in range(data_roi.shape[1]):
                     avg = np.mean(data_roi[:, i, :])
                     avg_intensity.append(avg)
 
             elif self.slice_direction == "Z(L)":
-                data_roi = self.data[y_min:y_max, x_min:x_max, :]
-                avg_intensity = []
 
+                # Region throughout all slice in a direction
+                data_roi = self.data[y_min:y_max, x_min:x_max, :]
+
+                # Takes average intensity of all slices and creates a list
                 for i in range(data_roi.shape[2]):
                     avg = np.mean(data_roi[:, :, i])
                     avg_intensity.append(avg)
 
             self.avg_intensity = avg_intensity
+
+            # Plots intensity
             self.roi_plot.plot(avg_intensity, clear=True)
 
     # --------------------------------------------------------------------------
 
     def center(self):
 
+        """
+        Adjusts ROI to match the border of the image.
+        """
+
+        # Check if rectangle was set
         if self.rect != None:
+
+            # Bottom lefthand corner of rectangle
             x = self.rect.x()
             y = self.rect.y()
+
+            # Shape of rectangle
             width = self.rect.width()
             height = self.rect.height()
+
+            # Set values for ROI
+            # Width and height must be a tuple
             self.setSize((width, height))
             self.setPos(x, y)
-
-            print(self.size()[0], self.size()[1], self.pos()[0], self.pos()[1])
-            print(width, height, x, y)
 
 # ==============================================================================
 
@@ -1275,8 +1351,10 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
         only used for the initial display when a new dataset is loaded.
         """
 
+        # Not ideal, but this supresses RuntimeWarnings from ROI's calculating empty slices
         warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+        # Plot intensity for each ROI
         self.main_window.image_widget.roi_1.plotAverageIntensity(data, slice_direction, rect)
         self.main_window.image_widget.roi_2.plotAverageIntensity(data, slice_direction, rect)
         self.main_window.image_widget.roi_3.plotAverageIntensity(data, slice_direction, rect)
@@ -1322,6 +1400,10 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
 
 class AdvancedROIPlotWidget(pg.PlotWidget):
 
+    """
+    Creates a plot that represents a relationship between the ROI's.
+    """
+
     def __init__ (self, parent):
         super(AdvancedROIPlotWidget, self).__init__(parent)
         self.main_window = parent
@@ -1341,6 +1423,11 @@ class AdvancedROIPlotWidget(pg.PlotWidget):
     # --------------------------------------------------------------------------
 
     def getRegions(self, first_roi_name, operator, second_roi_name, title):
+
+        """
+        Sets ROI and operator variables for calculation
+        """
+
         self.first_roi = self.getCorrespondingROI(first_roi_name)
         self.operator = operator
         self.second_roi = self.getCorrespondingROI(second_roi_name)
@@ -1351,6 +1438,12 @@ class AdvancedROIPlotWidget(pg.PlotWidget):
     # --------------------------------------------------------------------------
 
     def plotData(self):
+
+        """
+        Plots average intensity.
+        """
+
+        # Check if all variables were given
         if not None in [self.first_roi, self.operator, self.second_roi]:
             first_avg_intensity = np.array(self.first_roi.avg_intensity)
             second_avg_intensity = np.array(self.second_roi.avg_intensity)
@@ -1363,6 +1456,11 @@ class AdvancedROIPlotWidget(pg.PlotWidget):
     # --------------------------------------------------------------------------
 
     def getCorrespondingROI(self, roi_name):
+
+        """
+        Gives ROI widget that corresponds to a string from the dialog.
+        """
+
         roi_dict = {
             "ROI 1" : self.main_window.image_widget.roi_1,
             "ROI 2" : self.main_window.image_widget.roi_2,
