@@ -10,6 +10,7 @@ import os
 from rsMap3D.config.rsmap3dconfigparser import RSMap3DConfigParser
 from rsMap3D.datasource.Sector33SpecDataSource import Sector33SpecDataSource
 from rsMap3D.datasource.DetectorGeometryForXrayutilitiesReader import DetectorGeometryForXrayutilitiesReader as detReader
+from rsMap3D.datasource.InstForXrayutilitiesReader import InstForXrayutilitiesReader as instrReader
 from rsMap3D.gui.rsm3dcommonstrings import BINARY_OUTPUT
 from rsMap3D.mappers.gridmapper import QGridMapper
 from rsMap3D.mappers.output.vtigridwriter import VTIGridWriter
@@ -17,6 +18,7 @@ from rsMap3D.transforms.unitytransform3d import UnityTransform3D
 from rsMap3D.utils.srange import srange
 import vtk
 from vtk.util import numpy_support as npSup
+import xrayutilities as xu
 
 # ==============================================================================
 
@@ -72,6 +74,12 @@ class DataProcessing:
         grid_mapper.setProgressUpdater(updateMapperProgress)
         grid_mapper.doMap()
 
+        i_reader = instrReader(instrument_config_name)
+
+        print(dir(i_reader))
+        print()
+        print(dir(d_reader))
+
         return output_file_name
 
     # --------------------------------------------------------------------------
@@ -125,12 +133,153 @@ class DataProcessing:
 
     # --------------------------------------------------------------------------
 
-    def readInstrumentConfigXML(file_path):
-        ...
+    def createLiveScanArea(detector_config_name, instrument_config_name, mu, eta,
+        chi, phi, nu, delta, ub):
+
+        d_reader = detReader(detector_config_name)
+        i_reader = instrReader(instrument_config_name)
+
+        sample_circle_dir = i_reader.getSampleCircleDirections()
+        det_circle_dir = i_reader.getDetectorCircleDirections()
+        primary_beam_dir = i_reader.getPrimaryBeamDirection()
+
+        q_conv = xu.experiment.QConversion(sample_circle_dir, det_circle_dir, primary_beam_dir)
+
+        energy = 8050
+
+        inplane_ref_dir = i_reader.getInplaneReferenceDirection()
+        sample_norm_dir = i_reader.getSampleSurfaceNormalDirection()
+
+        hxrd = xu.HXRD(inplane_ref_dir, sample_norm_dir, en=energy, qconv=q_conv)
+
+        detector = d_reader.getDetectors()[0]
+        pixel_dir_1 = d_reader.getPixelDirection1(detector)
+        pixel_dir_2 = d_reader.getPixelDirection2(detector)
+        c_ch_1 = d_reader.getCenterChannelPixel(detector)[0]
+        c_ch_2 = d_reader.getCenterChannelPixel(detector)[1]
+        n_ch_1 = d_reader.getNpixels(detector)[0]
+        n_ch_2 = d_reader.getNpixels(detector)[1]
+        pixel_width_1 = d_reader.getSize(detector)[0] / d_reader.getNpixels(detector)[0]
+        pixel_width_2 = d_reader.getSize(detector)[1] / d_reader.getNpixels(detector)[1]
+        distance = d_reader.getDistance(detector)
+        roi = [0, n_ch_1, 0, n_ch_2]
+
+        hxrd.Ang2Q.init_area(pixel_dir_1, pixel_dir_2, cch1=c_ch_1, cch2=c_ch_2,
+            Nch1=n_ch_1, Nch2=n_ch_2, pwidth1=pixel_width_1, pwidth2=pixel_width_2,
+            distance=distance, roi=roi)
+
+        qx,qy,qz = hxrd.Ang2Q.area(mu,eta,chi,phi,nu,delta,UB=ub)
+
+        return qx, qy, qz
 
     # --------------------------------------------------------------------------
 
     def readDetectorConfigXML(file_path):
-        ...
+
+        d_reader = detReader(file_path)
+
+"""
+        # fourc goniometer in fourc coordinates
+
+        # convention for coordinate system:
+
+        # x: upwards;
+
+        # y: along the incident beam;
+
+        # z: "outboard" (makes coordinate system right-handed).
+
+        # QConversion will set up the goniometer geometry.
+
+        # So the first argument describes the sample rotations, the second the
+
+        # detector rotations and the third the primary beam direction.
+
+        qconv = xu.experiment.QConversion(self.getSampleCircleDirections(), \
+
+                                    self.getDetectorCircleDirections(), \
+
+                                    self.getPrimaryBeamDirection())
+
+
+
+        # define experimental class for angle conversion
+
+        #
+
+        # ipdir: inplane reference direction (ipdir points into the primary beam
+
+        #        direction at zero angles)
+
+        # ndir:  surface normal of your sample (ndir points in a direction
+
+        #        perpendicular to the primary beam and the innermost detector
+
+        #        rotation axis)
+
+        en = self.getIncidentEnergy()
+
+        hxrd = xu.HXRD(self.getInplaneReferenceDirection(), \
+
+                       self.getSampleSurfaceNormalDirection(), \
+
+                       en=en[self.getAvailableScans()[0]], \
+
+                       qconv=qconv)
+
+        # initialize area detector properties
+
+        if (self.getDetectorPixelWidth() != None ) and \
+
+            (self.getDistanceToDetector() != None):
+
+            hxrd.Ang2Q.init_area(self.getDetectorPixelDirection1(), \
+
+                self.getDetectorPixelDirection2(), \
+
+                cch1=self.getDetectorCenterChannel()[0], \
+
+                cch2=self.getDetectorCenterChannel()[1], \
+
+                Nch1=self.getDetectorDimensions()[0], \
+
+                Nch2=self.getDetectorDimensions()[1], \
+
+                pwidth1=self.getDetectorPixelWidth()[0], \
+
+                pwidth2=self.getDetectorPixelWidth()[1], \
+
+                distance=self.getDistanceToDetector(), \
+
+                Nav=self.getNumPixelsToAverage(), \
+
+                roi=self.getDetectorROI())
+
+        else:
+
+            hxrd.Ang2Q.init_area(self.getDetectorPixelDirection1(), \
+
+                self.getDetectorPixelDirection2(), \
+
+                cch1=self.getDetectorCenterChannel()[0], \
+
+                cch2=self.getDetectorCenterChannel()[1], \
+
+                Nch1=self.getDetectorDimensions()[0], \
+
+                Nch2=self.getDetectorDimensions()[1], \
+
+                chpdeg1=self.getDetectorChannelsPerDegree()[0], \
+
+                chpdeg2=self.getDetectorChannelsPerDegree()[1], \
+
+                Nav=self.getNumPixelsToAverage(),
+
+                roi=self.getDetectorROI())
+
+
+
+        angleNames = self.getAngles()
+"""
 
 # ==============================================================================
