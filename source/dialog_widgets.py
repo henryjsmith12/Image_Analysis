@@ -141,6 +141,8 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
 
         self.setWindowModality(QtCore.Qt.ApplicationModal)
 
+        self.detector_config_name = ""
+        self.instrument_config_name = ""
         self.detector_dir_1 = ""
         self.detector_dir_2 = ""
         self.cch_1 = 0.0
@@ -265,7 +267,7 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
 
         self.detector_config_name = self.detector_txtbox.text()
         self.instrument_config_name = self.instrument_txtbox.text()
-        self.ub_matrix = self.ub_matrix_txtedit.plainText()
+        #self.ub_matrix = self.ub_matrix_txtedit.plainText()
         self.mu = self.mu_sbox.value()
         self.eta = self.eta_sbox.value()
         self.chi = self.chi_sbox.value()
