@@ -375,8 +375,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_gbox.setEnabled(True)
 
         if self.live_hkl_rbtn.isChecked():
-            h = self.qx[index]
-            k = self.qy[index]
+            h = self.qx[0]
+            k = self.qy[0]
             rect = QtCore.QRectF(h[0], k[0], h[-1] - h[0], k[-1] - k[0])
             ...
         else:
@@ -1104,6 +1104,7 @@ class ImageWidget(pg.PlotWidget):
 
         # Only updates values if in HKL
         if self.main_window.options_widget.post_hkl_rbtn.isChecked():
+
             view_point = self.view.mapSceneToView(scene_point)
 
             x, y = view_point.x(), view_point.y()
@@ -1118,10 +1119,27 @@ class ImageWidget(pg.PlotWidget):
                 self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(y, 5)))
                 self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(z, 5)))
                 self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(x, 5)))
-            else:
+            elif self.main_window.options_widget.post_slice_direction_cbox.currentText() == "Z(L)":
                 self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(y, 5)))
                 self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(x, 5)))
                 self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(z, 5)))
+
+        elif self.main_window.options_widget.live_hkl_rbtn.isChecked():
+
+            view_point = self.view.mapSceneToView(scene_point)
+
+            x, y = view_point.x(), view_point.y()
+
+            count = self.main_window.options_widget.live_image_list.count()
+            index = self.main_window.options_widget.live_image_list.currentRow()
+            z_min = self.main_window.options_widget.qz[0][0]
+            z_max = self.main_window.options_widget.qz[0][-1]
+            z = z_min + (z_max - z_min) * index / count
+
+            self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(y, 5)))
+            self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(x, 5)))
+            self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(z, 5)))
+
 
         # Textboxes updated to be blank if in XYZ
         else:
