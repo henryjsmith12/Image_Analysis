@@ -313,6 +313,27 @@ class OptionsWidget(pg.LayoutWidget):
 
         dialog = ConversionParametersDialogWidget()
 
+        self.live_instrument_path = dialog.instrument_config_name
+        self.live_detector_path = dialog.detector_config_name
+        ub = np.array([[-1.15684624,  0.00820773,  0.00912059],
+            [ 0.00788469,  1.15617971, -0.04037437],
+            [-0.00940126, -0.04030994, -1.15617062]])
+        mu = dialog.mu
+        eta = dialog.eta
+        chi = dialog.chi
+        phi = dialog.phi
+        nu = dialog.nu
+        delta = dialog.delta
+
+        mu,eta,chi,phi = (0, 35, 0, 90)
+        nu,delta = (0,70)
+
+        self.qx, self.qy, self.qz = DataProcessing.createLiveScanArea(self.live_detector_path,
+            self.live_instrument_path, mu=mu, eta=eta, chi=chi, phi=phi, nu=nu,
+            delta=delta, ub=ub)
+
+        self.setLiveImageList()
+
         """
         ** TODO: Connect dialog to new rect-altering/image-creating functions
         """
@@ -339,6 +360,11 @@ class OptionsWidget(pg.LayoutWidget):
         # Concatenates directory and file names
         file_path = f"{self.live_scan_path}/{file_name.text()}"
 
+        if self.live_image_list.item(0).text() == "alignment.tif":
+            index = self.live_image_list.currentRow() - 1
+        else:
+            index = self.live_image_list.currentRow()
+
         # Reads image
         self.image = np.rot90(tiff.imread(file_path), 2)
 
@@ -348,8 +374,16 @@ class OptionsWidget(pg.LayoutWidget):
         # Enable options
         self.options_gbox.setEnabled(True)
 
+        if self.live_hkl_rbtn.isChecked():
+            h = self.qx[index]
+            k = self.qy[index]
+            rect = QtCore.QRectF(h[0], k[0], h[-1] - h[0], k[-1] - k[0])
+            ...
+        else:
+            rect = None
+
         # Loads image into viewing window
-        self.main_window.image_widget.displayImage(self.image, rect=None)
+        self.main_window.image_widget.displayImage(self.image, rect)
 
     # --------------------------------------------------------------------------
 
