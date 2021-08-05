@@ -12,7 +12,7 @@ from setuptools import setup
 setup(
     name='Image_Analysis',
     version='0.0.0',
-    description='',
+    description='A lightweight option for viewing scan data.',
     author='Henry Smith',
     author_email='smithh@anl.gov',
     url='https://github.com/henryjsmith12/Image_Analysis',
