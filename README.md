@@ -38,6 +38,6 @@ Run the program by using the command below:
 python image_analysis.py
 ```
 
-The program's user interface should appear and look as such:
+This is what the program's user interface looks like on startup:
 
 https://github.com/henryjsmith12/Image_Analysis/blob/master/Screenshots/startup_gui.jpg
