@@ -1,5 +1,7 @@
 # Image_Analysis
 
+Copyright (c) UChicago Argonne, LLC. All rights reserved.
+
 A lightweight option for viewing scan data. Image Analysis allows users to view raw .tiff image files or data converted to HKL by loading SPEC and XML configuration files. 
 
 ## Installation
