@@ -240,6 +240,7 @@ class OptionsWidget(pg.LayoutWidget):
 
         # Options widget connections
         self.options_roi_chkbox.stateChanged.connect(self.toggleROIBoxes)
+        self.image_mode_tabs.currentChanged.connect(self.toggleROICheckboxEnabled)
         self.options_crosshair_mouse_chkbox.stateChanged.connect(self.toggleMouseCrosshair)
         self.options_crosshair_color_btn.sigColorChanged.connect(self.changeCrosshairColor)
         self.options_mouse_pan_rbtn.toggled.connect(self.toggleMouseMode)
@@ -376,6 +377,7 @@ class OptionsWidget(pg.LayoutWidget):
 
         # Enable options
         self.options_gbox.setEnabled(True)
+        self.toggleROICheckboxEnabled()
 
         if self.live_hkl_rbtn.isChecked():
             h = self.qx[0]
@@ -660,6 +662,22 @@ class OptionsWidget(pg.LayoutWidget):
             self.main_window.image_widget.setLabel("left", "")
             self.main_window.image_widget.setLabel("bottom", "")
 
+    # --------------------------------------------------------------------------
+
+    def toggleROICheckboxEnabled(self):
+
+        """
+        Enables/disables ROI checkbox based on whether live or post plotting is
+        selected.
+        """
+
+        tab = self.image_mode_tabs.currentIndex()
+
+        if tab == 0:
+            self.options_roi_chkbox.setChecked(False)
+            self.options_roi_chkbox.setEnabled(False)
+        else:
+            self.options_roi_chkbox.setEnabled(True)
 
     # --------------------------------------------------------------------------
 
@@ -1434,10 +1452,7 @@ class ROIPlotsWidget(pg.GraphicsLayoutWidget):
         """
         Disables all ROI plots.
         """
-        self.roi_1_plot.setEnabled(False)
-        self.roi_2_plot.setEnabled(False)
-        self.roi_3_plot.setEnabled(False)
-        self.roi_4_plot.setEnabled(False)
+        ...
 
 # ==============================================================================
 
