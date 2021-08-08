@@ -97,6 +97,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_current_image_lbl = QtGui.QLabel("Current Image:")
         self.live_current_image_txtbox = QtGui.QLineEdit()
         self.live_current_image_txtbox.setReadOnly(True)
+        self.live_simulation_btn = QtGui.QPushButton("Simulate Live Plotting")
 
         # Live layout
         self.live_image_layout.addWidget(self.live_set_scan_btn, 0, 0, 1, 3)
@@ -107,6 +108,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_image_layout.addWidget(self.live_image_list, 2, 0, 3, 6)
         self.live_image_layout.addWidget(self.live_current_image_lbl, 5, 0, 1, 2)
         self.live_image_layout.addWidget(self.live_current_image_txtbox, 5, 2, 1, 4)
+        self.live_image_layout.addWidget(self.live_simulation_btn, 6, 0, 1, 6)
 
         # Live widget connections
         self.live_set_scan_btn.clicked.connect(self.setLiveScan)
@@ -115,6 +117,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_xyz_rbtn.toggled.connect(self.setLiveImageList)
         self.live_hkl_params_btn.clicked.connect(self.setLiveHKLParameters)
         self.live_image_list.itemClicked.connect(self.loadLiveImage)
+        self.live_simulation_btn.clicked.connect(self.simLivePlotting)
 
         # Post widgets
         self.post_set_project_btn = QtGui.QPushButton("Set Project")
@@ -828,18 +831,6 @@ class OptionsWidget(pg.LayoutWidget):
             self.loadLiveImage(self.live_image_list.item(i))
             # Necessary to refresh UI
             QtGui.QApplication.processEvents()
-            # Loop sleeps for set period (<1 second)
-            time.sleep(self.live_refresh_rate)
-
-    # --------------------------------------------------------------------------
-
-    def changeRefreshRate(self, value):
-
-        """
-        Changes refresh rate for live plotting (Between 0 and 1 second).
-        """
-
-        self.live_refresh_rate = value
 
 # ==============================================================================
 
