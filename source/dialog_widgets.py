@@ -267,7 +267,7 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
 
         self.detector_config_name = self.detector_txtbox.text()
         self.instrument_config_name = self.instrument_txtbox.text()
-        #self.ub_matrix = self.ub_matrix_txtedit.plainText()
+        self.ub = self.ub_matrix_txtedit.toPlainText()
         self.mu = self.mu_sbox.value()
         self.eta = self.eta_sbox.value()
         self.chi = self.chi_sbox.value()
