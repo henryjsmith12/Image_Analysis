@@ -325,7 +325,6 @@ class OptionsWidget(pg.LayoutWidget):
             [-0.00940126, -0.04030994, -1.15617062]])
         """
         ub = np.fromstring(dialog.ub, sep=" ").reshape((3,3))
-        print(ub)
         mu = dialog.mu
         eta = dialog.eta
         chi = dialog.chi
@@ -388,6 +387,8 @@ class OptionsWidget(pg.LayoutWidget):
         else:
             rect = None
 
+        self.rect = rect
+
         # Loads image into viewing window
         self.main_window.image_widget.displayImage(self.image, rect)
 
@@ -432,10 +433,11 @@ class OptionsWidget(pg.LayoutWidget):
 
         if self.post_hkl_rbtn.isChecked():
             self.post_spec_config_btn.setEnabled(True)
+
         else:
             self.post_spec_config_btn.setEnabled(False)
 
-        self.post_scan_list.clear()
+
 
     # --------------------------------------------------------------------------
 
@@ -606,13 +608,14 @@ class OptionsWidget(pg.LayoutWidget):
         self.image = np.flipud(self.image)
 
         self.post_slice_sbox.setValue(slice_value)
+        self.rect = rect
 
         # Set image in viewing window
         self.main_window.image_widget.displayImage(self.image, rect=rect)
 
         # Check if ROI's are in use
         if self.options_roi_chkbox.isChecked():
-            self.main_window.roi_plots_widget.displayROIPlots(self.dataset, slice_direction, rect)
+            self.main_window.roi_plots_widget.displayROIPlots(self.dataset, slice_direction, self.rect)
         else:
             self.main_window.roi_plots_widget.clearROIPlots()
 
@@ -694,6 +697,7 @@ class OptionsWidget(pg.LayoutWidget):
             self.main_window.image_widget.roi_2.show()
             self.main_window.image_widget.roi_3.show()
             self.main_window.image_widget.roi_4.show()
+            self.loadPostImage()
         else:
             self.main_window.image_widget.roi_1.hide()
             self.main_window.image_widget.roi_2.hide()
@@ -778,10 +782,10 @@ class OptionsWidget(pg.LayoutWidget):
 
         if button.text() == "Logarithmic":
             self.main_window.image_widget.options_cmap_scale = "Log"
-            self.main_window.image_widget.displayImage(self.image)
+            self.main_window.image_widget.displayImage(self.image, rect=self.rect)
         else:
             self.main_window.image_widget.options_cmap_scale = "Linear"
-            self.main_window.image_widget.displayImage(self.image)
+            self.main_window.image_widget.displayImage(self.image, rect=self.rect)
 
     # --------------------------------------------------------------------------
 
@@ -794,7 +798,7 @@ class OptionsWidget(pg.LayoutWidget):
         slider = self.sender()
 
         self.main_window.image_widget.cmap_pctl = slider.value() / 100.0
-        self.main_window.image_widget.displayImage(self.image)
+        self.main_window.image_widget.displayImage(self.image, rect=self.rect)
 
     # --------------------------------------------------------------------------
 
