@@ -321,9 +321,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_instrument_path = dialog.instrument_config_name
         self.live_detector_path = dialog.detector_config_name
         """
-        ub = np.array([[-1.15684624,  0.00820773,  0.00912059],
-            [ 0.00788469,  1.15617971, -0.04037437],
-            [-0.00940126, -0.04030994, -1.15617062]])
+        -1.15684624 0.00820773 0.00912059 0.00788469 1.15617971 -0.04037437 -0.00940126 -0.04030994 -1.15617062
+
+        0, 35, 0, 90, 0, 70
         """
         ub = np.fromstring(dialog.ub, sep=" ").reshape((3,3))
         mu = dialog.mu
