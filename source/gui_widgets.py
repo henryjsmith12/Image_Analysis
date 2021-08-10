@@ -321,6 +321,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_instrument_path = dialog.instrument_config_name
         self.live_detector_path = dialog.detector_config_name
         """
+        1 0 0 0 1 0 0 0 1
+        -1 0 0 0 -1 0 0 0 -1
         -1.15684624 0.00820773 0.00912059 0.00788469 1.15617971 -0.04037437 -0.00940126 -0.04030994 -1.15617062
 
         0, 35, 0, 90, 0, 70
@@ -381,8 +383,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.toggleROICheckboxEnabled()
 
         if self.live_hkl_rbtn.isChecked():
-            h = self.qx[0]
-            k = self.qy[0]
+
+            h = self.qx[self.qx.shape[0] // 2]
+            k = self.qy[self.qy.shape[0] // 2]
             rect = QtCore.QRectF(h[0], k[0], h[-1] - h[0], k[-1] - k[0])
             ...
         else:
@@ -1150,14 +1153,13 @@ class ImageWidget(pg.PlotWidget):
 
             count = self.main_window.options_widget.live_image_list.count()
             index = self.main_window.options_widget.live_image_list.currentRow()
-            z_min = self.main_window.options_widget.qz[0][0]
-            z_max = self.main_window.options_widget.qz[0][-1]
+            z_min = self.main_window.options_widget.qz[count // 2][0]
+            z_max = self.main_window.options_widget.qz[count // 2][-1]
             z = z_min + (z_max - z_min) * index / count
 
             self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(y, 5)))
             self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(x, 5)))
             self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(z, 5)))
-
 
         # Textboxes updated to be blank if in XYZ
         else:
