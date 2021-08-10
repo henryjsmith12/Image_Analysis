@@ -74,12 +74,6 @@ class DataProcessing:
         grid_mapper.setProgressUpdater(updateMapperProgress)
         grid_mapper.doMap()
 
-        i_reader = instrReader(instrument_config_name)
-
-        print(dir(i_reader))
-        print()
-        print(dir(d_reader))
-
         return output_file_name
 
     # --------------------------------------------------------------------------
@@ -171,5 +165,5 @@ class DataProcessing:
         qx,qy,qz = hxrd.Ang2Q.area(mu,eta,chi,phi,nu,delta,UB=ub)
 
         return qx, qy, qz
-    
+
 # ==============================================================================
