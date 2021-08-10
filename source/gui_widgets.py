@@ -117,6 +117,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_xyz_rbtn.toggled.connect(self.setLiveImageList)
         self.live_hkl_params_btn.clicked.connect(self.setLiveHKLParameters)
         self.live_image_list.itemClicked.connect(self.loadLiveImage)
+        self.live_image_list.itemClicked.connect(self.setAxes)
         self.live_simulation_btn.clicked.connect(self.simLivePlotting)
 
         # Post widgets
@@ -170,9 +171,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_xyz_rbtn.toggled.connect(self.setPostScanList)
         self.post_spec_config_btn.clicked.connect(self.setPostSpecConfigFiles)
         self.post_process_scan_btn.clicked.connect(self.processPostScan)
-        self.post_process_scan_btn.clicked.connect(self.setPostAxes)
+        self.post_process_scan_btn.clicked.connect(self.setAxes)
         self.post_slice_direction_cbox.currentTextChanged.connect(self.loadPostImage)
-        self.post_slice_direction_cbox.currentTextChanged.connect(self.setPostAxes)
+        self.post_slice_direction_cbox.currentTextChanged.connect(self.setAxes)
         self.post_slice_slider.valueChanged.connect(self.loadPostImage)
 
         # Options widgets
@@ -645,14 +646,17 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def setPostAxes(self):
+    def setAxes(self):
 
         """
         Changes image widget axes to reflect the slice in view.
         """
 
         # Check coordinate system radio button
-        if self.post_hkl_rbtn.isChecked():
+        if self.live_hkl_rbtn.isChecked() and self.image_mode_tabs.currentIndex() == 0:
+            self.main_window.image_widget.setLabel("left", "H")
+            self.main_window.image_widget.setLabel("bottom", "K")
+        elif self.post_hkl_rbtn.isChecked():
             if self.post_slice_direction_cbox.currentText() == "X(H)":
                 self.main_window.image_widget.setLabel("left", "K")
                 self.main_window.image_widget.setLabel("bottom", "L")
