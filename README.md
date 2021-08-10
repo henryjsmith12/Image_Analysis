@@ -10,7 +10,8 @@ A lightweight option for viewing scan data. Image Analysis allows users to view 
 * PyQt5 5.10+
 * pyqtgraph 
 
-A full list of requirements can be found in `requirements.txt`.
+A full list of requirements can be found in [`requirements.txt`](https://github.com/henryjsmith12/Image_Analysis/blob/master/requirements.txt).
+
 
 ## Installation
 
@@ -32,13 +33,13 @@ Activate the virtual environment.
 source venv/bin/activate
 ```
 
-Install the proper Python libraries. A full list of the project's dependencies and their versions can be found in `requirements.txt`.
+Install the proper Python libraries. A full list of the project's dependencies and library versions can be found in [`requirements.txt`](https://github.com/henryjsmith12/Image_Analysis/blob/master/requirements.txt).
 
 ```
 pip install requirements.txt
 ```
 
-The program is now ready to run.
+The program is now ready to use.
 
 ## Getting Started
 
