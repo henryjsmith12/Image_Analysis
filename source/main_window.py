@@ -79,7 +79,7 @@ class MainWindow(QtGui.QMainWindow):
         Creates widgets and adds them to their respective dock.
         """
 
-        # Create widgets and set up widget components
+        # Create widgets and set up components
         self.options_widget = OptionsWidget(self)
         self.options_widget.setupComponents()
         self.analysis_widget = AnalysisWidget(self)
