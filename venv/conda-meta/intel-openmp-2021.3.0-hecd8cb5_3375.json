@@ -1,0 +1,68 @@
+{
+  "build": "hecd8cb5_3375",
+  "build_number": 3375,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-64",
+  "constrains": [],
+  "depends": [],
+  "extracted_package_dir": "/Users/henryjsmith12/opt/anaconda3/pkgs/intel-openmp-2021.3.0-hecd8cb5_3375",
+  "features": "",
+  "files": [
+    "lib/libiomp5.dylib",
+    "lib/libiomp5_db.dylib",
+    "lib/libiompstubs5.dylib",
+    "licensing/compiler/openmp/third-party-programs.txt"
+  ],
+  "fn": "intel-openmp-2021.3.0-hecd8cb5_3375.conda",
+  "legacy_bz2_md5": "9d3d85255cbbda10852c9fee7d4281e5",
+  "legacy_bz2_size": 1242441,
+  "license": "LicenseRef-ProprietaryIntel",
+  "license_family": "Proprietary",
+  "link": {
+    "source": "/Users/henryjsmith12/opt/anaconda3/pkgs/intel-openmp-2021.3.0-hecd8cb5_3375",
+    "type": 1
+  },
+  "md5": "30ee73a3a4b40d8acd7268deb5ea3ab7",
+  "name": "intel-openmp",
+  "package_tarball_full_path": "/Users/henryjsmith12/opt/anaconda3/pkgs/intel-openmp-2021.3.0-hecd8cb5_3375.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "lib/libiomp5.dylib",
+        "path_type": "hardlink",
+        "sha256": "0f3846af5db0943aeea29bdc6c5cc4182ee1e49253090a31e2f55b8bb5783687",
+        "sha256_in_prefix": "0f3846af5db0943aeea29bdc6c5cc4182ee1e49253090a31e2f55b8bb5783687",
+        "size_in_bytes": 2934768
+      },
+      {
+        "_path": "lib/libiomp5_db.dylib",
+        "path_type": "hardlink",
+        "sha256": "2ed567697127f3ae31a00538535cb2f560fd4d07dfa9ab0084a0ae2c47bd4a68",
+        "sha256_in_prefix": "2ed567697127f3ae31a00538535cb2f560fd4d07dfa9ab0084a0ae2c47bd4a68",
+        "size_in_bytes": 286144
+      },
+      {
+        "_path": "lib/libiompstubs5.dylib",
+        "path_type": "hardlink",
+        "sha256": "019a72939f133d0df396cfe08b34b5fd032695cd053cfe83e4af7375a99c40d1",
+        "sha256_in_prefix": "019a72939f133d0df396cfe08b34b5fd032695cd053cfe83e4af7375a99c40d1",
+        "size_in_bytes": 186176
+      },
+      {
+        "_path": "licensing/compiler/openmp/third-party-programs.txt",
+        "path_type": "hardlink",
+        "sha256": "753301db61ffc9b486e9d3e8c6758ffc5db6679ea0cee32c4935b9e1a2d56bc5",
+        "sha256_in_prefix": "753301db61ffc9b486e9d3e8c6758ffc5db6679ea0cee32c4935b9e1a2d56bc5",
+        "size_in_bytes": 31156
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "b155391db367d990987a8a0c068a8f3bf46b95281b818ea187cace2782ebb046",
+  "size": 972337,
+  "subdir": "osx-64",
+  "timestamp": 1626190857221,
+  "track_features": "",
+  "url": "https://repo.anaconda.com/pkgs/main/osx-64/intel-openmp-2021.3.0-hecd8cb5_3375.conda",
+  "version": "2021.3.0"
+}

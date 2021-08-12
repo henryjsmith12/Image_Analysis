@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <!--
+  #UXML: XML Schema for UXML structured metadata
+
+##############################################################################
+# :author:    Pete R. Jemian
+# :email:     prjemian@gmail.com
+# :copyright: (c) 2014-2020, Pete R. Jemian
+#
+# Distributed under the terms of the Creative Commons Attribution 4.0 International Public License.
+#
+# The full license is in the file LICENSE.txt, distributed with this software.
+##############################################################################
+   -->
+
+  <xs:element name="UXML">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded">
+        <xs:group ref="UXML_components" maxOccurs="unbounded"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:group name="UXML_components">
+    <xs:choice>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="dataset"/>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="group"/>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="hardlink"/>
+    </xs:choice>
+  </xs:group>
+
+  <xs:element name="dataset">
+    <xs:complexType mixed="true">
+      <xs:attribute name="name" use="required" type="xs:NCName"/>
+      <!-- seems as if any names should be acceptable -->
+      <xs:attribute name="array_port" type="xs:NCName"/>
+      <xs:attribute name="input_port" type="xs:NCName"/>
+      <xs:attribute name="number" type="xs:integer"/>
+      <xs:attribute name="stats_prefix" type="xs:NMTOKEN"/>
+      <xs:attribute name="type" type="xs:NCName"/>
+      <xs:attribute name="units" type="xs:NCName"/>
+      <xs:attribute name="value_description" type="xs:NCName"/>
+      <xs:attribute name="unique_id" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="group">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded">
+        <xs:group ref="UXML_components" maxOccurs="unbounded"/>
+      </xs:choice>
+      <xs:attribute name="name" use="required" type="xs:NCName"/>
+      <xs:attribute name="_exists_" type="xs:boolean" default="false" use="optional"/>
+      <xs:attribute name="NX_class" use="required" type="xs:NCName"/>
+      <!--
+      seems as if any names should be acceptable
+
+      certain names are expected but others are user's choice
+      -->
+      <xs:attribute name="array_port" type="xs:NCName"/>
+      <xs:attribute name="description"/>
+      <xs:attribute name="input_port" type="xs:NCName"/>
+      <xs:attribute name="number" type="xs:integer"/>
+      <xs:attribute name="prefix" type="xs:NMTOKEN"/>
+      <xs:attribute name="pv_prefix" type="xs:NMTOKEN"/>
+      <xs:attribute name="roi_prefix" type="xs:NMTOKEN"/>
+      <xs:attribute name="unique_id" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="hardlink">
+    <xs:complexType>
+      <xs:attribute name="name" use="required" type="xs:NCName"/>
+      <xs:attribute name="target_id" use="required" type="xs:NMTOKEN"/>
+      <!-- or target (str) -->
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

@@ -1,0 +1,166 @@
+{
+  "build": "hb95cd4c_1",
+  "build_number": 1,
+  "channel": "https://repo.anaconda.com/pkgs/main/osx-64",
+  "constrains": [],
+  "depends": [
+    "libcxx >=4.0.1",
+    "libpng >=1.6.34,<1.7.0a0",
+    "libtiff >=4.0.9,<5.0a0",
+    "zlib >=1.2.11,<1.3.0a0"
+  ],
+  "extracted_package_dir": "/Users/henryjsmith12/opt/anaconda3/pkgs/openjpeg-2.3.0-hb95cd4c_1",
+  "features": "",
+  "files": [
+    "bin/opj_compress",
+    "bin/opj_decompress",
+    "bin/opj_dump",
+    "include/openjpeg-2.3/openjpeg.h",
+    "include/openjpeg-2.3/opj_config.h",
+    "include/openjpeg-2.3/opj_stdint.h",
+    "lib/libopenjp2.2.3.0.dylib",
+    "lib/libopenjp2.7.dylib",
+    "lib/libopenjp2.a",
+    "lib/libopenjp2.dylib",
+    "lib/openjpeg-2.3/OpenJPEGConfig.cmake",
+    "lib/openjpeg-2.3/OpenJPEGTargets-noconfig.cmake",
+    "lib/openjpeg-2.3/OpenJPEGTargets.cmake",
+    "lib/pkgconfig/libopenjp2.pc"
+  ],
+  "fn": "openjpeg-2.3.0-hb95cd4c_1.conda",
+  "legacy_bz2_md5": "5af28286f25c8c0a1eda1b7383337dd1",
+  "legacy_bz2_size": 427230,
+  "license": "BSD 2-Clause",
+  "link": {
+    "source": "/Users/henryjsmith12/opt/anaconda3/pkgs/openjpeg-2.3.0-hb95cd4c_1",
+    "type": 1
+  },
+  "md5": "52f90b294b2065a4c21addf72b73ff4a",
+  "name": "openjpeg",
+  "package_tarball_full_path": "/Users/henryjsmith12/opt/anaconda3/pkgs/openjpeg-2.3.0-hb95cd4c_1.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/opj_compress",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/concourse/worker/volumes/live/7c29c296-e238-47ee-5c4f-e359526dde5f/volume/openjpeg_1527098552309/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "4e2fecd6b34689cdfc6e411f9992f3c67210a03a0e3c1ec8eab8fb8d80b7ef6f",
+        "sha256_in_prefix": "b19bdcf0030eb429c6198d1681a796d4d5bdf17719f553c4fd7c1ce289c814ff",
+        "size_in_bytes": 133180
+      },
+      {
+        "_path": "bin/opj_decompress",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/concourse/worker/volumes/live/7c29c296-e238-47ee-5c4f-e359526dde5f/volume/openjpeg_1527098552309/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "11a759084e9d1b9c7c7e208239dc0403c638035dba5ddf3913de8fe04ec55cb4",
+        "sha256_in_prefix": "c088845228820d65410c61571f33cbda8984ea98d93456a2427d65d9918d5765",
+        "size_in_bytes": 125924
+      },
+      {
+        "_path": "bin/opj_dump",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/concourse/worker/volumes/live/7c29c296-e238-47ee-5c4f-e359526dde5f/volume/openjpeg_1527098552309/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "1def5f898adbda993bf794cc767cd43ea79f8d553c83b94d5376622b3254af88",
+        "sha256_in_prefix": "d6ce5be162ccba90366540805c3c32aaeeb219762f5422e77e823bd0b356b67c",
+        "size_in_bytes": 112204
+      },
+      {
+        "_path": "include/openjpeg-2.3/openjpeg.h",
+        "path_type": "hardlink",
+        "sha256": "62103f6aab6b54c84098423fbb0168d027827935fd1e3ce4bc144fcbab0c9e1f",
+        "sha256_in_prefix": "62103f6aab6b54c84098423fbb0168d027827935fd1e3ce4bc144fcbab0c9e1f",
+        "size_in_bytes": 59369
+      },
+      {
+        "_path": "include/openjpeg-2.3/opj_config.h",
+        "path_type": "hardlink",
+        "sha256": "b8724aa8e60178de6afb96047e2eccdb108a3ce83cee477644c9a4539f105148",
+        "sha256_in_prefix": "b8724aa8e60178de6afb96047e2eccdb108a3ce83cee477644c9a4539f105148",
+        "size_in_bytes": 332
+      },
+      {
+        "_path": "include/openjpeg-2.3/opj_stdint.h",
+        "path_type": "hardlink",
+        "sha256": "cea19da3f57de8102a2b654c70237faa99d9d4ca61ec869c642f057aa5ca0d7e",
+        "sha256_in_prefix": "cea19da3f57de8102a2b654c70237faa99d9d4ca61ec869c642f057aa5ca0d7e",
+        "size_in_bytes": 2171
+      },
+      {
+        "_path": "lib/libopenjp2.2.3.0.dylib",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/concourse/worker/volumes/live/7c29c296-e238-47ee-5c4f-e359526dde5f/volume/openjpeg_1527098552309/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "82dbdd86e7438b722d2fd85882dd45d585b7fb8d88965fa817d1b8a2ae9aed70",
+        "sha256_in_prefix": "2371df86502d1500b0f19aec20fb893b5e57426b36e33d703cb667d3c53d0d01",
+        "size_in_bytes": 336240
+      },
+      {
+        "_path": "lib/libopenjp2.7.dylib",
+        "file_mode": "binary",
+        "path_type": "softlink",
+        "prefix_placeholder": "/opt/concourse/worker/volumes/live/7c29c296-e238-47ee-5c4f-e359526dde5f/volume/openjpeg_1527098552309/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "82dbdd86e7438b722d2fd85882dd45d585b7fb8d88965fa817d1b8a2ae9aed70",
+        "size_in_bytes": 336240
+      },
+      {
+        "_path": "lib/libopenjp2.a",
+        "path_type": "hardlink",
+        "sha256": "ebf1a2e3cf84d16e8aabb7529486751b2a5ab968e4c12797f05a21b9b116c97b",
+        "sha256_in_prefix": "ebf1a2e3cf84d16e8aabb7529486751b2a5ab968e4c12797f05a21b9b116c97b",
+        "size_in_bytes": 429600
+      },
+      {
+        "_path": "lib/libopenjp2.dylib",
+        "file_mode": "binary",
+        "path_type": "softlink",
+        "prefix_placeholder": "/opt/concourse/worker/volumes/live/7c29c296-e238-47ee-5c4f-e359526dde5f/volume/openjpeg_1527098552309/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "82dbdd86e7438b722d2fd85882dd45d585b7fb8d88965fa817d1b8a2ae9aed70",
+        "size_in_bytes": 336240
+      },
+      {
+        "_path": "lib/openjpeg-2.3/OpenJPEGConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "8484bbb91b9d36cff4e7fffbfad2d5e3987e0bfcb617dd0ebb87a08fb4e28fd8",
+        "sha256_in_prefix": "8484bbb91b9d36cff4e7fffbfad2d5e3987e0bfcb617dd0ebb87a08fb4e28fd8",
+        "size_in_bytes": 1327
+      },
+      {
+        "_path": "lib/openjpeg-2.3/OpenJPEGTargets-noconfig.cmake",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "4056b3cb16441dca8f6a26585d0227370580f9b395bfc95c9f645b63d4686f49",
+        "sha256_in_prefix": "6fe0a6f531ee8005ae3f57cc082c47bf51a2e7fb3f270f5ad04baccf66532a6b",
+        "size_in_bytes": 2474
+      },
+      {
+        "_path": "lib/openjpeg-2.3/OpenJPEGTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "a96e4b44d2c0b3a2999a70e4a877f674cc285741c740a6199ab26e616d4b7a6d",
+        "sha256_in_prefix": "a96e4b44d2c0b3a2999a70e4a877f674cc285741c740a6199ab26e616d4b7a6d",
+        "size_in_bytes": 3421
+      },
+      {
+        "_path": "lib/pkgconfig/libopenjp2.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "b6fb6e8f338d8b5692a1a79227705b0751b870378a15f8d16a20a71ea06d030f",
+        "sha256_in_prefix": "f912096e2dd610c6ea76079254619683de993816fd231929dd9dd74a717818ea",
+        "size_in_bytes": 335
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "053bb5e64429018ecdf99179bb97ba5e6c1962a6977f112686d90f19302f1ae3",
+  "size": 287933,
+  "subdir": "osx-64",
+  "timestamp": 1527098708896,
+  "track_features": "",
+  "url": "https://repo.anaconda.com/pkgs/main/osx-64/openjpeg-2.3.0-hb95cd4c_1.conda",
+  "version": "2.3.0"
+}
