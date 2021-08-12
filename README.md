@@ -9,8 +9,9 @@ A lightweight option for viewing scan data. Image Analysis allows users to view 
 * Python 3.7+
 * PyQt5 5.10+
 * pyqtgraph 
+* Anaconda
 
-A full list of requirements can be found in [`requirements.txt`](https://github.com/henryjsmith12/Image_Analysis/blob/master/requirements.txt).
+A full list of requirements can be found in [`environment.yml`](https://github.com/henryjsmith12/Image_Analysis/blob/master/environment.yml).
 
 
 ## Installation
@@ -21,25 +22,25 @@ To install and prepare the program, open Command Prompt/Terminal to enter the fo
 git clone https://github.com/henryjsmith12/Image_Analysis
 ```
 
-The next task is to install the Python libraries that Image_Analysis uses. Change directories into the project directory.
+The next task is to create a conda virtual environment. Change directories into the project directory.
 
 ```
 cd Image_Analysis
 ```
 
-Activate the virtual environment. 
+Create the virtual environment. 
 
 ```
-source venv/bin/activate
+conda env create --prefix ./venv -f environment.yml
 ```
 
-Install the proper Python libraries. A full list of the project's dependencies can be found in [`requirements.txt`](https://github.com/henryjsmith12/Image_Analysis/blob/master/requirements.txt).
+Activate the virtual environment.
 
 ```
-pip install -r requirements.txt
+conda activate venv/
 ```
 
-The program is now ready to use.
+With the virtual environment activated, the program is now ready to use.
 
 ## Getting Started
 
