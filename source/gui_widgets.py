@@ -84,13 +84,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.live_set_scan_btn = QtGui.QPushButton("Set Scan")
         self.live_set_scan_txtbox = QtGui.QLineEdit()
         self.live_set_scan_txtbox.setReadOnly(True)
-        self.live_xyz_rbtn = QtGui.QRadioButton("XYZ")
-        self.live_xyz_rbtn.setEnabled(False)
-        self.live_hkl_rbtn = QtGui.QRadioButton("HKL")
-        self.live_hkl_rbtn.setEnabled(False)
-        self.live_coords_group = QtGui.QButtonGroup()
-        self.live_coords_group.addButton(self.live_xyz_rbtn)
-        self.live_coords_group.addButton(self.live_hkl_rbtn)
+        self.live_hkl_chkbox = QtGui.QCheckBox("HKL")
+        self.live_hkl_chkbox.setEnabled(False)
         self.live_hkl_params_btn = QtGui.QPushButton("Parameters")
         self.live_hkl_params_btn.setEnabled(False)
         self.live_image_list = QtGui.QListWidget()
@@ -102,8 +97,7 @@ class OptionsWidget(pg.LayoutWidget):
         # Live layout
         self.live_image_layout.addWidget(self.live_set_scan_btn, 0, 0, 1, 3)
         self.live_image_layout.addWidget(self.live_set_scan_txtbox, 0, 3, 1, 3)
-        self.live_image_layout.addWidget(self.live_xyz_rbtn, 1, 0)
-        self.live_image_layout.addWidget(self.live_hkl_rbtn, 1, 1)
+        self.live_image_layout.addWidget(self.live_hkl_chkbox, 1, 0)
         self.live_image_layout.addWidget(self.live_hkl_params_btn, 1, 2, 1, 4)
         self.live_image_layout.addWidget(self.live_image_list, 2, 0, 3, 6)
         self.live_image_layout.addWidget(self.live_current_image_lbl, 5, 0, 1, 2)
@@ -112,9 +106,7 @@ class OptionsWidget(pg.LayoutWidget):
 
         # Live widget connections
         self.live_set_scan_btn.clicked.connect(self.setLiveScan)
-        self.live_xyz_rbtn.toggled.connect(self.toggleLiveHKLParametersButton)
-        self.live_hkl_rbtn.toggled.connect(self.toggleLiveHKLParametersButton)
-        self.live_xyz_rbtn.toggled.connect(self.setLiveImageList)
+        self.live_hkl_chkbox.stateChanged.connect(self.toggleLiveHKLParametersButton)
         self.live_hkl_params_btn.clicked.connect(self.setLiveHKLParameters)
         self.live_image_list.itemClicked.connect(self.loadLiveImage)
         self.live_image_list.itemClicked.connect(self.setAxes)
@@ -286,12 +278,10 @@ class OptionsWidget(pg.LayoutWidget):
             self.live_image_files = sorted(os.listdir(self.live_scan_path))
 
             # Enable coordinate system radio buttons
-            self.live_xyz_rbtn.setEnabled(True)
-            self.live_hkl_rbtn.setEnabled(True)
+            self.live_hkl_chkbox.setEnabled(True)
 
-            # Sets scan image list if xyz is already selected (no extra params needed)
-            if self.live_xyz_rbtn.isChecked():
-                self.setLiveImageList()
+            # Sets scan image list
+            self.setLiveImageList()
 
     # --------------------------------------------------------------------------
 
@@ -301,12 +291,10 @@ class OptionsWidget(pg.LayoutWidget):
         Enables/disables HKL conversion parameters button and clears scan image list.
         """
 
-        if self.live_hkl_rbtn.isChecked():
+        if self.live_hkl_chkbox.isChecked():
             self.live_hkl_params_btn.setEnabled(True)
         else:
             self.live_hkl_params_btn.setEnabled(False)
-
-        self.live_image_list.clear()
 
     # --------------------------------------------------------------------------
 
@@ -382,19 +370,10 @@ class OptionsWidget(pg.LayoutWidget):
         self.options_gbox.setEnabled(True)
         self.toggleROICheckboxEnabled()
 
-        if self.live_hkl_rbtn.isChecked():
-
-            h = self.qx[self.qx.shape[0] // 2]
-            k = self.qy[self.qy.shape[0] // 2]
-            rect = QtCore.QRectF(h[0], k[0], h[-1] - h[0], k[-1] - k[0])
-            ...
-        else:
-            rect = None
-
-        self.rect = rect
+        self.rect = None
 
         # Loads image into viewing window
-        self.main_window.image_widget.displayImage(self.image, rect)
+        self.main_window.image_widget.displayImage(self.image, self.rect)
 
     # --------------------------------------------------------------------------
 
@@ -656,10 +635,7 @@ class OptionsWidget(pg.LayoutWidget):
         """
 
         # Check coordinate system radio button
-        if self.live_hkl_rbtn.isChecked() and self.image_mode_tabs.currentIndex() == 0:
-            self.main_window.image_widget.setLabel("left", "H")
-            self.main_window.image_widget.setLabel("bottom", "K")
-        elif self.post_hkl_rbtn.isChecked():
+        if self.post_hkl_rbtn.isChecked():
             if self.post_slice_direction_cbox.currentText() == "X(H)":
                 self.main_window.image_widget.setLabel("left", "K")
                 self.main_window.image_widget.setLabel("bottom", "L")
@@ -999,6 +975,7 @@ class ImageWidget(pg.PlotWidget):
 
         # Viewbox for image widget
         self.view = self.getViewBox()
+        self.scene_point = None
 
         # Image within image widget
         self.image_item = pg.ImageItem()
@@ -1084,6 +1061,9 @@ class ImageWidget(pg.PlotWidget):
         self.view.scene().sigMouseMoved.connect(self.updateMouseCrosshair)
         self.view.scene().sigMouseMoved.connect(self.updateHKLTextboxes)
 
+        self.updateMouseCrosshair(self.scene_point)
+        self.updateHKLTextboxes(self.scene_point)
+
     # --------------------------------------------------------------------------
 
     def updateMouseCrosshair(self, scene_point):
@@ -1091,12 +1071,17 @@ class ImageWidget(pg.PlotWidget):
         """
         Changes crosshair information and updates lines.
         """
+        if scene_point != None:
+            self.scene_point = scene_point
 
-        # View coordinates to plot coordinates
-        view_point = self.view.mapSceneToView(scene_point)
+        if self.scene_point != None:
+            # View coordinates to plot coordinates
+            self.view_point = self.view.mapSceneToView(self.scene_point)
 
-        # x and y values of mouse
-        x, y = view_point.x(), view_point.y()
+            # x and y values of mouse
+            x, y = self.view_point.x(), self.view_point.y()
+        else:
+            return
 
         # Change position of crosshair
         self.v_line.setPos(x)
@@ -1123,12 +1108,23 @@ class ImageWidget(pg.PlotWidget):
         Updates analysis widget textboxes for HKL values with new mouse/slice info.
         """
 
+
+        if scene_point != None:
+            self.scene_point = scene_point
+
+        if self.scene_point != None:
+            # View coordinates to plot coordinates
+            self.view_point = self.view.mapSceneToView(self.scene_point)
+
+            # x and y values of mouse
+            x, y = int(self.view_point.x()), int(self.view_point.y())
+        else:
+            return
+
         # Only updates values if in HKL
-        if self.main_window.options_widget.post_hkl_rbtn.isChecked():
+        if self.main_window.options_widget.post_hkl_rbtn.isChecked() and \
+            self.main_window.options_widget.image_mode_tabs.currentIndex() == 1:
 
-            view_point = self.view.mapSceneToView(scene_point)
-
-            x, y = view_point.x(), view_point.y()
             z = self.main_window.options_widget.post_slice_sbox.value()
 
             # Check slice direction
@@ -1145,21 +1141,17 @@ class ImageWidget(pg.PlotWidget):
                 self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(x, 5)))
                 self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(z, 5)))
 
-        elif self.main_window.options_widget.live_hkl_rbtn.isChecked():
+        elif self.main_window.options_widget.live_hkl_chkbox.isChecked() and \
+            self.main_window.options_widget.image_mode_tabs.currentIndex() == 0:
 
-            view_point = self.view.mapSceneToView(scene_point)
+            if self.image.shape[0] >= x >= 0 and self.image.shape[1] >= y >= 0:
+                h = self.main_window.options_widget.qx[x][y]
+                k = self.main_window.options_widget.qy[x][y]
+                l = self.main_window.options_widget.qz[x][y]
 
-            x, y = view_point.x(), view_point.y()
-
-            count = self.main_window.options_widget.live_image_list.count()
-            index = self.main_window.options_widget.live_image_list.currentRow()
-            z_min = self.main_window.options_widget.qz[count // 2][0]
-            z_max = self.main_window.options_widget.qz[count // 2][-1]
-            z = z_min + (z_max - z_min) * index / count
-
-            self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(y, 5)))
-            self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(x, 5)))
-            self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(z, 5)))
+                self.main_window.analysis_widget.mouse_h_txtbox.setText(str(round(h, 9)))
+                self.main_window.analysis_widget.mouse_k_txtbox.setText(str(round(k, 9)))
+                self.main_window.analysis_widget.mouse_l_txtbox.setText(str(round(l, 9)))
 
         # Textboxes updated to be blank if in XYZ
         else:
