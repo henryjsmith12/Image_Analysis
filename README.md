@@ -36,7 +36,7 @@ source venv/bin/activate
 Install the proper Python libraries. A full list of the project's dependencies can be found in [`requirements.txt`](https://github.com/henryjsmith12/Image_Analysis/blob/master/requirements.txt).
 
 ```
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 The program is now ready to use.
