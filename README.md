@@ -22,16 +22,22 @@ To install and prepare the program, open Command Prompt/Terminal to enter the fo
 git clone https://github.com/henryjsmith12/Image_Analysis
 ```
 
-The next task is to activate the conda virtual environment. Change directories into the project directory.
+The next task is to create/activate the conda virtual environment. Change directories into the project directory.
 
 ```
 cd Image_Analysis
 ```
 
+Create the virtual environment. 
+
+```
+conda env create -f environment.yml
+```
+
 Activate the virtual environment.
 
 ```
-conda activate venv/
+conda activate image_analysis_venv
 ```
 
 With the virtual environment activated, the program is now ready to use.
