@@ -420,8 +420,6 @@ class OptionsWidget(pg.LayoutWidget):
         else:
             self.post_spec_config_btn.setEnabled(False)
 
-
-
     # --------------------------------------------------------------------------
 
     def setPostSpecConfigFiles(self):
@@ -1117,7 +1115,7 @@ class ImageWidget(pg.PlotWidget):
             self.view_point = self.view.mapSceneToView(self.scene_point)
 
             # x and y values of mouse
-            x, y = int(self.view_point.x()), int(self.view_point.y())
+            x, y = self.view_point.x(), self.view_point.y()
         else:
             return
 
@@ -1145,6 +1143,7 @@ class ImageWidget(pg.PlotWidget):
             self.main_window.options_widget.image_mode_tabs.currentIndex() == 0:
 
             if self.image.shape[0] >= x >= 0 and self.image.shape[1] >= y >= 0:
+                x, y = int(x), int(y)
                 h = self.main_window.options_widget.qx[x][y]
                 k = self.main_window.options_widget.qy[x][y]
                 l = self.main_window.options_widget.qz[x][y]
