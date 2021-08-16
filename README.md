@@ -52,7 +52,7 @@ python image_analysis.py
 
 The program's user interface should look like this on startup:
 
-![Image Analysis GUI on Startup](https://github.com/henryjsmith12/Image_Analysis/blob/master/Screenshots/startup_gui.jpg)
+![Image Analysis GUI on Startup](https://github.com/henryjsmith12/Image_Analysis/blob/master/screenshots/gui_on_startup.jpg)
 
 ## Author
 
