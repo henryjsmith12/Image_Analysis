@@ -239,7 +239,7 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.dialog_btnbox.accepted.connect(self.accept)
 
         # Runs dialog widget
-        self._exec()
+        self.exec_()
 
     # --------------------------------------------------------------------------
 
