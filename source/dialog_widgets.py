@@ -181,20 +181,26 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.mu_lbl = QtGui.QLabel("Mu (deg):")
         self.mu_sbox = QtGui.QDoubleSpinBox()
         self.mu_sbox.setMaximum(360.0)
+        self.mu_sbox.setMinimum(-360.0)
         self.eta_lbl = QtGui.QLabel("Eta (deg):")
         self.eta_sbox = QtGui.QDoubleSpinBox()
         self.eta_sbox.setMaximum(360.0)
+        self.eta_sbox.setMinimum(-360.0)
         self.chi_lbl = QtGui.QLabel("Chi (deg):")
         self.chi_sbox = QtGui.QDoubleSpinBox()
         self.chi_sbox.setMaximum(360.0)
+        self.chi_sbox.setMinimum(-360.0)
         self.phi_lbl = QtGui.QLabel("Phi (deg):")
         self.phi_sbox = QtGui.QDoubleSpinBox()
         self.phi_sbox.setMaximum(360.0)
+        self.phi_sbox.setMinimum(-360.0)
         self.nu_lbl = QtGui.QLabel("Nu (deg):")
         self.nu_sbox = QtGui.QDoubleSpinBox()
         self.nu_sbox.setMaximum(360.0)
+        self.nu_sbox.setMinimum(-360.0)
         self.delta_lbl = QtGui.QLabel("Delta (deg):")
         self.delta_sbox = QtGui.QDoubleSpinBox()
+        self.delta_sbox.setMaximum(360.0)
         self.delta_sbox.setMaximum(360.0)
         self.import_btn = QtGui.QPushButton("Import UB Matrix/Diff. Angles")
         self.dialog_btnbox = QtGui.QDialogButtonBox()
@@ -233,7 +239,7 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.dialog_btnbox.accepted.connect(self.accept)
 
         # Runs dialog widget
-        self.exec_()
+        self._exec()
 
     # --------------------------------------------------------------------------
 
