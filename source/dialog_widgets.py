@@ -166,6 +166,7 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.phi = 0.0
         self.nu = 0.0
         self.delta = 0.0
+        self.energy = 0
 
         # Create widgets
         self.detector_lbl = QtGui.QLabel("Det. Config:")
@@ -202,6 +203,9 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.delta_sbox = QtGui.QDoubleSpinBox()
         self.delta_sbox.setMaximum(360.0)
         self.delta_sbox.setMaximum(360.0)
+        self.energy_lbl = QtGui.QLabel("Energy:")
+        self.energy_sbox = QtGui.QSpinBox()
+        self.energy_sbox.setMaximum(100000)
         self.import_btn = QtGui.QPushButton("Import UB Matrix/Diff. Angles")
         self.dialog_btnbox = QtGui.QDialogButtonBox()
         self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
@@ -231,7 +235,9 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.layout.addWidget(self.nu_sbox, 7, 2)
         self.layout.addWidget(self.delta_lbl, 8, 0)
         self.layout.addWidget(self.delta_sbox, 8, 2)
-        self.layout.addWidget(self.dialog_btnbox, 9, 2)
+        self.layout.addWidget(self.energy_lbl, 9, 0)
+        self.layout.addWidget(self.energy_sbox, 9, 2)
+        self.layout.addWidget(self.dialog_btnbox, 10, 2)
 
         # Connect widgets to functions
         self.detector_btn.clicked.connect(self.selectDetectorConfigFile)
@@ -280,6 +286,7 @@ class ConversionParametersDialogWidget(QtGui.QDialog):
         self.phi = self.phi_sbox.value()
         self.nu = self.nu_sbox.value()
         self.delta = self.delta_sbox.value()
+        self.energy = self.energy_sbox.value()
         self.close()
 
 # ==============================================================================

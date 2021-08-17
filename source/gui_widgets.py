@@ -322,10 +322,11 @@ class OptionsWidget(pg.LayoutWidget):
         phi = dialog.phi
         nu = dialog.nu
         delta = dialog.delta
+        energy = dialog.energy
 
         self.qx, self.qy, self.qz = DataProcessing.createLiveScanArea(self.live_detector_path,
             self.live_instrument_path, mu=mu, eta=eta, chi=chi, phi=phi, nu=nu,
-            delta=delta, ub=ub)
+            delta=delta, ub=ub, energy=energy)
 
         self.setLiveImageList()
 

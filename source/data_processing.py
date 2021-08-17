@@ -128,7 +128,7 @@ class DataProcessing:
     # --------------------------------------------------------------------------
 
     def createLiveScanArea(detector_config_name, instrument_config_name, mu, eta,
-        chi, phi, nu, delta, ub):
+        chi, phi, nu, delta, ub, energy):
 
         d_reader = detReader(detector_config_name)
         i_reader = instrReader(instrument_config_name)
