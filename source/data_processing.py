@@ -142,8 +142,6 @@ class DataProcessing:
 
         q_conv = xu.experiment.QConversion(sample_circle_dir, det_circle_dir, primary_beam_dir)
 
-        energy = 8050
-
         inplane_ref_dir = i_reader.getInplaneReferenceDirection()
         sample_norm_dir = i_reader.getSampleSurfaceNormalDirection()
 
