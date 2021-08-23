@@ -54,6 +54,9 @@ class DataProcessing:
         # Set destination file for gridmapper
         output_file_name = os.path.join(project_dir, spec_name + "_" + scan + ".vti")
 
+        if os.path.exists(output_file_name):
+            return output_file_name
+
         app_config = RSMap3DConfigParser()
         max_image_memory = app_config.getMaxImageMemory()
 
