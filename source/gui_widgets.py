@@ -72,6 +72,8 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_image_gbox.setLayout(self.post_image_layout)
         self.options_gbox.setLayout(self.options_layout)
 
+        self.live_conversion_dialog = ConversionParametersDialogWidget()
+
     # --------------------------------------------------------------------------
 
     def setupComponents(self):
@@ -107,7 +109,7 @@ class OptionsWidget(pg.LayoutWidget):
         # Live widget connections
         self.live_set_scan_btn.clicked.connect(self.setLiveScan)
         self.live_hkl_chkbox.stateChanged.connect(self.toggleLiveHKLParametersButton)
-        self.live_hkl_params_btn.clicked.connect(self.setLiveHKLParameters)
+        self.live_hkl_params_btn.clicked.connect(self.openLiveHKLConversionDialog)
         self.live_image_list.itemClicked.connect(self.loadLiveImage)
         self.live_image_list.itemClicked.connect(self.setAxes)
         self.live_simulation_btn.clicked.connect(self.simLivePlotting)
@@ -298,13 +300,20 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
+    def openLiveHKLConversionDialog(self):
+
+        self.live_conversion_dialog.show()
+        self.live_conversion_dialog.finished.connect(self.setLiveHKLParameters)
+
+    # --------------------------------------------------------------------------
+
     def setLiveHKLParameters(self):
 
         """
         Opens HKL conversion parameter dialog.
         """
 
-        dialog = ConversionParametersDialogWidget()
+        dialog = self.live_conversion_dialog
 
         self.live_instrument_path = dialog.instrument_config_name
         self.live_detector_path = dialog.detector_config_name
@@ -329,10 +338,6 @@ class OptionsWidget(pg.LayoutWidget):
             delta=delta, ub=ub, energy=energy)
 
         self.setLiveImageList()
-
-        """
-        ** TODO: Connect dialog to new rect-altering/image-creating functions
-        """
 
     # --------------------------------------------------------------------------
 
