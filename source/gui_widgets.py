@@ -72,7 +72,9 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_image_gbox.setLayout(self.post_image_layout)
         self.options_gbox.setLayout(self.options_layout)
 
+        # Initialize conversion dialogs
         self.live_conversion_dialog = ConversionParametersDialogWidget()
+        self.post_conversion_dialog = DataSourceDialogWidget()
 
     # --------------------------------------------------------------------------
 
@@ -163,7 +165,7 @@ class OptionsWidget(pg.LayoutWidget):
         self.post_xyz_rbtn.toggled.connect(self.togglePostSpecConfigButton)
         self.post_hkl_rbtn.toggled.connect(self.togglePostSpecConfigButton)
         self.post_xyz_rbtn.toggled.connect(self.setPostScanList)
-        self.post_spec_config_btn.clicked.connect(self.setPostSpecConfigFiles)
+        self.post_spec_config_btn.clicked.connect(self.openPostHKLConversionDialog)
         self.post_process_scan_btn.clicked.connect(self.processPostScan)
         self.post_process_scan_btn.clicked.connect(self.setAxes)
         self.post_slice_direction_cbox.currentTextChanged.connect(self.loadPostImage)
@@ -428,14 +430,21 @@ class OptionsWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def setPostSpecConfigFiles(self):
+    def openPostHKLConversionDialog(self):
+
+        self.post_conversion_dialog.show()
+        self.post_conversion_dialog.finished.connect(self.setPostHKLParameters)
+
+    # --------------------------------------------------------------------------
+
+    def setPostHKLParameters(self):
 
         """
         Opens data source dialog and calls fucntion to set the scan list.
         """
 
         # See DataSourceDialogWidget class for more info
-        dialog = DataSourceDialogWidget()
+        dialog = self.post_conversion_dialog
 
         self.post_spec_path = dialog.spec_name
         self.post_detector_path = dialog.detector_config_name

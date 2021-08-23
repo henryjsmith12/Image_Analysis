@@ -234,9 +234,6 @@ class DataSourceDialogWidget(QtGui.QDialog):
         self.instrument_btn.clicked.connect(self.selectInstrumentConfigFile)
         self.dialog_btnbox.accepted.connect(self.accept)
 
-        # Run dialog widget
-        self.exec_()
-
     # --------------------------------------------------------------------------
 
     def selectSpecFile(self):
