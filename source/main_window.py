@@ -6,9 +6,10 @@ See LICENSE file.
 # ==============================================================================
 
 from pyqtgraph.Qt import QtGui
-from pyqtgraph.dockarea import *
 
 from source.gui_widgets import *
+from source.live_widget import *
+from source.post_widget import *
 
 # ==============================================================================
 
@@ -35,63 +36,24 @@ class MainWindow(QtGui.QMainWindow):
         self.help_menu_item = self.menu_bar.addMenu(" Help")
 
         self.new_menu_action.triggered.connect(self.newWidgetTab)
+        # Remove tab
+        self.tab_widget.tabCloseRequested.connect(lambda index: \
+            self.tab_widget.removeTab(index))
 
     # --------------------------------------------------------------------------
 
     def newWidgetTab(self):
 
         dialog = WidgetSelectionDialog()
+        tab = None
 
-    # --------------------------------------------------------------------------
+        if dialog.result() == 1:
+            if dialog.widget_type == "Live Plotting":
+                tab = LivePlottingWidget()
+            elif dialog.widget_type == "Post Plotting":
+                tab = PostPlottingWidget()
 
-    def createDocks(self):
-
-        """
-        Creates dock widgets and adds them to the main window.
-        """
-
-        # Docked widgets for main window
-        self.options_dock = Dock("Options", size=(100, 300), hideTitle=True)
-        self.analysis_dock = Dock("Analysis", size=(300, 50), hideTitle=True)
-        self.image_dock = Dock("Image", size=(300, 350))
-        self.roi_plots_dock = Dock("ROI", size=(300, 350))
-        self.advanced_roi_plot_dock = Dock("Advanced ROI", size=(300, 350))
-
-        # Dock organization
-        self.dock_area.addDock(self.options_dock, "left")
-        self.dock_area.addDock(self.image_dock, "right", self.options_dock)
-        self.dock_area.addDock(self.roi_plots_dock, "right", self.options_dock)
-        self.dock_area.addDock(self.advanced_roi_plot_dock, "right", self.options_dock)
-        self.dock_area.addDock(self.analysis_dock, "bottom", self.image_dock)
-        self.dock_area.moveDock(self.analysis_dock, "bottom", self.roi_plots_dock)
-        self.dock_area.moveDock(self.analysis_dock, "bottom", self.advanced_roi_plot_dock)
-        self.dock_area.moveDock(self.image_dock, "above", self.advanced_roi_plot_dock)
-        self.dock_area.moveDock(self.roi_plots_dock, "above", self.advanced_roi_plot_dock)
-        self.dock_area.moveDock(self.image_dock, "above", self.roi_plots_dock)
-
-    # --------------------------------------------------------------------------
-
-    def createWidgets(self):
-
-        """
-        Creates widgets and adds them to their respective dock.
-        """
-
-        # Create widgets and set up components
-        self.options_widget = OptionsWidget(self)
-        self.options_widget.setupComponents()
-        self.analysis_widget = AnalysisWidget(self)
-        self.analysis_widget.setupComponents()
-        self.roi_plots_widget = ROIPlotsWidget(self)
-        self.image_widget = ImageWidget(self)
-        self.advanced_roi_plot_widget = AdvancedROIPlotWidget(self)
-
-        # Add widgets to docks
-        self.options_dock.addWidget(self.options_widget)
-        self.analysis_dock.addWidget(self.analysis_widget)
-        self.image_dock.addWidget(self.image_widget)
-        self.roi_plots_dock.addWidget(self.roi_plots_widget)
-        self.advanced_roi_plot_dock.addWidget(self.advanced_roi_plot_widget)
+            self.tab_widget.addTab(tab, dialog.widget_name)
 
 # ==============================================================================
 
@@ -119,15 +81,15 @@ class WidgetSelectionDialog(QtGui.QDialog):
         self.layout.addWidget(self.ok_btn, 2, 1)
 
         self.ok_btn.clicked.connect(self.acceptDialog)
-
-        # Changes widget tab name to generic placeholder name
+        # Change widget name text to default
         self.widget_type_cbox.currentTextChanged.connect(lambda text: \
             self.widget_name_txtbox.setText(text))
 
         self.exec_()
 
-    def acceptDialog(self):
+    # --------------------------------------------------------------------------
 
+    def acceptDialog(self):
         if self.widget_type_cbox.currentText() != "":
             self.widget_type = self.widget_type_cbox.currentText()
             self.widget_name = self.widget_name_txtbox.text()
