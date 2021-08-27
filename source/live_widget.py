@@ -32,17 +32,17 @@ class LivePlottingWidget(QtGui.QWidget):
 
         self.dock_area = DockArea()
         self.createDocks()
+        self.createWidgets()
 
         self.layout.addWidget(self.dock_area)
 
     # --------------------------------------------------------------------------
 
     def createDocks(self):
-
-        self.image_selection_dock = Dock("Image Selection", size=(100, 100), hideTitle=True)
-        self.options_dock = Dock("Options", size=(100, 100), hideTitle=True)
-        self.analysis_dock = Dock("Analysis", size=(200, 100), hideTitle=True)
-        self.image_dock = Dock("Image", size=(200, 100), hideTitle=True)
+        self.image_selection_dock = Dock("Image Selection", size=(100, 100))
+        self.options_dock = Dock("Options", size=(100, 100))
+        self.analysis_dock = Dock("Analysis", size=(200, 100))
+        self.image_dock = Dock("Image", size=(200, 100))
 
         self.dock_area.addDock(self.image_selection_dock)
         self.dock_area.addDock(self.options_dock, "bottom", self.image_selection_dock)
@@ -53,17 +53,21 @@ class LivePlottingWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def createWidgets(self):
-
         self.image_selection_widget = ImageSelectionWidget(self)
         self.options_widget = OptionsWidget(self)
         self.analysis_widget = AnalysisWidget(self)
         self.image_widget = ImageWidget(self)
 
+        self.image_selection_dock.addWidget(self.image_selection_widget)
+        self.options_dock.addWidget(self.options_widget)
+        self.analysis_dock.addWidget(self.analysis_widget)
+        self.image_dock.addWidget(self.image_widget)
+
 # ==============================================================================
 
 class ImageSelectionWidget(pg.LayoutWidget):
 
-    def __init__ (self):
+    def __init__ (self, parent):
         super(ImageSelectionWidget, self).__init__(parent)
         self.parent = parent
 
@@ -71,7 +75,7 @@ class ImageSelectionWidget(pg.LayoutWidget):
 
 class OptionsWidget(pg.LayoutWidget):
 
-    def __init__ (self):
+    def __init__ (self, parent):
         super(OptionsWidget, self).__init__(parent)
         self.parent = parent
 
@@ -79,7 +83,7 @@ class OptionsWidget(pg.LayoutWidget):
 
 class AnalysisWidget(pg.LayoutWidget):
 
-    def __init__ (self):
+    def __init__ (self, parent):
         super(AnalysisWidget, self).__init__(parent)
         self.parent = parent
 
