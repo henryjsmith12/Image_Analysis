@@ -14,35 +14,33 @@ from source.gui_widgets import *
 
 class MainWindow(QtGui.QMainWindow):
 
-    """
-    Contains docked widgets and components of main window.
-
-    - OptionsWidget: Image selection modes and plotting options.
-
-    - AnalysisWidget: ROI controls and mouse/image information.
-
-    - ImageWidget: Plot window for image and ROI's.
-
-    - ROIWidget: Contains average intensity plots for ROI's.
-
-    - AdvancedROIWidget: Contains plot that can be customized to show
-        relationships between ROI's
-    """
-
     def __init__ (self, parent=None):
         super(MainWindow, self).__init__(parent)
-
-        # Customizable dock area
-        self.dock_area = DockArea()
-        self.setCentralWidget(self.dock_area)
 
         # Window attributes
         self.setMinimumSize(1400, 800)
         self.setGeometry(0, 50, 1450, 800)
         self.setWindowTitle("Image Analysis")
 
-        self.createDocks()
-        self.createWidgets()
+        # Tab widget
+        self.tab_widget = QtGui.QTabWidget()
+        self.tab_widget.setTabsClosable(True)
+        self.setCentralWidget(self.tab_widget)
+
+        # Menu bar
+        self.menu_bar = self.menuBar()
+        self.menu_bar.setNativeMenuBar(False)
+        self.file_menu_item = self.menu_bar.addMenu(" File")
+        self.new_menu_action = self.file_menu_item.addAction("New")
+        self.help_menu_item = self.menu_bar.addMenu(" Help")
+
+        self.new_menu_action.triggered.connect(self.newWidgetTab)
+
+    # --------------------------------------------------------------------------
+
+    def newWidgetTab(self):
+
+        dialog = WidgetSelectionDialog()
 
     # --------------------------------------------------------------------------
 
@@ -94,5 +92,45 @@ class MainWindow(QtGui.QMainWindow):
         self.image_dock.addWidget(self.image_widget)
         self.roi_plots_dock.addWidget(self.roi_plots_widget)
         self.advanced_roi_plot_dock.addWidget(self.advanced_roi_plot_widget)
+
+# ==============================================================================
+
+class WidgetSelectionDialog(QtGui.QDialog):
+
+    def __init__ (self):
+        super().__init__()
+
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+
+        self.widget_type_lbl = QtGui.QLabel("Widget Type:")
+        self.widget_type_cbox = QtGui.QComboBox()
+        self.widget_type_cbox.addItems(["", "Live Plotting", "Post Plotting"])
+        self.widget_name_lbl = QtGui.QLabel("Tab Name:")
+        self.widget_name_txtbox = QtGui.QLineEdit()
+        self.ok_btn = QtGui.QPushButton("OK")
+
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+
+        self.layout.addWidget(self.widget_type_lbl, 0, 0)
+        self.layout.addWidget(self.widget_type_cbox, 0, 1)
+        self.layout.addWidget(self.widget_name_lbl, 1, 0)
+        self.layout.addWidget(self.widget_name_txtbox, 1, 1)
+        self.layout.addWidget(self.ok_btn, 2, 1)
+
+        self.ok_btn.clicked.connect(self.acceptDialog)
+
+        # Changes widget tab name to generic placeholder name
+        self.widget_type_cbox.currentTextChanged.connect(lambda text: \
+            self.widget_name_txtbox.setText(text))
+
+        self.exec_()
+
+    def acceptDialog(self):
+
+        if self.widget_type_cbox.currentText() != "":
+            self.widget_type = self.widget_type_cbox.currentText()
+            self.widget_name = self.widget_name_txtbox.text()
+            self.accept()
 
 # ==============================================================================

@@ -94,7 +94,7 @@ class DataProcessing:
         data = reader.GetOutput()
         dim = data.GetDimensions()
 
-        vec = list(dim )
+        vec = list(dim)
 
         vec = [i for i in dim]
         vec.reverse()
