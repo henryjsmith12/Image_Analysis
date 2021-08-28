@@ -74,7 +74,7 @@ class DataSelectionWidget(pg.LayoutWidget):
 
     def __init__ (self, parent):
         super(DataSelectionWidget, self).__init__(parent)
-        self.parent = parent
+        self.main_widget = parent
 
 # ==============================================================================
 
@@ -82,7 +82,7 @@ class OptionsWidget(pg.LayoutWidget):
 
     def __init__ (self, parent):
         super(OptionsWidget, self).__init__(parent)
-        self.parent = parent
+        self.main_widget = parent
 
 # ==============================================================================
 
@@ -90,7 +90,7 @@ class AnalysisWidget(pg.LayoutWidget):
 
     def __init__ (self, parent):
         super(AnalysisWidget, self).__init__(parent)
-        self.parent = parent
+        self.main_widget = parent
 
 # ==============================================================================
 
@@ -98,6 +98,6 @@ class ROIAnalysisWidget(pg.LayoutWidget):
 
     def __init__ (self, parent):
         super(ROIAnalysisWidget, self).__init__(parent)
-        self.parent = parent
+        self.main_widget = parent
 
 # ==============================================================================
