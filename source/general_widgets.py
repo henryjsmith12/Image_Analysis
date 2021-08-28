@@ -22,7 +22,27 @@ class ImageWidget(pg.PlotWidget):
         super(ImageWidget, self).__init__(parent)
         self.parent = parent
 
+        # Image within image widget
+        self.image_item = pg.ImageItem()
+        self.addItem(self.image_item)
+
         self.setBackground("default")
+
+        # Larger y-values towards bottom
+        self.invertY(True)
+
+    # --------------------------------------------------------------------------
+
+    def displayImage(self, image):
+        # Normalize image with logarithmic colormap
+        colormap_max = np.amax(image)
+        norm = colors.LogNorm(vmax=colormap_max)
+        norm_image = norm(image)
+        color_image = plt.cm.jet(norm_image)
+
+        # Set image to image item
+        self.image_item.setImage(color_image)
+
 
 # ==============================================================================
 
