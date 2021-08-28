@@ -236,7 +236,7 @@ class OptionsWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def changeCrosshairColor(self):
-        color = self.options_crosshair_color_btn.color()
+        color = self.crosshair_colorbtn.color()
 
         self.main_widget.image_widget.v_line.setPen(pg.mkPen(color))
         self.main_widget.image_widget.h_line.setPen(pg.mkPen(color))
