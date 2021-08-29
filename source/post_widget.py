@@ -101,6 +101,7 @@ class DataSelectionWidget(QtGui.QWidget):
         self.project_btn.clicked.connect(self.setProjectDirectory)
         self.spec_list.itemClicked.connect(self.setScanList)
         self.conversion_btn.clicked.connect(self.showConversionDialog)
+        self.process_btn.clicked.connect(self.loadData)
 
     # --------------------------------------------------------------------------
 
@@ -117,6 +118,7 @@ class DataSelectionWidget(QtGui.QWidget):
             if self.spec_files == []:
                 return
 
+            self.project_txtbox.setText(os.path.basename(self.project_path))
             self.spec_list.clear()
             self.scan_list.clear()
             self.spec_list.addItems(self.spec_files)
@@ -153,10 +155,27 @@ class DataSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def loadData(self):
+        self.dataset = []
+        self.rect = None
+
+        scan = self.scan_list.currentItem()
+        scan_path = f"{self.scans_path}/{scan.text()}"
+        files = sorted(os.listdir(scan_path))
+
         if self.conversion_chkbox.isChecked():
-            ...
+            vti_file = ConversionLogic.createVTIFile()
+            self.axes, self.dataset = ConversionLogic.loadData(vti_file)
         else:
-            ...
+            for i in range(0, len(files)):
+                if files[i] != "alignment.tif":
+                    file_path = f"{scan_path}/{files[i]}"
+                    image = ndimage.rotate(tiff.imread(file_path), 90)
+                    self.dataset.append(image)
+
+            self.dataset = np.stack(self.dataset)
+            self.dataset = np.swapaxes(self.dataset, 0, 2)
+
+        self.main_widget.data_widget.displayDataset(self.dataset)
 
 # ==============================================================================
 
@@ -189,6 +208,20 @@ class DataWidget(pg.ImageView):
     def __init__ (self, parent):
         super(DataWidget, self).__init__(parent)
         self.main_widget = parent
+
+    # --------------------------------------------------------------------------
+
+    def displayDataset(self, dataset):
+        self.dataset = dataset
+        # Normalize image with logarithmic colormap
+        colormap_max = np.amax(self.dataset)
+        norm = colors.LogNorm(vmax=colormap_max)
+        shape = self.dataset.shape
+        temp_reshaped_dataset = np.reshape(self.dataset, -1)
+        norm_dataset = np.reshape(norm(temp_reshaped_dataset), shape)
+        color_dataset = plt.cm.jet(norm_dataset)
+
+        self.setImage(color_dataset)
 
 # ==============================================================================
 
@@ -286,6 +319,101 @@ class ConversionParametersDialog(QtGui.QDialog):
 # ==============================================================================
 
 class ConversionLogic():
-    ...
+
+    def createVTIFile(project_dir, spec_file, detector_config_name, instrument_config_name,
+        scan, nx, ny, nz):
+
+        # Necessary subfunctions for function to run smoothly
+        # See rsMap3D source code
+        def updateDataSourceProgress(value1, value2):
+            print("DataSource Progress %s/%s" % (value1, value2))
+
+        def updateMapperProgress(value1):
+            print("Mapper Progress %s" % (value1))
+
+        d_reader = detReader(detector_config_name)
+        detector_name = "Pilatus"
+        detector = d_reader.getDetectorById(detector_name)
+        n_pixels = d_reader.getNpixels(detector)
+        roi = [1, n_pixels[0], 1, n_pixels[1]]
+        bin = [1,1]
+
+        spec_name, spec_ext = os.path.splitext(os.path.basename(spec_file))
+        # Set destination file for gridmapper
+        output_file_name = os.path.join(project_dir, spec_name + "_" + scan + ".vti")
+
+        if os.path.exists(output_file_name):
+            return output_file_name
+
+        app_config = RSMap3DConfigParser()
+        max_image_memory = app_config.getMaxImageMemory()
+
+        scan_range = srange(scan).list()
+        data_source = Sector33SpecDataSource(project_dir, spec_name, spec_ext,
+            instrument_config_name, detector_config_name, roi=roi, pixelsToAverage=bin,
+            scanList=scan_range, appConfig=app_config)
+        data_source.setCurrentDetector(detector_name)
+        data_source.setProgressUpdater(updateDataSourceProgress)
+        data_source.loadSource(mapHKL=True)
+        data_source.setRangeBounds(data_source.getOverallRanges())
+        image_tbu = data_source.getImageToBeUsed()
+        image_size = np.prod(data_source.getDetectorDimensions())
+
+        grid_mapper = QGridMapper(data_source, output_file_name, nx=nx, ny=ny, nz=nz,
+            outputType=BINARY_OUTPUT, transform=UnityTransform3D(),
+            gridWriter=VTIGridWriter(), appConfig=app_config)
+        grid_mapper.setProgressUpdater(updateMapperProgress)
+        grid_mapper.doMap()
+
+        return output_file_name
+
+    # --------------------------------------------------------------------------
+
+    def loadData(vti_file):
+
+        """
+        Converts information from .vti file into an array in HKL.
+        """
+
+        reader = vtk.vtkXMLImageDataReader()
+        reader.SetFileName(vti_file)
+        reader.Update()
+
+        data = reader.GetOutput()
+        dim = data.GetDimensions()
+
+        vec = list(dim)
+
+        vec = [i for i in dim]
+        vec.reverse()
+
+        u = npSup.vtk_to_numpy(data.GetPointData().GetArray('Scalars_'))
+
+        max_value = np.nanmax(u)
+        min_value = np.nanmin(u)
+
+        u = u.reshape(vec)
+
+        # Swaps H and L
+        ctrdata = np.swapaxes(u, 0, 2)
+
+        origin = data.GetOrigin()
+        spacing = data.GetSpacing()
+        extent = data.GetExtent()
+
+        x = []
+        y = []
+        z = []
+
+        for point in range(extent[0], extent[1] + 1):
+            x.append(origin[0] + point * spacing[0])
+        for point in range(extent[2], extent[3] + 1):
+            y.append(origin[1] + point * spacing[1])
+        for point in range(extent[4], extent[5] + 1):
+            z.append(origin[2] + point * spacing[2])
+
+        axes = [x, y, z]
+
+        return axes, ctrdata
 
 # ==============================================================================
