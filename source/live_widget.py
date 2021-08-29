@@ -539,7 +539,7 @@ class MappingParametersDialog(QtGui.QDialog):
         self.delta_lbl = QtGui.QLabel("Delta (deg):")
         self.delta_sbox = QtGui.QDoubleSpinBox()
         self.delta_sbox.setMaximum(360.0)
-        self.delta_sbox.setMaximum(360.0)
+        self.delta_sbox.setMinimum(-360.0)
         self.energy_lbl = QtGui.QLabel("Energy:")
         self.energy_sbox = QtGui.QSpinBox()
         self.energy_sbox.setMaximum(100000)
