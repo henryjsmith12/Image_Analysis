@@ -40,6 +40,9 @@ class MainWindow(QtGui.QMainWindow):
         self.tab_widget.tabCloseRequested.connect(lambda index: \
             self.tab_widget.removeTab(index))
 
+        self.tab_widget.addTab(LivePlottingWidget(), "Live Plotting")
+        self.tab_widget.addTab(PostPlottingWidget(), "Post Plotting")
+
     # --------------------------------------------------------------------------
 
     def newWidgetTab(self):

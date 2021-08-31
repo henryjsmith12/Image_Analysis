@@ -59,14 +59,17 @@ class PostPlottingWidget(QtGui.QWidget):
         self.options_dock = Dock("Options", size=(100, 100), hideTitle=True)
         self.analysis_dock = Dock("Analysis", size=(200, 100))
         self.roi_analysis_dock = Dock("ROI's", size=(200, 100))
-        self.data_dock = Dock("Image", size=(200, 100), hideTitle=True)
+        self.data_dock = Dock("Scan", size=(100, 100), hideTitle=True)
+        self.slice_dock = Dock("Slice", size=(100, 100))
 
         self.dock_area.addDock(self.data_selection_dock)
+        self.dock_area.addDock(self.data_dock, "right", self.data_selection_dock)
+        self.dock_area.addDock(self.slice_dock, "right", self.data_dock)
         self.dock_area.addDock(self.options_dock, "bottom", self.data_selection_dock)
-        self.dock_area.addDock(self.analysis_dock, "right", self.options_dock)
-        self.dock_area.addDock(self.roi_analysis_dock, "right", self.options_dock)
-        self.dock_area.addDock(self.data_dock, "top", self.analysis_dock)
-        self.dock_area.moveDock(self.data_dock, "right", self.data_selection_dock)
+        self.dock_area.addDock(self.analysis_dock, "bottom", self.data_dock)
+        self.dock_area.moveDock(self.slice_dock, "top", self.analysis_dock)
+        self.dock_area.moveDock(self.slice_dock, "right", self.data_dock)
+        self.dock_area.addDock(self.roi_analysis_dock, "above", self.analysis_dock)
         self.dock_area.moveDock(self.analysis_dock, "above", self.roi_analysis_dock)
 
     # --------------------------------------------------------------------------
@@ -77,12 +80,14 @@ class PostPlottingWidget(QtGui.QWidget):
         self.analysis_widget = AnalysisWidget(self)
         self.roi_analysis_widget = ROIAnalysisWidget(self)
         self.data_widget = DataWidget(self)
+        self.slice_widget = SliceWidget(self)
 
         self.data_selection_dock.addWidget(self.data_selection_widget)
         self.options_dock.addWidget(self.options_widget)
         self.analysis_dock.addWidget(self.analysis_widget)
         self.roi_analysis_dock.addWidget(self.roi_analysis_widget)
         self.data_dock.addWidget(self.data_widget)
+        self.slice_dock.addWidget(self.slice_widget)
 
 # ==============================================================================
 
@@ -223,8 +228,19 @@ class ROIAnalysisWidget(pg.LayoutWidget):
 class DataWidget(pg.ImageView):
 
     def __init__ (self, parent):
-        super(DataWidget, self).__init__(parent)
+        super(DataWidget, self).__init__(parent, view=pg.PlotItem())
         self.main_widget = parent
+
+        self.ui.histogram.hide()
+        self.ui.roiBtn.hide()
+        self.ui.menuBtn.hide()
+
+        self.dataset = []
+
+        self.line_roi = pg.LineSegmentROI([[10, 10], [20,20]], pen='r')
+        self.addItem(self.line_roi)
+
+        self.line_roi.sigRegionChanged.connect(self.updateSlice)
 
     # --------------------------------------------------------------------------
 
@@ -239,6 +255,39 @@ class DataWidget(pg.ImageView):
         color_dataset = plt.cm.jet(norm_dataset)
 
         self.setImage(color_dataset)
+
+    # --------------------------------------------------------------------------
+
+    def updateSlice(self):
+        slice = self.line_roi.getArrayRegion(self.dataset, self.imageItem, axes=(1,2))
+
+        self.main_widget.slice_widget.displaySlice(slice)
+
+# ==============================================================================
+
+class SliceWidget(pg.ImageView):
+
+    def __init__ (self, parent):
+        super(SliceWidget, self).__init__(parent)
+        self.main_widget = parent
+
+        self.ui.histogram.hide()
+        self.ui.roiBtn.hide()
+        self.ui.menuBtn.hide()
+
+
+    # --------------------------------------------------------------------------
+
+    def displaySlice(self, slice):
+        self.slice = slice
+        # Normalize image with logarithmic colormap
+        colormap_max = np.amax(self.main_widget.data_widget.dataset)
+        norm = colors.LogNorm(vmax=colormap_max)
+        norm_slice = norm(self.slice)
+        color_slice = plt.cm.jet(norm_slice)
+
+        # Set image to image item
+        self.setImage(color_slice)
 
 # ==============================================================================
 
