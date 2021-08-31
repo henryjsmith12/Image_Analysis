@@ -59,8 +59,8 @@ class PostPlottingWidget(QtGui.QWidget):
         self.options_dock = Dock("Options", size=(100, 100), hideTitle=True)
         self.analysis_dock = Dock("Analysis", size=(200, 100))
         self.roi_analysis_dock = Dock("ROI's", size=(200, 100))
-        self.data_dock = Dock("Scan", size=(100, 100), hideTitle=True)
-        self.slice_dock = Dock("Slice", size=(100, 100))
+        self.data_dock = Dock("Data", size=(100, 100), hideTitle=True)
+        self.slice_dock = Dock("Slice", size=(100, 100), hideTitle=True)
 
         self.dock_area.addDock(self.data_selection_dock)
         self.dock_area.addDock(self.data_dock, "right", self.data_selection_dock)
