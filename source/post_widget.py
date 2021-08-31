@@ -18,6 +18,20 @@ import tifffile as tiff
 import time
 import warnings
 
+from rsMap3D.config.rsmap3dconfigparser import RSMap3DConfigParser
+from rsMap3D.datasource.Sector33SpecDataSource import Sector33SpecDataSource
+from rsMap3D.datasource.DetectorGeometryForXrayutilitiesReader import DetectorGeometryForXrayutilitiesReader as detReader
+from rsMap3D.datasource.InstForXrayutilitiesReader import InstForXrayutilitiesReader as instrReader
+from rsMap3D.gui.rsm3dcommonstrings import BINARY_OUTPUT
+from rsMap3D.mappers.gridmapper import QGridMapper
+from rsMap3D.mappers.output.vtigridwriter import VTIGridWriter
+from rsMap3D.transforms.unitytransform3d import UnityTransform3D
+from rsMap3D.utils.srange import srange
+import vtk
+from vtk.util import numpy_support as npSup
+import xrayutilities as xu
+
+
 from source.general_widgets import *
 
 # ==============================================================================
@@ -159,11 +173,14 @@ class DataSelectionWidget(QtGui.QWidget):
         self.rect = None
 
         scan = self.scan_list.currentItem()
+        scan_number = scan.text()[1:]
         scan_path = f"{self.scans_path}/{scan.text()}"
         files = sorted(os.listdir(scan_path))
 
         if self.conversion_chkbox.isChecked():
-            vti_file = ConversionLogic.createVTIFile()
+            vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_path, \
+                self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
+                self.pixel_count_ny, self.pixel_count_nz)
             self.axes, self.dataset = ConversionLogic.loadData(vti_file)
         else:
             for i in range(0, len(files)):
@@ -234,9 +251,9 @@ class ConversionParametersDialog(QtGui.QDialog):
 
         self.detector_config_name = ""
         self.instrument_config_name = ""
-        self.pixel_count_nx = ""
-        self.pixel_count_ny = ""
-        self.pixel_count_nz = ""
+        self.pixel_count_nx = 0
+        self.pixel_count_ny = 0
+        self.pixel_count_nz = 0
 
         # Create widgets
         self.detector_lbl = QtGui.QLabel("Det. Config:")
