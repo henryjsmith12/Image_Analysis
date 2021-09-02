@@ -51,9 +51,9 @@ class MainWindow(QtGui.QMainWindow):
         tab = None
 
         if dialog.result() == 1:
-            if dialog.widget_type == "Live Plotting":
+            if dialog.widget_type == "Live":
                 tab = LivePlottingWidget()
-            elif dialog.widget_type == "Post Plotting":
+            elif dialog.widget_type == "Post":
                 tab = PostPlottingWidget()
 
             self.tab_widget.addTab(tab, dialog.widget_name)

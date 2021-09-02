@@ -197,15 +197,76 @@ class DataSelectionWidget(QtGui.QWidget):
             self.dataset = np.stack(self.dataset)
             self.dataset = np.swapaxes(self.dataset, 0, 2)
 
-        self.main_widget.data_widget.displayDataset(self.dataset)
+        self.main_widget.data_widget.displayDataset(self.dataset, new_dataset=True)
 
 # ==============================================================================
 
-class OptionsWidget(pg.LayoutWidget):
+class OptionsWidget(QtGui.QWidget):
 
     def __init__ (self, parent):
         super(OptionsWidget, self).__init__(parent)
         self.main_widget = parent
+
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+
+        self.slice_direction_lbl = QtGui.QLabel("Slice Direction:")
+        self.slice_direction_cbox = QtGui.QComboBox()
+        self.slice_direction_cbox.addItems(["X(H)", "Y(K)", "Z(L)"])
+
+        self.crosshair_chkbox = QtGui.QCheckBox("Crosshair")
+        self.crosshair_colorbtn = pg.ColorButton()
+
+        self.bkgrd_color_lbl = QtGui.QLabel("Bkgrd Color:")
+        self.bkgrd_black_rbtn = QtGui.QRadioButton("Black")
+        self.bkgrd_black_rbtn.setChecked(True)
+        self.bkgrd_white_rbtn = QtGui.QRadioButton("White")
+        self.bkgrd_color_group = QtGui.QButtonGroup()
+        self.bkgrd_color_group.addButton(self.bkgrd_black_rbtn)
+        self.bkgrd_color_group.addButton(self.bkgrd_white_rbtn)
+
+        self.colormap_scale_lbl = QtGui.QLabel("Colormap Scale:")
+        self.colormap_linear_rbtn = QtGui.QRadioButton("Linear")
+        self.colormap_log_rbtn = QtGui.QRadioButton("Log")
+        self.colormap_log_rbtn.setChecked(True)
+        self.colormap_scale_group = QtGui.QButtonGroup()
+        self.colormap_scale_group.addButton(self.colormap_linear_rbtn)
+        self.colormap_scale_group.addButton(self.colormap_log_rbtn)
+
+        self.colormap_max_lbl = QtGui.QLabel("Colormap Max:")
+        self.colormap_slice_rbtn = QtGui.QRadioButton("Slice")
+        self.colormap_scan_rbtn = QtGui.QRadioButton("Scan")
+        self.colormap_scan_rbtn.setChecked(True)
+        self.colormap_max_group = QtGui.QButtonGroup()
+        self.colormap_max_group.addButton(self.colormap_slice_rbtn)
+        self.colormap_max_group.addButton(self.colormap_scan_rbtn)
+
+        self.layout.addWidget(self.slice_direction_lbl, 0, 0)
+        self.layout.addWidget(self.slice_direction_cbox, 0, 1, 1, 2)
+        self.layout.addWidget(self.crosshair_chkbox, 1, 0)
+        self.layout.addWidget(self.crosshair_colorbtn, 1, 1, 1, 2)
+        self.layout.addWidget(self.bkgrd_color_lbl, 2, 0)
+        self.layout.addWidget(self.bkgrd_black_rbtn, 2, 1)
+        self.layout.addWidget(self.bkgrd_white_rbtn, 2, 2)
+        self.layout.addWidget(self.colormap_scale_lbl, 3, 0)
+        self.layout.addWidget(self.colormap_linear_rbtn, 3, 1)
+        self.layout.addWidget(self.colormap_log_rbtn, 3, 2)
+        self.layout.addWidget(self.colormap_max_lbl, 4, 0)
+        self.layout.addWidget(self.colormap_slice_rbtn, 4, 1)
+        self.layout.addWidget(self.colormap_scan_rbtn, 4, 2)
+
+        self.slice_direction_cbox.currentTextChanged.connect(self.changeSliceDirection)
+
+    # --------------------------------------------------------------------------
+
+    def changeSliceDirection(self):
+        direction = self.sender().currentText()
+        self.main_widget.data_widget.displayDataset( \
+            self.main_widget.data_widget.dataset, direction)
+
+    # --------------------------------------------------------------------------
+
+
 
 # ==============================================================================
 
@@ -214,6 +275,119 @@ class AnalysisWidget(pg.LayoutWidget):
     def __init__ (self, parent):
         super(AnalysisWidget, self).__init__(parent)
         self.main_widget = parent
+
+        self.scan_gbox = QtGui.QGroupBox("Scan")
+        self.slice_gbox = QtGui.QGroupBox("Slice")
+        self.mouse_gbox = QtGui.QGroupBox("Mouse")
+        self.max_gbox = QtGui.QGroupBox("Max")
+
+        self.addWidget(self.scan_gbox, row=0, col=0, rowspan=1)
+        self.addWidget(self.slice_gbox, row=1, col=0, rowspan=1)
+        self.addWidget(self.mouse_gbox, row=0, col=1, rowspan=2)
+        self.addWidget(self.max_gbox, row=0, col=2, rowspan=2)
+
+        self.scan_layout = QtGui.QGridLayout()
+        self.slice_layout = QtGui.QGridLayout()
+        self.mouse_layout = QtGui.QGridLayout()
+        self.max_layout = QtGui.QGridLayout()
+
+        self.scan_gbox.setLayout(self.scan_layout)
+        self.slice_gbox.setLayout(self.slice_layout)
+        self.mouse_gbox.setLayout(self.mouse_layout)
+        self.max_gbox.setLayout(self.max_layout)
+
+        self.scan_pixel_count_x_lbl = QtGui.QLabel("Pixel Count (x):")
+        self.scan_pixel_count_x_txtbox = QtGui.QLineEdit()
+        self.scan_pixel_count_x_txtbox.setReadOnly(True)
+        self.scan_pixel_count_y_lbl = QtGui.QLabel("Pixel Count (y):")
+        self.scan_pixel_count_y_txtbox = QtGui.QLineEdit()
+        self.scan_pixel_count_y_txtbox.setReadOnly(True)
+        self.scan_slice_count_lbl = QtGui.QLabel("Slice Count:")
+        self.scan_slice_count_txtbox = QtGui.QLineEdit()
+        self.scan_slice_count_txtbox.setReadOnly(True)
+
+        self.slice_current_lbl = QtGui.QLabel("Current Slice:")
+        self.slice_current_txtbox = QtGui.QLineEdit()
+        self.slice_current_txtbox.setReadOnly(True)
+        self.slice_max_intensity_lbl = QtGui.QLabel("Max Intensity:")
+        self.slice_max_intensity_txtbox = QtGui.QLineEdit()
+        self.slice_max_intensity_txtbox.setReadOnly(True)
+
+        self.mouse_x_lbl = QtGui.QLabel("x Pos:")
+        self.mouse_x_txtbox = QtGui.QLineEdit()
+        self.mouse_x_txtbox.setReadOnly(True)
+        self.mouse_y_lbl = QtGui.QLabel("y Pos:")
+        self.mouse_y_txtbox = QtGui.QLineEdit()
+        self.mouse_y_txtbox.setReadOnly(True)
+        self.mouse_intensity_lbl = QtGui.QLabel("Intensity:")
+        self.mouse_intensity_txtbox = QtGui.QLineEdit()
+        self.mouse_intensity_txtbox.setReadOnly(True)
+        self.mouse_h_lbl = QtGui.QLabel("H:")
+        self.mouse_h_txtbox = QtGui.QLineEdit()
+        self.mouse_h_txtbox.setReadOnly(True)
+        self.mouse_k_lbl = QtGui.QLabel("K:")
+        self.mouse_k_txtbox = QtGui.QLineEdit()
+        self.mouse_k_txtbox.setReadOnly(True)
+        self.mouse_l_lbl = QtGui.QLabel("L:")
+        self.mouse_l_txtbox = QtGui.QLineEdit()
+        self.mouse_l_txtbox.setReadOnly(True)
+
+        self.max_x_lbl = QtGui.QLabel("x Pos:")
+        self.max_x_txtbox = QtGui.QLineEdit()
+        self.max_x_txtbox.setReadOnly(True)
+        self.max_y_lbl = QtGui.QLabel("y Pos:")
+        self.max_y_txtbox = QtGui.QLineEdit()
+        self.max_y_txtbox.setReadOnly(True)
+        self.max_intensity_lbl = QtGui.QLabel("Intensity:")
+        self.max_intensity_txtbox = QtGui.QLineEdit()
+        self.max_intensity_txtbox.setReadOnly(True)
+        self.max_h_lbl = QtGui.QLabel("H:")
+        self.max_h_txtbox = QtGui.QLineEdit()
+        self.max_h_txtbox.setReadOnly(True)
+        self.max_k_lbl = QtGui.QLabel("K:")
+        self.max_k_txtbox = QtGui.QLineEdit()
+        self.max_k_txtbox.setReadOnly(True)
+        self.max_l_lbl = QtGui.QLabel("L:")
+        self.max_l_txtbox = QtGui.QLineEdit()
+        self.max_l_txtbox.setReadOnly(True)
+
+        self.scan_layout.addWidget(self.scan_pixel_count_x_lbl, 0, 0)
+        self.scan_layout.addWidget(self.scan_pixel_count_x_txtbox, 0, 1)
+        self.scan_layout.addWidget(self.scan_pixel_count_y_lbl, 1, 0)
+        self.scan_layout.addWidget(self.scan_pixel_count_y_txtbox, 1, 1)
+        self.scan_layout.addWidget(self.scan_slice_count_lbl, 2, 0)
+        self.scan_layout.addWidget(self.scan_slice_count_txtbox, 2, 1)
+
+        self.slice_layout.addWidget(self.slice_current_lbl, 0, 0)
+        self.slice_layout.addWidget(self.slice_current_txtbox, 0, 1)
+        self.slice_layout.addWidget(self.slice_max_intensity_lbl, 1, 0)
+        self.slice_layout.addWidget(self.slice_max_intensity_txtbox, 1, 1)
+
+        self.mouse_layout.addWidget(self.mouse_x_lbl, 0, 0)
+        self.mouse_layout.addWidget(self.mouse_x_txtbox, 0, 1)
+        self.mouse_layout.addWidget(self.mouse_y_lbl, 1, 0)
+        self.mouse_layout.addWidget(self.mouse_y_txtbox, 1, 1)
+        self.mouse_layout.addWidget(self.mouse_intensity_lbl, 2, 0)
+        self.mouse_layout.addWidget(self.mouse_intensity_txtbox, 2, 1)
+        self.mouse_layout.addWidget(self.mouse_h_lbl, 3, 0)
+        self.mouse_layout.addWidget(self.mouse_h_txtbox, 3, 1)
+        self.mouse_layout.addWidget(self.mouse_k_lbl, 4, 0)
+        self.mouse_layout.addWidget(self.mouse_k_txtbox, 4, 1)
+        self.mouse_layout.addWidget(self.mouse_l_lbl, 5, 0)
+        self.mouse_layout.addWidget(self.mouse_l_txtbox, 5, 1)
+
+        self.max_layout.addWidget(self.max_x_lbl, 0, 0)
+        self.max_layout.addWidget(self.max_x_txtbox, 0, 1)
+        self.max_layout.addWidget(self.max_y_lbl, 1, 0)
+        self.max_layout.addWidget(self.max_y_txtbox, 1, 1)
+        self.max_layout.addWidget(self.max_intensity_lbl, 2, 0)
+        self.max_layout.addWidget(self.max_intensity_txtbox, 2, 1)
+        self.max_layout.addWidget(self.max_h_lbl, 3, 0)
+        self.max_layout.addWidget(self.max_h_txtbox, 3, 1)
+        self.max_layout.addWidget(self.max_k_lbl, 4, 0)
+        self.max_layout.addWidget(self.max_k_txtbox, 4, 1)
+        self.max_layout.addWidget(self.max_l_lbl, 5, 0)
+        self.max_layout.addWidget(self.max_l_txtbox, 5, 1)
 
 # ==============================================================================
 
@@ -236,30 +410,47 @@ class DataWidget(pg.ImageView):
         self.ui.menuBtn.hide()
 
         self.dataset = []
+        self.slice_direction = None
+        self.color_dataset = None
 
-        self.line_roi = pg.LineSegmentROI([[10, 10], [20,20]], pen='r')
+        self.line_roi = pg.LineSegmentROI([[10, 10], [20, 20]], pen='r')
         self.addItem(self.line_roi)
 
         self.line_roi.sigRegionChanged.connect(self.updateSlice)
 
     # --------------------------------------------------------------------------
 
-    def displayDataset(self, dataset):
+    def displayDataset(self, dataset, slice_direction=None, new_dataset=False):
         self.dataset = dataset
-        # Normalize image with logarithmic colormap
-        colormap_max = np.amax(self.dataset)
-        norm = colors.LogNorm(vmax=colormap_max)
-        shape = self.dataset.shape
-        temp_reshaped_dataset = np.reshape(self.dataset, -1)
-        norm_dataset = np.reshape(norm(temp_reshaped_dataset), shape)
-        color_dataset = plt.cm.jet(norm_dataset)
 
-        self.setImage(color_dataset)
+        if slice_direction != None:
+            self.slice_direction = slice_direction
+
+        if self.slice_direction == None or self.slice_direction == "X(H)":
+            self.axes = {"t":0, "x":2, "y":1, "c":3}
+        elif self.slice_direction == "Y(K)":
+            self.axes = {"t":1, "x":2, "y":0, "c":3}
+        else:
+            self.axes = {"t":2, "x":1, "y":0, "c":3}
+
+        if new_dataset == True:
+            # Normalize image with logarithmic colormap
+            colormap_max = np.amax(self.dataset)
+            norm = colors.LogNorm(vmax=colormap_max)
+            shape = self.dataset.shape
+            temp_reshaped_dataset = np.reshape(self.dataset, -1)
+            norm_dataset = np.reshape(norm(temp_reshaped_dataset), shape)
+            self.color_dataset = plt.cm.jet(norm_dataset)
+
+        self.setImage(self.color_dataset, axes=self.axes)
+
+        self.updateSlice()
 
     # --------------------------------------------------------------------------
 
     def updateSlice(self):
-        slice = self.line_roi.getArrayRegion(self.dataset, self.imageItem, axes=(1,2))
+        slice = self.line_roi.getArrayRegion(self.dataset, self.imageItem, \
+            axes=(self.axes.get("x"), self.axes.get("y")))
 
         self.main_widget.slice_widget.displaySlice(slice)
 
@@ -274,7 +465,6 @@ class SliceWidget(pg.ImageView):
         self.ui.histogram.hide()
         self.ui.roiBtn.hide()
         self.ui.menuBtn.hide()
-
 
     # --------------------------------------------------------------------------
 
