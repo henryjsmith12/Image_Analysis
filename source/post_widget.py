@@ -175,7 +175,7 @@ class DataSelectionWidget(QtGui.QWidget):
 
     def loadData(self):
         self.dataset = []
-        self.rect = None
+        self.dataset_rect = None
 
         scan = self.scan_list.currentItem()
         scan_number = scan.text()[1:]
@@ -187,6 +187,9 @@ class DataSelectionWidget(QtGui.QWidget):
                 self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
                 self.pixel_count_ny, self.pixel_count_nz)
             self.axes, self.dataset = ConversionLogic.loadData(vti_file)
+
+            self.dataset_rect = [(self.axes[0][0], self.axes[0][-1]), (self.axes[1][0], \
+                self.axes[1][-1]), (self.axes[2][0], self.axes[2][-1])]
         else:
             for i in range(0, len(files)):
                 if files[i] != "alignment.tif":
@@ -197,7 +200,11 @@ class DataSelectionWidget(QtGui.QWidget):
             self.dataset = np.stack(self.dataset)
             self.dataset = np.swapaxes(self.dataset, 0, 2)
 
-        self.main_widget.data_widget.displayDataset(self.dataset, new_dataset=True)
+            self.dataset_rect = [(0, self.dataset.shape[0]), (0, self.dataset.shape[1]), \
+                (0, self.dataset.shape[2])]
+
+        self.main_widget.data_widget.displayDataset(self.dataset, new_dataset=True, \
+            dataset_rect=self.dataset_rect)
 
 # ==============================================================================
 
@@ -402,7 +409,7 @@ class ROIAnalysisWidget(pg.LayoutWidget):
 class DataWidget(pg.ImageView):
 
     def __init__ (self, parent):
-        super(DataWidget, self).__init__(parent, view=pg.PlotItem())
+        super(DataWidget, self).__init__(parent, view=pg.PlotItem(), imageItem=pg.ImageItem())
         self.main_widget = parent
 
         self.ui.histogram.hide()
@@ -412,6 +419,7 @@ class DataWidget(pg.ImageView):
         self.dataset = []
         self.slice_direction = None
         self.color_dataset = None
+        self.dataset_rect = None
 
         self.line_roi = pg.LineSegmentROI([[10, 10], [20, 20]], pen='r')
         self.addItem(self.line_roi)
@@ -420,18 +428,32 @@ class DataWidget(pg.ImageView):
 
     # --------------------------------------------------------------------------
 
-    def displayDataset(self, dataset, slice_direction=None, new_dataset=False):
+    def displayDataset(self, dataset, slice_direction=None, new_dataset=False, dataset_rect=None):
         self.dataset = dataset
+        self.dataset_rect = dataset_rect
 
         if slice_direction != None:
             self.slice_direction = slice_direction
 
         if self.slice_direction == None or self.slice_direction == "X(H)":
-            self.axes = {"t":0, "x":2, "y":1, "c":3}
+            self.plot_axes = {"t":0, "x":2, "y":1, "c":3}
+            pos = (self.dataset_rect[2][0], self.dataset_rect[1][0])
+            scale = ((self.dataset_rect[2][-1] - self.dataset_rect[2][0]) / self.dataset.shape[2],
+                (self.dataset_rect[1][-1] - self.dataset_rect[1][0]) / self.dataset.shape[1])
+
+            #slider_ticks =
         elif self.slice_direction == "Y(K)":
-            self.axes = {"t":1, "x":2, "y":0, "c":3}
+            self.plot_axes = {"t":1, "x":2, "y":0, "c":3}
+            pos = (self.dataset_rect[2][0], self.dataset_rect[0][0])
+            scale = ((self.dataset_rect[2][-1] - self.dataset_rect[2][0]) / self.dataset.shape[2],
+                (self.dataset_rect[0][-1] - self.dataset_rect[0][0]) / self.dataset.shape[0])
+            #slider_ticks =
         else:
-            self.axes = {"t":2, "x":1, "y":0, "c":3}
+            self.plot_axes = {"t":2, "x":1, "y":0, "c":3}
+            pos = (self.dataset_rect[1][0], self.dataset_rect[0][0])
+            scale = ((self.dataset_rect[1][-1] - self.dataset_rect[1][0]) / self.dataset.shape[1],
+                (self.dataset_rect[0][-1] - self.dataset_rect[0][0]) / self.dataset.shape[0])
+            #slider_ticks =
 
         if new_dataset == True:
             # Normalize image with logarithmic colormap
@@ -442,9 +464,11 @@ class DataWidget(pg.ImageView):
             norm_dataset = np.reshape(norm(temp_reshaped_dataset), shape)
             self.color_dataset = plt.cm.jet(norm_dataset)
 
-        self.setImage(self.color_dataset, axes=self.axes)
+        self.setImage(self.color_dataset, axes=self.plot_axes, pos=pos, scale=scale)
 
-        self.updateSlice()
+        print(self.dataset_rect[2][0], self.dataset_rect[1][0])
+
+        #self.updateSlice()
 
     # --------------------------------------------------------------------------
 
