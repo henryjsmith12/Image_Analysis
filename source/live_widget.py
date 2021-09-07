@@ -446,10 +446,10 @@ class AnalysisWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def updateMouseInfo(self, image, x, y):
+        self.mouse_x_txtbox.setText(str(x))
+        self.mouse_y_txtbox.setText(str(y))
 
         if image.shape[0] >= x >= 0 and image.shape[1] >= y >= 0:
-            self.mouse_x_txtbox.setText(str(x))
-            self.mouse_y_txtbox.setText(str(y))
             self.mouse_intensity_txtbox.setText(str(image[int(x), int(y)]))
 
             if self.mapped == True:
@@ -457,8 +457,6 @@ class AnalysisWidget(pg.LayoutWidget):
                 self.mouse_k_txtbox.setText(str(self.qy[int(x)][int(y)]))
                 self.mouse_l_txtbox.setText(str(self.qz[int(x)][int(y)]))
         else:
-            self.mouse_x_txtbox.setText("")
-            self.mouse_y_txtbox.setText("")
             self.mouse_intensity_txtbox.setText("")
             self.mouse_h_txtbox.setText("")
             self.mouse_k_txtbox.setText("")

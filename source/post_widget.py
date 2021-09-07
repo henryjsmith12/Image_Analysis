@@ -31,7 +31,6 @@ import vtk
 from vtk.util import numpy_support as npSup
 import xrayutilities as xu
 
-
 from source.general_widgets import *
 
 # ==============================================================================
@@ -277,6 +276,153 @@ class OptionsWidget(QtGui.QWidget):
 
 # ==============================================================================
 
+class ROIAnalysisWidget(pg.LayoutWidget):
+
+    def __init__ (self, parent):
+        super(ROIAnalysisWidget, self).__init__(parent)
+        self.main_widget = parent
+
+# ==============================================================================
+
+class DataWidget(pg.ImageView):
+
+    def __init__ (self, parent):
+        super(DataWidget, self).__init__(parent, view=pg.PlotItem(), imageItem=pg.ImageItem())
+        self.main_widget = parent
+
+        self.ui.histogram.hide()
+        self.ui.roiBtn.hide()
+        self.ui.menuBtn.hide()
+
+        self.dataset = []
+        self.slice_direction = None
+        self.color_dataset = None
+        self.dataset_rect = None
+        self.scene_point = None
+
+        self.view_box = self.view.getViewBox()
+
+        self.line_roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]], pen='r')
+        self.addItem(self.line_roi)
+
+        self.line_roi.sigRegionChanged.connect(self.updateSlice)
+
+    # --------------------------------------------------------------------------
+
+    def displayDataset(self, dataset, slice_direction=None, new_dataset=False, dataset_rect=None):
+        self.dataset = dataset
+
+        if dataset_rect != None:
+            self.dataset_rect = dataset_rect
+
+        if slice_direction != None:
+            self.slice_direction = slice_direction
+
+        if self.slice_direction == None or self.slice_direction == "X(H)":
+            self.plot_axes = {"t":0, "x":2, "y":1, "c":3}
+            pos = (self.dataset_rect[2][0], self.dataset_rect[1][0])
+            scale = ((self.dataset_rect[2][-1] - self.dataset_rect[2][0]) / self.dataset.shape[2],
+                (self.dataset_rect[1][-1] - self.dataset_rect[1][0]) / self.dataset.shape[1])
+            slider_ticks = np.linspace(self.dataset_rect[0][0], self.dataset_rect[0][-1], \
+                self.dataset.shape[0])
+            self.view.setLabel(axis="left", text="K")
+            self.view.setLabel(axis="bottom", text="L")
+
+        elif self.slice_direction == "Y(K)":
+            self.plot_axes = {"t":1, "x":2, "y":0, "c":3}
+            pos = (self.dataset_rect[2][0], self.dataset_rect[0][0])
+            scale = ((self.dataset_rect[2][-1] - self.dataset_rect[2][0]) / self.dataset.shape[2],
+                (self.dataset_rect[0][-1] - self.dataset_rect[0][0]) / self.dataset.shape[0])
+            slider_ticks = np.linspace(self.dataset_rect[1][0], self.dataset_rect[1][-1], \
+                self.dataset.shape[1])
+            self.view.setLabel(axis="left", text="H")
+            self.view.setLabel(axis="bottom", text="L")
+
+        else:
+            self.plot_axes = {"t":2, "x":1, "y":0, "c":3}
+            pos = (self.dataset_rect[1][0], self.dataset_rect[0][0])
+            scale = ((self.dataset_rect[1][-1] - self.dataset_rect[1][0]) / self.dataset.shape[1],
+                (self.dataset_rect[0][-1] - self.dataset_rect[0][0]) / self.dataset.shape[0])
+            slider_ticks = np.linspace(self.dataset_rect[2][0], self.dataset_rect[2][-1], \
+                self.dataset.shape[2])
+            self.view.setLabel(axis="left", text="H")
+            self.view.setLabel(axis="bottom", text="K")
+
+        if new_dataset == True:
+            # Normalize image with logarithmic colormap
+            colormap_max = np.amax(self.dataset)
+            norm = colors.LogNorm(vmax=colormap_max)
+            shape = self.dataset.shape
+            temp_reshaped_dataset = np.reshape(self.dataset, -1)
+            norm_dataset = np.reshape(norm(temp_reshaped_dataset), shape)
+            self.color_dataset = plt.cm.jet(norm_dataset)
+
+        self.setImage(self.color_dataset, axes=self.plot_axes, pos=pos, scale=scale, \
+            xvals=slider_ticks)
+        self.setCurrentIndex(0)
+
+        #self.updateSlice()
+
+        self.view_box.scene().sigMouseMoved.connect(self.updateMouse)
+        self.updateMouse()
+        self.main_widget.analysis_widget.updateScanInfo(self.dataset)
+        """
+        self.main_widget.analysis_widget.updateSliceInfo(self.dataset, self.currentIndex, \
+            self.slice_direction)
+        """
+        self.main_widget.analysis_widget.updateMaxInfo(self.dataset, self.dataset_rect)
+
+    # --------------------------------------------------------------------------
+
+    def updateSlice(self):
+        slice = self.line_roi.getArrayRegion(self.dataset, self.imageItem, \
+            axes = (self.axes.get("x"), self.axes.get("y")))
+
+        self.main_widget.slice_widget.displaySlice(slice)
+
+    # --------------------------------------------------------------------------
+
+    def updateMouse(self, scene_point=None):
+        if scene_point != None:
+            self.scene_point = scene_point
+        if self.scene_point != None:
+            self.view_point = self.view_box.mapSceneToView(self.scene_point)
+
+            # x and y values of mouse
+            x, y = self.view_point.x(), self.view_point.y()
+        else:
+            return
+
+        self.main_widget.analysis_widget.updateMouseInfo(self.dataset, \
+            self.dataset_rect, x, y, self.currentIndex, self.slice_direction)
+
+# ==============================================================================
+
+class SliceWidget(pg.ImageView):
+
+    def __init__ (self, parent):
+        super(SliceWidget, self).__init__(parent)
+        self.main_widget = parent
+
+        self.ui.histogram.hide()
+        self.ui.roiBtn.hide()
+        self.ui.menuBtn.hide()
+
+    # --------------------------------------------------------------------------
+
+    def displaySlice(self, slice):
+        self.slice = slice
+        # Normalize image with logarithmic colormap
+        colormap_max = np.amax(self.main_widget.data_widget.dataset)
+        norm = colors.LogNorm(vmax=colormap_max)
+        norm_slice = norm(self.slice)
+        color_slice = plt.cm.jet(norm_slice)
+
+        # Set image to image item
+        self.setImage(color_slice)
+
+# ==============================================================================
+
 class AnalysisWidget(pg.LayoutWidget):
 
     def __init__ (self, parent):
@@ -309,9 +455,9 @@ class AnalysisWidget(pg.LayoutWidget):
         self.scan_pixel_count_y_lbl = QtGui.QLabel("Pixel Count (y):")
         self.scan_pixel_count_y_txtbox = QtGui.QLineEdit()
         self.scan_pixel_count_y_txtbox.setReadOnly(True)
-        self.scan_slice_count_lbl = QtGui.QLabel("Slice Count:")
-        self.scan_slice_count_txtbox = QtGui.QLineEdit()
-        self.scan_slice_count_txtbox.setReadOnly(True)
+        self.scan_pixel_count_z_lbl = QtGui.QLabel("Pixel Count (z):")
+        self.scan_pixel_count_z_txtbox = QtGui.QLineEdit()
+        self.scan_pixel_count_z_txtbox.setReadOnly(True)
 
         self.slice_current_lbl = QtGui.QLabel("Current Slice:")
         self.slice_current_txtbox = QtGui.QLineEdit()
@@ -339,12 +485,6 @@ class AnalysisWidget(pg.LayoutWidget):
         self.mouse_l_txtbox = QtGui.QLineEdit()
         self.mouse_l_txtbox.setReadOnly(True)
 
-        self.max_x_lbl = QtGui.QLabel("x Pos:")
-        self.max_x_txtbox = QtGui.QLineEdit()
-        self.max_x_txtbox.setReadOnly(True)
-        self.max_y_lbl = QtGui.QLabel("y Pos:")
-        self.max_y_txtbox = QtGui.QLineEdit()
-        self.max_y_txtbox.setReadOnly(True)
         self.max_intensity_lbl = QtGui.QLabel("Intensity:")
         self.max_intensity_txtbox = QtGui.QLineEdit()
         self.max_intensity_txtbox.setReadOnly(True)
@@ -362,8 +502,8 @@ class AnalysisWidget(pg.LayoutWidget):
         self.scan_layout.addWidget(self.scan_pixel_count_x_txtbox, 0, 1)
         self.scan_layout.addWidget(self.scan_pixel_count_y_lbl, 1, 0)
         self.scan_layout.addWidget(self.scan_pixel_count_y_txtbox, 1, 1)
-        self.scan_layout.addWidget(self.scan_slice_count_lbl, 2, 0)
-        self.scan_layout.addWidget(self.scan_slice_count_txtbox, 2, 1)
+        self.scan_layout.addWidget(self.scan_pixel_count_z_lbl, 2, 0)
+        self.scan_layout.addWidget(self.scan_pixel_count_z_txtbox, 2, 1)
 
         self.slice_layout.addWidget(self.slice_current_lbl, 0, 0)
         self.slice_layout.addWidget(self.slice_current_txtbox, 0, 1)
@@ -383,125 +523,79 @@ class AnalysisWidget(pg.LayoutWidget):
         self.mouse_layout.addWidget(self.mouse_l_lbl, 5, 0)
         self.mouse_layout.addWidget(self.mouse_l_txtbox, 5, 1)
 
-        self.max_layout.addWidget(self.max_x_lbl, 0, 0)
-        self.max_layout.addWidget(self.max_x_txtbox, 0, 1)
-        self.max_layout.addWidget(self.max_y_lbl, 1, 0)
-        self.max_layout.addWidget(self.max_y_txtbox, 1, 1)
-        self.max_layout.addWidget(self.max_intensity_lbl, 2, 0)
-        self.max_layout.addWidget(self.max_intensity_txtbox, 2, 1)
-        self.max_layout.addWidget(self.max_h_lbl, 3, 0)
-        self.max_layout.addWidget(self.max_h_txtbox, 3, 1)
-        self.max_layout.addWidget(self.max_k_lbl, 4, 0)
-        self.max_layout.addWidget(self.max_k_txtbox, 4, 1)
-        self.max_layout.addWidget(self.max_l_lbl, 5, 0)
-        self.max_layout.addWidget(self.max_l_txtbox, 5, 1)
-
-# ==============================================================================
-
-class ROIAnalysisWidget(pg.LayoutWidget):
-
-    def __init__ (self, parent):
-        super(ROIAnalysisWidget, self).__init__(parent)
-        self.main_widget = parent
-
-# ==============================================================================
-
-class DataWidget(pg.ImageView):
-
-    def __init__ (self, parent):
-        super(DataWidget, self).__init__(parent, view=pg.PlotItem(), imageItem=pg.ImageItem())
-        self.main_widget = parent
-
-        self.ui.histogram.hide()
-        self.ui.roiBtn.hide()
-        self.ui.menuBtn.hide()
-
-        self.dataset = []
-        self.slice_direction = None
-        self.color_dataset = None
-        self.dataset_rect = None
-
-        self.line_roi = pg.LineSegmentROI([[10, 10], [20, 20]], pen='r')
-        self.addItem(self.line_roi)
-
-        self.line_roi.sigRegionChanged.connect(self.updateSlice)
+        self.max_layout.addWidget(self.max_intensity_lbl, 0, 0)
+        self.max_layout.addWidget(self.max_intensity_txtbox, 0, 1)
+        self.max_layout.addWidget(self.max_h_lbl, 1, 0)
+        self.max_layout.addWidget(self.max_h_txtbox, 1, 1)
+        self.max_layout.addWidget(self.max_k_lbl, 2, 0)
+        self.max_layout.addWidget(self.max_k_txtbox, 2, 1)
+        self.max_layout.addWidget(self.max_l_lbl, 3, 0)
+        self.max_layout.addWidget(self.max_l_txtbox, 3, 1)
 
     # --------------------------------------------------------------------------
 
-    def displayDataset(self, dataset, slice_direction=None, new_dataset=False, dataset_rect=None):
-        self.dataset = dataset
-        self.dataset_rect = dataset_rect
+    def updateScanInfo(self, dataset):
+        self.scan_pixel_count_x_txtbox.setText(str(dataset.shape[0]))
+        self.scan_pixel_count_y_txtbox.setText(str(dataset.shape[1]))
+        self.scan_pixel_count_z_txtbox.setText(str(dataset.shape[2]))
 
-        if slice_direction != None:
-            self.slice_direction = slice_direction
+    # --------------------------------------------------------------------------
 
-        if self.slice_direction == None or self.slice_direction == "X(H)":
-            self.plot_axes = {"t":0, "x":2, "y":1, "c":3}
-            pos = (self.dataset_rect[2][0], self.dataset_rect[1][0])
-            scale = ((self.dataset_rect[2][-1] - self.dataset_rect[2][0]) / self.dataset.shape[2],
-                (self.dataset_rect[1][-1] - self.dataset_rect[1][0]) / self.dataset.shape[1])
+    def updateSliceInfo(self, dataset, index, slice_direction):
+        self.slice_current_txtbox.setText(str(index))
 
-            #slider_ticks =
-        elif self.slice_direction == "Y(K)":
-            self.plot_axes = {"t":1, "x":2, "y":0, "c":3}
-            pos = (self.dataset_rect[2][0], self.dataset_rect[0][0])
-            scale = ((self.dataset_rect[2][-1] - self.dataset_rect[2][0]) / self.dataset.shape[2],
-                (self.dataset_rect[0][-1] - self.dataset_rect[0][0]) / self.dataset.shape[0])
-            #slider_ticks =
+        if slice_direction == None or slice_direction == "X(H)":
+            ...
+        elif slice_direction == None or slice_direction == "Y(K)":
+            ...
         else:
-            self.plot_axes = {"t":2, "x":1, "y":0, "c":3}
-            pos = (self.dataset_rect[1][0], self.dataset_rect[0][0])
-            scale = ((self.dataset_rect[1][-1] - self.dataset_rect[1][0]) / self.dataset.shape[1],
-                (self.dataset_rect[0][-1] - self.dataset_rect[0][0]) / self.dataset.shape[0])
-            #slider_ticks =
-
-        if new_dataset == True:
-            # Normalize image with logarithmic colormap
-            colormap_max = np.amax(self.dataset)
-            norm = colors.LogNorm(vmax=colormap_max)
-            shape = self.dataset.shape
-            temp_reshaped_dataset = np.reshape(self.dataset, -1)
-            norm_dataset = np.reshape(norm(temp_reshaped_dataset), shape)
-            self.color_dataset = plt.cm.jet(norm_dataset)
-
-        self.setImage(self.color_dataset, axes=self.plot_axes, pos=pos, scale=scale)
-
-        print(self.dataset_rect[2][0], self.dataset_rect[1][0])
-
-        #self.updateSlice()
+            ...
 
     # --------------------------------------------------------------------------
 
-    def updateSlice(self):
-        slice = self.line_roi.getArrayRegion(self.dataset, self.imageItem, \
-            axes=(self.axes.get("x"), self.axes.get("y")))
+    def updateMouseInfo(self, dataset, rect, x, y, index, slice_direction):
+        self.mouse_x_txtbox.setText(str(x))
+        self.mouse_y_txtbox.setText(str(y))
 
-        self.main_widget.slice_widget.displaySlice(slice)
+        if slice_direction == None or slice_direction == "X(H)":
+            self.mouse_h_txtbox.setText(str(rect[0][0] + (rect[0][-1] - rect[0][0]) * index / dataset.shape[0]))
+            self.mouse_k_txtbox.setText(str(y))
+            self.mouse_l_txtbox.setText(str(x))
+            h_index = index
+            k_index = int(dataset.shape[1] * (y - rect[1][0]) / (rect[1][-1] - rect[1][0]))
+            l_index = int(dataset.shape[2] * (x - rect[2][0]) / (rect[2][-1] - rect[2][0]))
+        elif slice_direction == "Y(K)":
+            self.mouse_h_txtbox.setText(str(y))
+            self.mouse_k_txtbox.setText(str(rect[1][0] + (rect[1][-1] - rect[1][0]) * index / dataset.shape[1]))
+            self.mouse_l_txtbox.setText(str(x))
+            h_index = int(dataset.shape[0] * (y - rect[0][0]) / (rect[0][-1] - rect[0][0]))
+            k_index = index
+            l_index = int(dataset.shape[2] * (x - rect[2][0]) / (rect[2][-1] - rect[2][0]))
+        else:
+            self.mouse_h_txtbox.setText(str(y))
+            self.mouse_k_txtbox.setText(str(x))
+            self.mouse_l_txtbox.setText(str(rect[2][0] + (rect[2][-1] - rect[2][0]) * index / dataset.shape[2]))
+            h_index = int(dataset.shape[0] * (x - rect[0][0]) / (rect[0][-1] - rect[0][0]))
+            k_index = int(dataset.shape[1] * (y - rect[1][0]) / (rect[1][-1] - rect[1][0]))
+            l_index = index
 
-# ==============================================================================
-
-class SliceWidget(pg.ImageView):
-
-    def __init__ (self, parent):
-        super(SliceWidget, self).__init__(parent)
-        self.main_widget = parent
-
-        self.ui.histogram.hide()
-        self.ui.roiBtn.hide()
-        self.ui.menuBtn.hide()
+        if dataset.shape[0] >= h_index >= 0 and dataset.shape[1] >= k_index >= 0 and \
+            dataset.shape[2] >= k_index >= 0:
+            intensity = int(dataset[h_index][k_index][l_index])
+            self.mouse_intensity_txtbox.setText(str(intensity))
+        else:
+            self.mouse_intensity_txtbox.setText("")
 
     # --------------------------------------------------------------------------
 
-    def displaySlice(self, slice):
-        self.slice = slice
-        # Normalize image with logarithmic colormap
-        colormap_max = np.amax(self.main_widget.data_widget.dataset)
-        norm = colors.LogNorm(vmax=colormap_max)
-        norm_slice = norm(self.slice)
-        color_slice = plt.cm.jet(norm_slice)
+    def updateMaxInfo(self, dataset, rect):
+        max = np.amax(dataset)
+        h_index, k_index, l_index = np.unravel_index(dataset.argmax(), dataset.shape)
 
-        # Set image to image item
-        self.setImage(color_slice)
+        self.max_intensity_txtbox.setText(str(int(max)))
+        self.max_h_txtbox.setText(str(rect[0][0] + (rect[0][-1] - rect[0][0]) * h_index / dataset.shape[0]))
+        self.max_k_txtbox.setText(str(rect[1][0] + (rect[1][-1] - rect[1][0]) * k_index / dataset.shape[1]))
+        self.max_l_txtbox.setText(str(rect[2][0] + (rect[2][-1] - rect[2][0]) * l_index / dataset.shape[2]))
 
 # ==============================================================================
 
