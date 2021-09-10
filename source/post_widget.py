@@ -223,56 +223,38 @@ class OptionsWidget(QtGui.QWidget):
         self.crosshair_chkbox = QtGui.QCheckBox("Crosshair")
         self.crosshair_colorbtn = pg.ColorButton()
 
-        self.bkgrd_color_lbl = QtGui.QLabel("Bkgrd Color:")
-        self.bkgrd_black_rbtn = QtGui.QRadioButton("Black")
-        self.bkgrd_black_rbtn.setChecked(True)
-        self.bkgrd_white_rbtn = QtGui.QRadioButton("White")
-        self.bkgrd_color_group = QtGui.QButtonGroup()
-        self.bkgrd_color_group.addButton(self.bkgrd_black_rbtn)
-        self.bkgrd_color_group.addButton(self.bkgrd_white_rbtn)
-
-        self.colormap_scale_lbl = QtGui.QLabel("Colormap Scale:")
-        self.colormap_linear_rbtn = QtGui.QRadioButton("Linear")
-        self.colormap_log_rbtn = QtGui.QRadioButton("Log")
-        self.colormap_log_rbtn.setChecked(True)
-        self.colormap_scale_group = QtGui.QButtonGroup()
-        self.colormap_scale_group.addButton(self.colormap_linear_rbtn)
-        self.colormap_scale_group.addButton(self.colormap_log_rbtn)
-
-        self.colormap_max_lbl = QtGui.QLabel("Colormap Max:")
-        self.colormap_slice_rbtn = QtGui.QRadioButton("Slice")
-        self.colormap_scan_rbtn = QtGui.QRadioButton("Scan")
-        self.colormap_scan_rbtn.setChecked(True)
-        self.colormap_max_group = QtGui.QButtonGroup()
-        self.colormap_max_group.addButton(self.colormap_slice_rbtn)
-        self.colormap_max_group.addButton(self.colormap_scan_rbtn)
-
         self.layout.addWidget(self.slice_direction_lbl, 0, 0)
         self.layout.addWidget(self.slice_direction_cbox, 0, 1, 1, 2)
         self.layout.addWidget(self.crosshair_chkbox, 1, 0)
         self.layout.addWidget(self.crosshair_colorbtn, 1, 1, 1, 2)
-        self.layout.addWidget(self.bkgrd_color_lbl, 2, 0)
-        self.layout.addWidget(self.bkgrd_black_rbtn, 2, 1)
-        self.layout.addWidget(self.bkgrd_white_rbtn, 2, 2)
-        self.layout.addWidget(self.colormap_scale_lbl, 3, 0)
-        self.layout.addWidget(self.colormap_linear_rbtn, 3, 1)
-        self.layout.addWidget(self.colormap_log_rbtn, 3, 2)
-        self.layout.addWidget(self.colormap_max_lbl, 4, 0)
-        self.layout.addWidget(self.colormap_slice_rbtn, 4, 1)
-        self.layout.addWidget(self.colormap_scan_rbtn, 4, 2)
 
         self.slice_direction_cbox.currentTextChanged.connect(self.changeSliceDirection)
+        self.crosshair_chkbox.stateChanged.connect(self.toggleCrosshair)
+        self.crosshair_colorbtn .sigColorChanged.connect(self.changeCrosshairColor)
 
     # --------------------------------------------------------------------------
 
     def changeSliceDirection(self):
         direction = self.sender().currentText()
-        self.main_widget.data_widget.displayDataset( \
-            self.main_widget.data_widget.dataset, direction)
+        self.main_widget.data_widget.displayDataset(self.main_widget.data_widget.dataset, direction)
 
     # --------------------------------------------------------------------------
 
+    def toggleCrosshair(self, state):
+        if state == 2:
+            self.main_widget.data_widget.v_line.setVisible(True)
+            self.main_widget.data_widget.h_line.setVisible(True)
+        else:
+            self.main_widget.data_widget.v_line.setVisible(False)
+            self.main_widget.data_widget.h_line.setVisible(False)
 
+    # --------------------------------------------------------------------------
+
+    def changeCrosshairColor(self):
+        color = self.crosshair_colorbtn.color()
+
+        self.main_widget.data_widget.v_line.setPen(pg.mkPen(color))
+        self.main_widget.data_widget.h_line.setPen(pg.mkPen(color))
 
 # ==============================================================================
 
@@ -301,10 +283,18 @@ class DataWidget(pg.ImageView):
         self.scene_point = None
 
         self.view_box = self.view.getViewBox()
+        self.view.setAspectLocked(False)
+
+        # Crosshair
+        self.v_line = pg.InfiniteLine(angle=90, movable=False)
+        self.h_line = pg.InfiniteLine(angle=0, movable=False)
+        self.v_line.setVisible(False)
+        self.h_line.setVisible(False)
+        self.view.addItem(self.v_line, ignoreBounds=True)
+        self.view.addItem(self.h_line, ignoreBounds=True)
 
         self.line_roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]], pen='r')
         self.addItem(self.line_roi)
-
         self.line_roi.sigRegionChanged.connect(self.updateSlice)
 
     # --------------------------------------------------------------------------
@@ -366,10 +356,6 @@ class DataWidget(pg.ImageView):
         self.view_box.scene().sigMouseMoved.connect(self.updateMouse)
         self.updateMouse()
         self.main_widget.analysis_widget.updateScanInfo(self.dataset)
-        """
-        self.main_widget.analysis_widget.updateSliceInfo(self.dataset, self.currentIndex, \
-            self.slice_direction)
-        """
         self.main_widget.analysis_widget.updateMaxInfo(self.dataset, self.dataset_rect)
 
     # --------------------------------------------------------------------------
@@ -392,6 +378,10 @@ class DataWidget(pg.ImageView):
             x, y = self.view_point.x(), self.view_point.y()
         else:
             return
+
+        # Crosshair
+        self.v_line.setPos(x)
+        self.h_line.setPos(y)
 
         self.main_widget.analysis_widget.updateMouseInfo(self.dataset, \
             self.dataset_rect, x, y, self.currentIndex, self.slice_direction)
@@ -434,18 +424,15 @@ class AnalysisWidget(pg.LayoutWidget):
         self.mouse_gbox = QtGui.QGroupBox("Mouse")
         self.max_gbox = QtGui.QGroupBox("Max")
 
-        self.addWidget(self.scan_gbox, row=0, col=0, rowspan=1)
-        self.addWidget(self.slice_gbox, row=1, col=0, rowspan=1)
-        self.addWidget(self.mouse_gbox, row=0, col=1, rowspan=2)
-        self.addWidget(self.max_gbox, row=0, col=2, rowspan=2)
+        self.addWidget(self.scan_gbox, row=0, col=0)
+        self.addWidget(self.mouse_gbox, row=0, col=1)
+        self.addWidget(self.max_gbox, row=0, col=2)
 
         self.scan_layout = QtGui.QGridLayout()
-        self.slice_layout = QtGui.QGridLayout()
         self.mouse_layout = QtGui.QGridLayout()
         self.max_layout = QtGui.QGridLayout()
 
         self.scan_gbox.setLayout(self.scan_layout)
-        self.slice_gbox.setLayout(self.slice_layout)
         self.mouse_gbox.setLayout(self.mouse_layout)
         self.max_gbox.setLayout(self.max_layout)
 
@@ -458,13 +445,6 @@ class AnalysisWidget(pg.LayoutWidget):
         self.scan_pixel_count_z_lbl = QtGui.QLabel("Pixel Count (z):")
         self.scan_pixel_count_z_txtbox = QtGui.QLineEdit()
         self.scan_pixel_count_z_txtbox.setReadOnly(True)
-
-        self.slice_current_lbl = QtGui.QLabel("Current Slice:")
-        self.slice_current_txtbox = QtGui.QLineEdit()
-        self.slice_current_txtbox.setReadOnly(True)
-        self.slice_max_intensity_lbl = QtGui.QLabel("Max Intensity:")
-        self.slice_max_intensity_txtbox = QtGui.QLineEdit()
-        self.slice_max_intensity_txtbox.setReadOnly(True)
 
         self.mouse_x_lbl = QtGui.QLabel("x Pos:")
         self.mouse_x_txtbox = QtGui.QLineEdit()
@@ -505,11 +485,6 @@ class AnalysisWidget(pg.LayoutWidget):
         self.scan_layout.addWidget(self.scan_pixel_count_z_lbl, 2, 0)
         self.scan_layout.addWidget(self.scan_pixel_count_z_txtbox, 2, 1)
 
-        self.slice_layout.addWidget(self.slice_current_lbl, 0, 0)
-        self.slice_layout.addWidget(self.slice_current_txtbox, 0, 1)
-        self.slice_layout.addWidget(self.slice_max_intensity_lbl, 1, 0)
-        self.slice_layout.addWidget(self.slice_max_intensity_txtbox, 1, 1)
-
         self.mouse_layout.addWidget(self.mouse_x_lbl, 0, 0)
         self.mouse_layout.addWidget(self.mouse_x_txtbox, 0, 1)
         self.mouse_layout.addWidget(self.mouse_y_lbl, 1, 0)
@@ -541,18 +516,6 @@ class AnalysisWidget(pg.LayoutWidget):
 
     # --------------------------------------------------------------------------
 
-    def updateSliceInfo(self, dataset, index, slice_direction):
-        self.slice_current_txtbox.setText(str(index))
-
-        if slice_direction == None or slice_direction == "X(H)":
-            ...
-        elif slice_direction == None or slice_direction == "Y(K)":
-            ...
-        else:
-            ...
-
-    # --------------------------------------------------------------------------
-
     def updateMouseInfo(self, dataset, rect, x, y, index, slice_direction):
         self.mouse_x_txtbox.setText(str(x))
         self.mouse_y_txtbox.setText(str(y))
@@ -575,10 +538,11 @@ class AnalysisWidget(pg.LayoutWidget):
             self.mouse_h_txtbox.setText(str(y))
             self.mouse_k_txtbox.setText(str(x))
             self.mouse_l_txtbox.setText(str(rect[2][0] + (rect[2][-1] - rect[2][0]) * index / dataset.shape[2]))
-            h_index = int(dataset.shape[0] * (x - rect[0][0]) / (rect[0][-1] - rect[0][0]))
-            k_index = int(dataset.shape[1] * (y - rect[1][0]) / (rect[1][-1] - rect[1][0]))
+            h_index = int(dataset.shape[0] * (y - rect[0][0]) / (rect[0][-1] - rect[0][0]))
+            k_index = int(dataset.shape[1] * (x - rect[1][0]) / (rect[1][-1] - rect[1][0]))
             l_index = index
 
+        #print(h_index, k_index, l_index)
         if dataset.shape[0] >= h_index >= 0 and dataset.shape[1] >= k_index >= 0 and \
             dataset.shape[2] >= k_index >= 0:
             intensity = int(dataset[h_index][k_index][l_index])
