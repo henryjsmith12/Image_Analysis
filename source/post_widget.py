@@ -31,8 +31,6 @@ import vtk
 from vtk.util import numpy_support as npSup
 import xrayutilities as xu
 
-from source.general_widgets import *
-
 # ==============================================================================
 
 class PostPlottingWidget(QtGui.QWidget):
@@ -255,14 +253,6 @@ class OptionsWidget(QtGui.QWidget):
 
         self.main_widget.data_widget.v_line.setPen(pg.mkPen(color))
         self.main_widget.data_widget.h_line.setPen(pg.mkPen(color))
-
-# ==============================================================================
-
-class ROIAnalysisWidget(pg.LayoutWidget):
-
-    def __init__ (self, parent):
-        super(ROIAnalysisWidget, self).__init__(parent)
-        self.main_widget = parent
 
 # ==============================================================================
 
@@ -560,6 +550,88 @@ class AnalysisWidget(pg.LayoutWidget):
         self.max_h_txtbox.setText(str(rect[0][0] + (rect[0][-1] - rect[0][0]) * h_index / dataset.shape[0]))
         self.max_k_txtbox.setText(str(rect[1][0] + (rect[1][-1] - rect[1][0]) * k_index / dataset.shape[1]))
         self.max_l_txtbox.setText(str(rect[2][0] + (rect[2][-1] - rect[2][0]) * l_index / dataset.shape[2]))
+
+# ==============================================================================
+
+class ROIAnalysisWidget(pg.LayoutWidget):
+
+    def __init__ (self, parent):
+        super(ROIAnalysisWidget, self).__init__(parent)
+        self.main_widget = parent
+
+        self.roi_tabs = QtGui.QTabWidget()
+
+        self.roi_1 = ROIWidget(self)
+        self.roi_2 = ROIWidget(self)
+        self.roi_3 = ROIWidget(self)
+        self.roi_4 = ROIWidget(self)
+
+        self.roi_tabs.addTab(self.roi_1, "ROI 1")
+        self.roi_tabs.addTab(self.roi_2, "ROI 2")
+        self.roi_tabs.addTab(self.roi_3, "ROI 3")
+        self.roi_tabs.addTab(self.roi_4, "ROI 4")
+
+        self.addWidget(self.roi_tabs)
+
+# ==============================================================================
+
+class ROIWidget(QtGui.QWidget):
+
+    def __init__ (self, parent):
+        super(ROIWidget, self).__init__(parent)
+        self.roi_analysis_widget = parent
+
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+
+        self.roi = pg.ROI([-1, -1], [2, 2])
+        self.info_gbox = QtGui.QGroupBox()
+        self.plot = pg.PlotWidget()
+
+        self.layout.addWidget(self.info_gbox, 0, 0)
+        self.layout.addWidget(self.plot, 0, 1)
+
+        self.info_layout = QtGui.QGridLayout()
+        self.info_gbox.setLayout(self.info_layout)
+
+        self.visible_chkbox = QtGui.QCheckBox("Visible")
+        self.color_btn = pg.ColorButton()
+        self.x_lbl = QtGui.QLabel("x Pos:")
+        self.x_sbox = QtGui.QDoubleSpinBox()
+        self.x_sbox.setMinimum(0)
+        self.x_sbox.setMaximum(1000)
+        self.x_sbox.setDecimals(6)
+        self.y_lbl = QtGui.QLabel("y Pos:")
+        self.y_sbox = QtGui.QDoubleSpinBox()
+        self.y_sbox.setMinimum(0)
+        self.y_sbox.setMaximum(1000)
+        self.y_sbox.setDecimals(6)
+        self.width_lbl = QtGui.QLabel("Width:")
+        self.width_sbox = QtGui.QDoubleSpinBox()
+        self.width_sbox.setMinimum(0)
+        self.width_sbox.setMaximum(1000)
+        self.width_sbox.setDecimals(6)
+        self.height_lbl = QtGui.QLabel("Height:")
+        self.height_sbox = QtGui.QDoubleSpinBox()
+        self.height_sbox.setMinimum(0)
+        self.height_sbox.setMaximum(1000)
+        self.height_sbox.setDecimals(6)
+        self.outline_btn = QtGui.QPushButton("Outline Image")
+        self.plot_gbox = QtGui.QGroupBox("Plot")
+
+        self.info_layout.addWidget(self.visible_chkbox, 0, 0)
+        self.info_layout.addWidget(self.color_btn, 0, 1)
+        self.info_layout.addWidget(self.x_lbl, 1, 0)
+        self.info_layout.addWidget(self.x_sbox, 1, 1)
+        self.info_layout.addWidget(self.y_lbl, 2, 0)
+        self.info_layout.addWidget(self.y_sbox, 2, 1)
+        self.info_layout.addWidget(self.width_lbl, 3, 0)
+        self.info_layout.addWidget(self.width_sbox, 3, 1)
+        self.info_layout.addWidget(self.height_lbl, 4, 0)
+        self.info_layout.addWidget(self.height_sbox, 4, 1)
+        self.info_layout.addWidget(self.outline_btn, 1, 2, 1, 2)
+        self.info_layout.addWidget(self.plot_gbox, 2, 2, 3, 2)
+
 
 # ==============================================================================
 
