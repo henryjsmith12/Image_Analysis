@@ -31,8 +31,6 @@ import vtk
 from vtk.util import numpy_support as npSup
 import xrayutilities as xu
 
-from source.general_widgets import *
-
 # ==============================================================================
 
 class LivePlottingWidget(QtGui.QWidget):

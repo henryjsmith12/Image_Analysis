@@ -283,6 +283,16 @@ class DataWidget(pg.ImageView):
         self.view.addItem(self.v_line, ignoreBounds=True)
         self.view.addItem(self.h_line, ignoreBounds=True)
 
+        #ROIs
+        self.roi_1 = self.main_widget.roi_analysis_widget.roi_1.roi
+        self.roi_2 = self.main_widget.roi_analysis_widget.roi_2.roi
+        self.roi_3 = self.main_widget.roi_analysis_widget.roi_3.roi
+        self.roi_4 = self.main_widget.roi_analysis_widget.roi_4.roi
+        self.addItem(self.roi_1)
+        self.addItem(self.roi_2)
+        self.addItem(self.roi_3)
+        self.addItem(self.roi_4)
+
         self.line_roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]], pen='r')
         self.addItem(self.line_roi)
         self.line_roi.sigRegionChanged.connect(self.updateSlice)
@@ -352,7 +362,7 @@ class DataWidget(pg.ImageView):
 
     def updateSlice(self):
         slice = self.line_roi.getArrayRegion(self.dataset, self.imageItem, \
-            axes = (self.axes.get("x"), self.axes.get("y")))
+            axes=(self.axes.get("x"), self.axes.get("y")))
 
         self.main_widget.slice_widget.displaySlice(slice)
 
@@ -532,12 +542,10 @@ class AnalysisWidget(pg.LayoutWidget):
             k_index = int(dataset.shape[1] * (x - rect[1][0]) / (rect[1][-1] - rect[1][0]))
             l_index = index
 
-        #print(h_index, k_index, l_index)
-        if dataset.shape[0] >= h_index >= 0 and dataset.shape[1] >= k_index >= 0 and \
-            dataset.shape[2] >= k_index >= 0:
+        try:
             intensity = int(dataset[h_index][k_index][l_index])
             self.mouse_intensity_txtbox.setText(str(intensity))
-        else:
+        except IndexError:
             self.mouse_intensity_txtbox.setText("")
 
     # --------------------------------------------------------------------------
@@ -580,16 +588,23 @@ class ROIWidget(QtGui.QWidget):
     def __init__ (self, parent):
         super(ROIWidget, self).__init__(parent)
         self.roi_analysis_widget = parent
+        self.main_widget = self.roi_analysis_widget.main_widget
 
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
-        self.roi = pg.ROI([-1, -1], [2, 2])
+        self.roi = pg.ROI([-0.25, -0.25], [0.5, 0.5])
+        self.roi.hide()
         self.info_gbox = QtGui.QGroupBox()
-        self.plot = pg.PlotWidget()
+        self.plot_widget = pg.PlotWidget()
+        self.pen = pg.mkPen(width=3)
+        self.roi.setPen(self.pen)
+        self.roi.addScaleHandle([0.5, 0], [0.5, 0.5])
+        self.roi.addScaleHandle([0, 0.5], [0.5, 0.5])
+        self.roi.addScaleHandle([0, 0], [0.5, 0.5])
 
         self.layout.addWidget(self.info_gbox, 0, 0)
-        self.layout.addWidget(self.plot, 0, 1)
+        self.layout.addWidget(self.plot_widget, 0, 1)
 
         self.info_layout = QtGui.QGridLayout()
         self.info_gbox.setLayout(self.info_layout)
@@ -598,12 +613,12 @@ class ROIWidget(QtGui.QWidget):
         self.color_btn = pg.ColorButton()
         self.x_lbl = QtGui.QLabel("x Pos:")
         self.x_sbox = QtGui.QDoubleSpinBox()
-        self.x_sbox.setMinimum(0)
+        self.x_sbox.setMinimum(-1000)
         self.x_sbox.setMaximum(1000)
         self.x_sbox.setDecimals(6)
         self.y_lbl = QtGui.QLabel("y Pos:")
         self.y_sbox = QtGui.QDoubleSpinBox()
-        self.y_sbox.setMinimum(0)
+        self.y_sbox.setMinimum(-1000)
         self.y_sbox.setMaximum(1000)
         self.y_sbox.setDecimals(6)
         self.width_lbl = QtGui.QLabel("Width:")
@@ -629,9 +644,153 @@ class ROIWidget(QtGui.QWidget):
         self.info_layout.addWidget(self.width_sbox, 3, 1)
         self.info_layout.addWidget(self.height_lbl, 4, 0)
         self.info_layout.addWidget(self.height_sbox, 4, 1)
-        self.info_layout.addWidget(self.outline_btn, 1, 2, 1, 2)
-        self.info_layout.addWidget(self.plot_gbox, 2, 2, 3, 2)
+        # self.info_layout.addWidget(self.outline_btn, 1, 2, 1, 2)
+        # self.info_layout.addWidget(self.plot_gbox, 2, 2, 3, 2)
 
+        self.visible_chkbox.clicked.connect(self.toggleVisibility)
+        self.color_btn.sigColorChanged.connect(self.changeColor)
+        self.width_sbox.valueChanged.connect(self.updateSize)
+        self.height_sbox.valueChanged.connect(self.updateSize)
+        self.x_sbox.valueChanged.connect(self.updatePosition)
+        self.y_sbox.valueChanged.connect(self.updatePosition)
+        self.roi.sigRegionChanged.connect(self.updateAnalysis)
+        self.roi.sigRegionChanged.connect(self.plotAverageIntensity)
+
+        # Keep track of whether textboxes or roi was updated last
+        # Helps avoid infinite loop of updating
+        # Acts like a semaphore of sorts
+        self.updating = ""
+
+        print(dir(self.plot_widget))
+
+    # --------------------------------------------------------------------------
+
+    def toggleVisibility(self, state):
+        if state:
+            self.roi.show()
+        else:
+            self.roi.hide()
+
+        self.updateAnalysis()
+
+    # --------------------------------------------------------------------------
+
+    def changeColor(self):
+        color = self.color_btn.color()
+        pen = pg.mkPen(color, width=3)
+        self.roi.setPen(pen)
+
+    # --------------------------------------------------------------------------
+
+    def updateSize(self):
+        if self.updating != "analysis":
+            self.updating = "roi"
+            width = self.width_sbox.value()
+            height = self.height_sbox.value()
+            self.roi.setSize((width, height))
+            self.updatePosition()
+            self.updating = ""
+
+    # --------------------------------------------------------------------------
+
+    def updatePosition(self):
+        if self.updating != "analysis":
+            self.updating = "roi"
+            # Bottom lefthand corner of roi
+            x_origin = self.x_sbox.value() - self.roi.size()[0] / 2
+            y_origin = self.y_sbox.value() - self.roi.size()[1] / 2
+            self.roi.setPos((x_origin, y_origin))
+            self.updating = ""
+
+    # --------------------------------------------------------------------------
+
+    def updateAnalysis(self):
+        if self.updating != "roi":
+            self.updating = "analysis"
+            self.x_sbox.setValue(self.roi.pos()[0] + self.roi.size()[0] / 2)
+            self.y_sbox.setValue(self.roi.pos()[1] + self.roi.size()[1] / 2)
+            self.width_sbox.setValue(self.roi.size()[0])
+            self.height_sbox.setValue(self.roi.size()[1])
+            self.updating = ""
+
+    # --------------------------------------------------------------------------
+
+    def plotAverageIntensity(self):
+        avg_intensity = []
+        dataset = self.main_widget.data_widget.dataset
+        rect = self.main_widget.data_widget.dataset_rect
+        slice_direction = self.main_widget.data_widget.slice_direction
+
+        if slice_direction == None or slice_direction == "X(H)":
+            #x:L y:K
+            x_min = int((self.roi.pos()[0] - rect[2][0]) * dataset.shape[2] / (rect[2][-1] - rect[2][0]))
+            x_max = int((self.roi.pos()[0] + self.roi.size()[0] - rect[2][0]) * dataset.shape[2] / (rect[2][-1] - rect[2][0]))
+            y_min = int((self.roi.pos()[1] - rect[1][0]) * dataset.shape[1] / (rect[1][-1] - rect[1][0]))
+            y_max = int((self.roi.pos()[1] + self.roi.size()[1] - rect[1][0]) * dataset.shape[1] / (rect[1][-1] - rect[1][0]))
+
+            if x_min >= 0 and x_max <= dataset.shape[2] and \
+                y_min >= 0 and y_max <= dataset.shape[1]:
+                # Region throughout all slice in a direction
+                data_roi = dataset[:, y_min:y_max, x_min:x_max]
+                x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
+
+                # Takes average intensity of all slices and creates a list
+                for i in range(data_roi.shape[0]):
+                    avg = np.mean(data_roi[i, :, :])
+                    avg_intensity.append(avg)
+
+                self.plot_widget.setLabel(axis="left", text="Average Intensity")
+                self.plot_widget.setLabel(axis="bottom", text="H")
+            else:
+                self.plot_widget.clear()
+
+        elif slice_direction == "Y(K)":
+            #x:L y:H
+            x_min = int((self.roi.pos()[0] - rect[2][0]) * dataset.shape[2] / (rect[2][-1] - rect[2][0]))
+            x_max = int((self.roi.pos()[0] + self.roi.size()[0] - rect[2][0]) * dataset.shape[2] / (rect[2][-1] - rect[2][0]))
+            y_min = int((self.roi.pos()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
+            y_max = int((self.roi.pos()[1] + self.roi.size()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
+
+            if x_min >= 0 and x_max <= dataset.shape[0] and \
+                y_min >= 0 and y_max <= dataset.shape[1]:
+                # Region throughout all slice in a direction
+                data_roi = dataset[y_min:y_max, :, x_min:x_max]
+                x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
+
+                # Takes average intensity of all slices and creates a list
+                for i in range(data_roi.shape[1]):
+                    avg = np.mean(data_roi[:, i, :])
+                    avg_intensity.append(avg)
+
+                self.plot_widget.setLabel(axis="left", text="Average Intensity")
+                self.plot_widget.setLabel(axis="bottom", text="K")
+            else:
+                self.plot_widget.clear()
+
+        else:
+            #x:K y:H
+            x_min = int((self.roi.pos()[0] - rect[1][0]) * dataset.shape[1] / (rect[1][-1] - rect[1][0]))
+            x_max = int((self.roi.pos()[0] + self.roi.size()[0] - rect[1][0]) * dataset.shape[1] / (rect[1][-1] - rect[1][0]))
+            y_min = int((self.roi.pos()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
+            y_max = int((self.roi.pos()[1] + self.roi.size()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
+
+            if x_min >= 0 and x_max <= dataset.shape[0] and \
+                y_min >= 0 and y_max <= dataset.shape[2]:
+                # Region throughout all slice in a direction
+                data_roi = dataset[y_min:y_max, x_min:x_max, :]
+                x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
+
+                # Takes average intensity of all slices and creates a list
+                for i in range(data_roi.shape[2]):
+                    avg = np.mean(data_roi[:, :, i])
+                    avg_intensity.append(avg)
+
+                self.plot_widget.setLabel(axis="left", text="Average Intensity")
+                self.plot_widget.setLabel(axis="bottom", text="L")
+            else:
+                self.plot_widget.clear()
+
+        self.plot_widget.plot(x_values, avg_intensity, clear=True)
 
 # ==============================================================================
 
