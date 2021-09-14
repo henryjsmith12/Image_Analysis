@@ -55,19 +55,18 @@ class PostPlottingWidget(QtGui.QWidget):
         self.data_selection_dock = Dock("Data Selection", size=(100, 100), hideTitle=True)
         self.options_dock = Dock("Options", size=(100, 100), hideTitle=True)
         self.analysis_dock = Dock("Analysis", size=(200, 100))
-        self.roi_analysis_dock = Dock("ROI's", size=(200, 100))
+        self.roi_analysis_dock = Dock("ROI", size=(200, 100))
         self.data_dock = Dock("Data", size=(100, 100), hideTitle=True)
-        self.slice_dock = Dock("Slice", size=(100, 100), hideTitle=True)
+        self.line_roi_analysis_dock = Dock("Line ROI", size=(200, 100))
 
         self.dock_area.addDock(self.data_selection_dock)
         self.dock_area.addDock(self.data_dock, "right", self.data_selection_dock)
-        self.dock_area.addDock(self.slice_dock, "right", self.data_dock)
         self.dock_area.addDock(self.options_dock, "bottom", self.data_selection_dock)
         self.dock_area.addDock(self.analysis_dock, "bottom", self.data_dock)
-        self.dock_area.moveDock(self.slice_dock, "top", self.analysis_dock)
-        self.dock_area.moveDock(self.slice_dock, "right", self.data_dock)
-        self.dock_area.addDock(self.roi_analysis_dock, "above", self.analysis_dock)
+        self.dock_area.addDock(self.line_roi_analysis_dock, "above", self.analysis_dock)
+        self.dock_area.addDock(self.roi_analysis_dock, "above", self.line_roi_analysis_dock)
         self.dock_area.moveDock(self.analysis_dock, "above", self.roi_analysis_dock)
+        self.dock_area.moveDock(self.analysis_dock, "above", self.line_roi_analysis_dock)
 
     # --------------------------------------------------------------------------
 
@@ -77,14 +76,14 @@ class PostPlottingWidget(QtGui.QWidget):
         self.analysis_widget = AnalysisWidget(self)
         self.roi_analysis_widget = ROIAnalysisWidget(self)
         self.data_widget = DataWidget(self)
-        self.slice_widget = SliceWidget(self)
+        self.line_roi_analysis_widget = LineROIAnalysisWidget(self)
 
         self.data_selection_dock.addWidget(self.data_selection_widget)
         self.options_dock.addWidget(self.options_widget)
         self.analysis_dock.addWidget(self.analysis_widget)
         self.roi_analysis_dock.addWidget(self.roi_analysis_widget)
+        self.line_roi_analysis_dock.addWidget(self.line_roi_analysis_widget)
         self.data_dock.addWidget(self.data_widget)
-        self.slice_dock.addWidget(self.slice_widget)
 
 # ==============================================================================
 
@@ -293,10 +292,6 @@ class DataWidget(pg.ImageView):
         self.addItem(self.roi_3)
         self.addItem(self.roi_4)
 
-        self.line_roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]], pen='r')
-        self.addItem(self.line_roi)
-        self.line_roi.sigRegionChanged.connect(self.updateSlice)
-
     # --------------------------------------------------------------------------
 
     def displayDataset(self, dataset, slice_direction=None, new_dataset=False, dataset_rect=None):
@@ -351,20 +346,10 @@ class DataWidget(pg.ImageView):
             xvals=slider_ticks)
         self.setCurrentIndex(0)
 
-        #self.updateSlice()
-
         self.view_box.scene().sigMouseMoved.connect(self.updateMouse)
         self.updateMouse()
         self.main_widget.analysis_widget.updateScanInfo(self.dataset)
         self.main_widget.analysis_widget.updateMaxInfo(self.dataset, self.dataset_rect)
-
-    # --------------------------------------------------------------------------
-
-    def updateSlice(self):
-        slice = self.line_roi.getArrayRegion(self.dataset, self.imageItem, \
-            axes=(self.axes.get("x"), self.axes.get("y")))
-
-        self.main_widget.slice_widget.displaySlice(slice)
 
     # --------------------------------------------------------------------------
 
@@ -385,31 +370,6 @@ class DataWidget(pg.ImageView):
 
         self.main_widget.analysis_widget.updateMouseInfo(self.dataset, \
             self.dataset_rect, x, y, self.currentIndex, self.slice_direction)
-
-# ==============================================================================
-
-class SliceWidget(pg.ImageView):
-
-    def __init__ (self, parent):
-        super(SliceWidget, self).__init__(parent)
-        self.main_widget = parent
-
-        self.ui.histogram.hide()
-        self.ui.roiBtn.hide()
-        self.ui.menuBtn.hide()
-
-    # --------------------------------------------------------------------------
-
-    def displaySlice(self, slice):
-        self.slice = slice
-        # Normalize image with logarithmic colormap
-        colormap_max = np.amax(self.main_widget.data_widget.dataset)
-        norm = colors.LogNorm(vmax=colormap_max)
-        norm_slice = norm(self.slice)
-        color_slice = plt.cm.jet(norm_slice)
-
-        # Set image to image item
-        self.setImage(color_slice)
 
 # ==============================================================================
 
@@ -661,8 +621,6 @@ class ROIWidget(QtGui.QWidget):
         # Acts like a semaphore of sorts
         self.updating = ""
 
-        print(dir(self.plot_widget))
-
     # --------------------------------------------------------------------------
 
     def toggleVisibility(self, state):
@@ -791,6 +749,140 @@ class ROIWidget(QtGui.QWidget):
                 self.plot_widget.clear()
 
         self.plot_widget.plot(x_values, avg_intensity, clear=True)
+
+# ==============================================================================
+
+class LineROIAnalysisWidget(pg.LayoutWidget):
+
+    def __init__ (self, parent):
+        super(LineROIAnalysisWidget, self).__init__(parent)
+        self.main_widget = parent
+
+        self.line_roi_tabs = QtGui.QTabWidget()
+
+        self.line_roi_1 = LineROIWidget(self)
+        self.line_roi_2 = LineROIWidget(self)
+        self.line_roi_3 = LineROIWidget(self)
+        self.line_roi_4 = LineROIWidget(self)
+
+        print(self.line_roi_1.roi.allChildItems())
+
+        self.line_roi_tabs.addTab(self.line_roi_1, "ROI 1")
+        self.line_roi_tabs.addTab(self.line_roi_2, "ROI 2")
+        self.line_roi_tabs.addTab(self.line_roi_3, "ROI 3")
+        self.line_roi_tabs.addTab(self.line_roi_4, "ROI 4")
+
+        self.addWidget(self.line_roi_tabs)
+
+# ==============================================================================
+
+class LineROIWidget(QtGui.QWidget):
+
+    def __init__ (self, parent):
+        super(LineROIWidget, self).__init__(parent)
+        self.line_roi_analysis_widget = parent
+        self.main_widget = self.line_roi_analysis_widget.main_widget
+
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+
+        self.roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
+        self.main_widget.data_widget.addItem(self.roi)
+        self.roi.hide()
+        self.info_gbox = QtGui.QGroupBox()
+        self.image_view = pg.ImageView()
+        self.image_view.ui.histogram.hide()
+        self.image_view.ui.roiBtn.hide()
+        self.image_view.ui.menuBtn.hide()
+        self.pen = pg.mkPen(width=3)
+        self.roi.setPen(self.pen)
+
+        self.layout.addWidget(self.info_gbox, 0, 0)
+        self.layout.addWidget(self.image_view, 0, 1)
+
+        self.info_layout = QtGui.QGridLayout()
+        self.info_gbox.setLayout(self.info_layout)
+
+        self.visible_chkbox = QtGui.QCheckBox("Visible")
+        self.color_btn = pg.ColorButton()
+        self.x1_lbl = QtGui.QLabel("x1 Pos:")
+        self.x1_sbox = QtGui.QDoubleSpinBox()
+        self.x1_sbox.setMinimum(-1000)
+        self.x1_sbox.setMaximum(1000)
+        self.x1_sbox.setDecimals(6)
+        self.y1_lbl = QtGui.QLabel("y1 Pos:")
+        self.y1_sbox = QtGui.QDoubleSpinBox()
+        self.y1_sbox.setMinimum(-1000)
+        self.y1_sbox.setMaximum(1000)
+        self.y1_sbox.setDecimals(6)
+        self.x2_lbl = QtGui.QLabel("x2 Pos:")
+        self.x2_sbox = QtGui.QDoubleSpinBox()
+        self.x2_sbox.setMinimum(-1000)
+        self.x2_sbox.setMaximum(1000)
+        self.x2_sbox.setDecimals(6)
+        self.y2_lbl = QtGui.QLabel("y2 Pos:")
+        self.y2_sbox = QtGui.QDoubleSpinBox()
+        self.y2_sbox.setMinimum(-1000)
+        self.y2_sbox.setMaximum(1000)
+        self.y2_sbox.setDecimals(6)
+        #self.outline_btn = QtGui.QPushButton("Outline Image")
+        #self.plot_gbox = QtGui.QGroupBox("Plot")
+
+        self.info_layout.addWidget(self.visible_chkbox, 0, 0)
+        self.info_layout.addWidget(self.color_btn, 0, 1)
+        self.info_layout.addWidget(self.x1_lbl, 1, 0)
+        self.info_layout.addWidget(self.x1_sbox, 1, 1)
+        self.info_layout.addWidget(self.y1_lbl, 2, 0)
+        self.info_layout.addWidget(self.y1_sbox, 2, 1)
+        self.info_layout.addWidget(self.x2_lbl, 3, 0)
+        self.info_layout.addWidget(self.x2_sbox, 3, 1)
+        self.info_layout.addWidget(self.y2_lbl, 4, 0)
+        self.info_layout.addWidget(self.y2_sbox, 4, 1)
+
+        self.roi.sigRegionChanged.connect(self.displaySlice)
+        self.visible_chkbox.clicked.connect(self.toggleVisibility)
+        self.color_btn.sigColorChanged.connect(self.changeColor)
+
+    # --------------------------------------------------------------------------
+
+    def displaySlice(self):
+        dataset = self.main_widget.data_widget.dataset
+        image_item = self.main_widget.data_widget.imageItem
+        axes = self.main_widget.data_widget.axes
+
+        if dataset != [] or dataset != None:
+            try:
+                slice = self.roi.getArrayRegion(dataset, image_item, \
+                    axes=(axes.get("x"), axes.get("y")))
+
+                colormap_max = np.amax(dataset)
+                norm = colors.LogNorm(vmax=colormap_max)
+                norm_slice = norm(slice)
+                color_slice = plt.cm.jet(norm_slice)
+
+                self.image_view.setImage(color_slice)
+            except ValueError:
+                self.image_view.clear()
+
+    # --------------------------------------------------------------------------
+
+    def toggleVisibility(self, state):
+        if state:
+            self.roi.show()
+        else:
+            self.roi.hide()
+
+    # --------------------------------------------------------------------------
+
+    def changeColor(self):
+        color = self.color_btn.color()
+        pen = pg.mkPen(color, width=3)
+        self.roi.setPen(pen)
+
+    # --------------------------------------------------------------------------
+
+    def updatePosition(self):
+        ...
 
 # ==============================================================================
 
