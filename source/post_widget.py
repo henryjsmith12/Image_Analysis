@@ -765,8 +765,6 @@ class LineROIAnalysisWidget(pg.LayoutWidget):
         self.line_roi_3 = LineROIWidget(self)
         self.line_roi_4 = LineROIWidget(self)
 
-        print(self.line_roi_1.roi.allChildItems())
-
         self.line_roi_tabs.addTab(self.line_roi_1, "ROI 1")
         self.line_roi_tabs.addTab(self.line_roi_2, "ROI 2")
         self.line_roi_tabs.addTab(self.line_roi_3, "ROI 3")
@@ -796,6 +794,8 @@ class LineROIWidget(QtGui.QWidget):
         self.image_view.ui.menuBtn.hide()
         self.pen = pg.mkPen(width=3)
         self.roi.setPen(self.pen)
+        self.handle_1 = self.roi.getHandles()[0]
+        self.handle_2 = self.roi.getHandles()[1]
 
         self.layout.addWidget(self.info_gbox, 0, 0)
         self.layout.addWidget(self.image_view, 0, 1)
@@ -842,6 +842,14 @@ class LineROIWidget(QtGui.QWidget):
         self.roi.sigRegionChanged.connect(self.displaySlice)
         self.visible_chkbox.clicked.connect(self.toggleVisibility)
         self.color_btn.sigColorChanged.connect(self.changeColor)
+        self.x1_sbox.valueChanged.connect(self.updatePosition)
+        self.y1_sbox.valueChanged.connect(self.updatePosition)
+        self.x2_sbox.valueChanged.connect(self.updatePosition)
+        self.y2_sbox.valueChanged.connect(self.updatePosition)
+        self.roi.sigRegionChanged.connect(self.updateAnalysis)
+        self.roi.sigClicked.connect(self.updateAnalysis)
+
+        self.updating = ""
 
     # --------------------------------------------------------------------------
 
@@ -882,7 +890,27 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updatePosition(self):
-        ...
+        if self.updating != "analysis":
+            self.updating = "roi"
+            # Bottom lefthand corner of roi
+            x1 = self.x1_sbox.value()
+            y1 = self.y1_sbox.value()
+            self.roi.movePoint(self.handle_1, (x1, y1))
+            x2 = self.x2_sbox.value()
+            y2 = self.y2_sbox.value()
+            self.roi.movePoint(self.handle_2, (x2, y2))
+            self.updating = ""
+
+    # --------------------------------------------------------------------------
+
+    def updateAnalysis(self):
+        if self.updating != "roi":
+            self.updating = "analysis"
+            self.x1_sbox.setValue(self.roi.listPoints()[0].x())
+            self.y1_sbox.setValue(self.roi.listPoints()[0].y())
+            self.x2_sbox.setValue(self.roi.listPoints()[1].x())
+            self.y2_sbox.setValue(self.roi.listPoints()[1].y())
+            self.updating = ""
 
 # ==============================================================================
 
