@@ -7,7 +7,6 @@ See LICENSE file.
 
 from pyqtgraph.Qt import QtGui
 
-from source.gui_widgets import *
 from source.live_widget import *
 from source.post_widget import *
 
