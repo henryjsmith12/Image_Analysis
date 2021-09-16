@@ -13,22 +13,10 @@ import os
 import pyqtgraph as pg
 from pyqtgraph.dockarea import *
 from pyqtgraph.Qt import QtGui, QtCore
-from scipy import ndimage
-import tifffile as tiff
-import time
-import warnings
-
-from rsMap3D.config.rsmap3dconfigparser import RSMap3DConfigParser
-from rsMap3D.datasource.Sector33SpecDataSource import Sector33SpecDataSource
 from rsMap3D.datasource.DetectorGeometryForXrayutilitiesReader import DetectorGeometryForXrayutilitiesReader as detReader
 from rsMap3D.datasource.InstForXrayutilitiesReader import InstForXrayutilitiesReader as instrReader
-from rsMap3D.gui.rsm3dcommonstrings import BINARY_OUTPUT
-from rsMap3D.mappers.gridmapper import QGridMapper
-from rsMap3D.mappers.output.vtigridwriter import VTIGridWriter
-from rsMap3D.transforms.unitytransform3d import UnityTransform3D
-from rsMap3D.utils.srange import srange
-import vtk
-from vtk.util import numpy_support as npSup
+from scipy import ndimage
+import tifffile as tiff
 import xrayutilities as xu
 
 # ==============================================================================
