@@ -52,7 +52,9 @@ python image_analysis.py
 
 The program's user interface should look like this on startup:
 
-![Image Analysis GUI on Startup](https://github.com/henryjsmith12/Image_Analysis/blob/master/screenshots/gui_on_startup.jpg)
+![Live Plotting Widget on Startup](https://github.com/henryjsmith12/Image_Analysis/blob/base/screenshots/Live_Plotting_on_Startup.png)
+
+![Post Plotting Widget on Startup](https://github.com/henryjsmith12/Image_Analysis/blob/base/screenshots/Post_Plotting_on_Startup.png)
 
 ## Author
 
