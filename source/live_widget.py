@@ -457,6 +457,12 @@ class ImageWidget(pg.PlotWidget):
 # ==============================================================================
 
 class AnalysisWidget(pg.LayoutWidget):
+    """
+    - Holds groupbox with information about:
+        - Mouse location/intensity
+        - Max location/intensity
+    - Updates HKL mapping for image
+    """
 
     def __init__ (self, parent):
         super(AnalysisWidget, self).__init__(parent)
@@ -560,12 +566,20 @@ class AnalysisWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def updateImageInfo(self, image):
+        """
+        Adds image size (in pixels) to textboxes
+        """
+
         self.image_pixel_count_x_txtbox.setText(str(image.shape[0]))
         self.image_pixel_count_y_txtbox.setText(str(image.shape[1]))
 
     # --------------------------------------------------------------------------
 
     def updateMouseInfo(self, image, x, y):
+        """
+        Adds mouse info to textboxes
+        """
+
         self.mouse_x_txtbox.setText(str(x))
         self.mouse_y_txtbox.setText(str(y))
 
@@ -585,6 +599,10 @@ class AnalysisWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def updateMaxInfo(self, image):
+        """
+        Adds max info to textboxes
+        """
+
         max = np.amax(image)
         x, y = np.unravel_index(image.argmax(), image.shape)
         self.max_x_txtbox.setText(str(x))
@@ -599,6 +617,10 @@ class AnalysisWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def updateHKLMap(self, qx, qy, qz):
+        """
+        Updates pixel map to display HKL values of pixels
+        """
+
         self.mapped = True
         self.qx, self.qy, self.qz = qx, qy, qz
         self.main_widget.image_widget.displayImage(self.main_widget.image_widget.image)
@@ -606,6 +628,9 @@ class AnalysisWidget(pg.LayoutWidget):
 # ==============================================================================
 
 class MappingParametersDialog(QtGui.QDialog):
+    """
+    - Allows user to set parameters used to map pixels to reciprocal space
+    """
 
     def __init__ (self):
         super().__init__()
@@ -623,7 +648,6 @@ class MappingParametersDialog(QtGui.QDialog):
         self.delta = 0.0
         self.energy = 0
 
-        # Create widgets
         self.detector_lbl = QtGui.QLabel("Det. Config:")
         self.detector_txtbox = QtGui.QLineEdit()
         self.detector_txtbox.setReadOnly(True)
@@ -634,6 +658,7 @@ class MappingParametersDialog(QtGui.QDialog):
         self.instrument_btn = QtGui.QPushButton("Browse")
         self.ub_matrix_lbl = QtGui.QLabel("UB Matrix:")
         self.ub_matrix_txtedit = QtGui.QPlainTextEdit()
+        self.ub_matrix_txtedit.setPlainText("1 0 0 0 1 0 0 0 1")
         self.mu_lbl = QtGui.QLabel("Mu (deg):")
         self.mu_sbox = QtGui.QDoubleSpinBox()
         self.mu_sbox.setMaximum(360.0)
@@ -663,11 +688,9 @@ class MappingParametersDialog(QtGui.QDialog):
         self.energy_sbox.setMaximum(100000)
         self.ok_btn = QtGui.QPushButton("OK")
 
-        # Create layout
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
-        # Add widgets to layout
         self.layout.addWidget(self.detector_lbl, 0, 0)
         self.layout.addWidget(self.detector_txtbox, 0, 1)
         self.layout.addWidget(self.detector_btn, 0, 2)
@@ -692,7 +715,7 @@ class MappingParametersDialog(QtGui.QDialog):
         self.layout.addWidget(self.energy_sbox, 9, 2)
         self.layout.addWidget(self.ok_btn, 10, 2)
 
-        # Connect widgets to functions
+        # Signals
         self.detector_btn.clicked.connect(self.selectDetectorConfigFile)
         self.instrument_btn.clicked.connect(self.selectInstrumentConfigFile)
         self.ok_btn.clicked.connect(self.acceptDialog)
@@ -700,7 +723,6 @@ class MappingParametersDialog(QtGui.QDialog):
     # --------------------------------------------------------------------------
 
     def selectDetectorConfigFile(self):
-
         """
         Allows user to select a detector configuration .xml file.
         """
@@ -711,7 +733,6 @@ class MappingParametersDialog(QtGui.QDialog):
     # --------------------------------------------------------------------------
 
     def selectInstrumentConfigFile(self):
-
         """
         Allows user to select an instrument configuration .xml file.
         """
@@ -722,7 +743,6 @@ class MappingParametersDialog(QtGui.QDialog):
     # --------------------------------------------------------------------------
 
     def acceptDialog(self):
-
         """
         Sets class variables to values in dialog and closes the dialog window.
         """
@@ -742,22 +762,39 @@ class MappingParametersDialog(QtGui.QDialog):
 # ==============================================================================
 
 class MappingLogic():
+    """
+    Function(s) that deal with mapping images to reciprocal space
+    """
 
-    def createLiveScanArea(instrument_config_name, detector_config_name, mu, eta,
+    def createLiveScanArea(instrument_config_name, detector_config_name, mu, eta, \
         chi, phi, nu, delta, ub, energy):
+        """
+        Creates a scan area to map pixels to reciprocal space coordinates
+        """
 
-        d_reader = detReader(detector_config_name)
-        i_reader = instrReader(instrument_config_name)
+        d_reader = detReader(detector_config_name) # Detector reader
+        i_reader = instrReader(instrument_config_name) # Instrument reader
 
+        # x+/-, y+/-, z+/-
         sample_circle_dir = i_reader.getSampleCircleDirections()
         det_circle_dir = i_reader.getDetectorCircleDirections()
         primary_beam_dir = i_reader.getPrimaryBeamDirection()
 
+        """
+        Object for the conversion of angular coordinates to momentum space for
+        arbitrary goniometer geometries and X-ray energy. (from xru docs)
+        """
         q_conv = xu.experiment.QConversion(sample_circle_dir, det_circle_dir, primary_beam_dir)
 
+        # x+/-, y+/-, z+/-
         inplane_ref_dir = i_reader.getInplaneReferenceDirection()
         sample_norm_dir = i_reader.getSampleSurfaceNormalDirection()
 
+        """
+        Object describing high angle x-ray diffraction experiments and helps with
+        calculating the angles of Bragg reflections as well as helps with analyzing
+        measured data. (from xru docs)
+        """
         hxrd = xu.HXRD(inplane_ref_dir, sample_norm_dir, en=energy, qconv=q_conv)
 
         detector = d_reader.getDetectors()[0]
