@@ -162,7 +162,8 @@ class ImageSelectionWidget(QtGui.QWidget):
 
         for i in range(self.image_list.count()):
             self.loadImage(self.image_list.item(i))
-            QtGui.QApplication.processEvents() # Refreshes GUI; not efficient
+            # Refreshes GUI; inefficient
+            QtGui.QApplication.processEvents()
 
 # ==============================================================================
 
