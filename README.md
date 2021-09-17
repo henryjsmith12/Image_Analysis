@@ -2,7 +2,7 @@
 
 Copyright (c) UChicago Argonne, LLC. All rights reserved.
 
-A lightweight option for viewing scan data. Image Analysis allows users to view raw .tiff image files or data converted to HKL by loading SPEC and XML configuration files. This project is built with a [`PyQt5`](https://github.com/baoboa/pyqt5) framework for the GUI and [`pyqtgraph`](https://github.com/pyqtgraph/pyqtgraph) for the plots. The data is converted with [`rsMap3D`](https://github.com/AdvancedPhotonSource/rsMap3D) and [`xrayutilities`](https://github.com/dkriegner/xrayutilities).
+A lightweight option for viewing scan data. Image Analysis allows users to view raw .tiff image files or view data converted to reciprocal space by loading SPEC and XML configuration files. This project is built with a [`PyQt5`](https://github.com/baoboa/pyqt5) framework for the GUI and [`pyqtgraph`](https://github.com/pyqtgraph/pyqtgraph) for the plots. The data is converted with [`rsMap3D`](https://github.com/AdvancedPhotonSource/rsMap3D) and [`xrayutilities`](https://github.com/dkriegner/xrayutilities).
 
 ## Requirements
 
