@@ -112,10 +112,39 @@ class WidgetSelectionDialog(QtGui.QDialog):
         - Creates new widget tab
         - Triggered by clicking ok_btn
         """
-        
+
         if self.widget_type_cbox.currentText() != "":
             self.widget_type = self.widget_type_cbox.currentText()
             self.widget_name = self.widget_name_txtbox.text()
             self.accept()
 
 # ==============================================================================
+
+"""
+Hacky solution to fix css on dock labels
+"""
+
+from pyqtgraph.dockarea.Dock import DockLabel
+
+def updateStylePatched(self):
+    if self.dim:
+        fg = '#000000'
+        bg = '#f6f6f6'
+    else:
+        fg = '#f6f6f6'
+        bg = '#989797'
+
+    if self.orientation == 'vertical':
+        self.vStyle = """DockLabel {
+            background-color : %s;
+            color : %s;
+        }""" % (bg, fg)
+        self.setStyleSheet(self.vStyle)
+    else:
+        self.hStyle = """DockLabel {
+            background-color : %s;
+            color : %s;
+        }""" % (bg, fg)
+        self.setStyleSheet(self.hStyle)
+
+DockLabel.updateStyle = updateStylePatched
