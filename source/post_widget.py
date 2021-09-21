@@ -605,6 +605,8 @@ class ROIWidget(QtGui.QWidget):
         self.roi_analysis_widget = parent
         self.main_widget = self.roi_analysis_widget.main_widget
 
+        self.avg_intensity = None
+
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
@@ -659,8 +661,7 @@ class ROIWidget(QtGui.QWidget):
         self.info_layout.addWidget(self.width_sbox, 3, 1)
         self.info_layout.addWidget(self.height_lbl, 4, 0)
         self.info_layout.addWidget(self.height_sbox, 4, 1)
-        # self.info_layout.addWidget(self.outline_btn, 1, 2, 1, 2)
-        # self.info_layout.addWidget(self.plot_gbox, 2, 2, 3, 2)
+        self.info_layout.addWidget(self.outline_btn, 5, 0, 1, 2)
 
         self.visible_chkbox.clicked.connect(self.toggleVisibility)
         self.color_btn.sigColorChanged.connect(self.changeColor)
@@ -670,6 +671,7 @@ class ROIWidget(QtGui.QWidget):
         self.y_sbox.valueChanged.connect(self.updatePosition)
         self.roi.sigRegionChanged.connect(self.updateAnalysis)
         self.roi.sigRegionChanged.connect(self.plotAverageIntensity)
+        self.outline_btn.clicked.connect(self.center)
 
         # Keep track of whether textboxes or roi was updated last
         # Helps avoid infinite loop of updating
@@ -684,6 +686,8 @@ class ROIWidget(QtGui.QWidget):
         else:
             self.roi.hide()
 
+        # TODO: Find a place for this garbage
+        self.roi.sigRegionChanged.connect(self.roi_analysis_widget.roi_sub.plotData)
         self.updateAnalysis()
 
     # --------------------------------------------------------------------------
@@ -725,6 +729,25 @@ class ROIWidget(QtGui.QWidget):
             self.width_sbox.setValue(self.roi.size()[0])
             self.height_sbox.setValue(self.roi.size()[1])
             self.updating = ""
+
+    # --------------------------------------------------------------------------
+
+    def center(self):
+        rect = self.main_widget.data_widget.dataset_rect
+        slice_direction = self.main_widget.data_widget.slice_direction
+
+        if slice_direction == None or slice_direction == "X(H)":
+            self.roi.setPos((rect[2][0], rect[1][0]))
+            self.roi.setSize((rect[2][-1] - rect[2][0], rect[1][-1] - rect[1][0]))
+        elif slice_direction == "Y(K)":
+            self.roi.setPos((rect[0][0], rect[2][0]))
+            self.roi.setSize((rect[0][-1] - rect[0][0], rect[2][-1] - rect[2][0]))
+        else:
+            self.roi.setPos((rect[1][0], rect[0][0]))
+            self.roi.setSize((rect[1][-1] - rect[1][0], rect[0][-1] - rect[0][0]))
+
+        print(rect[0][0], rect[1][0])
+        print(rect[0][-1] - rect[0][0], rect[1][-1] - rect[1][0])
 
     # --------------------------------------------------------------------------
 
@@ -803,7 +826,12 @@ class ROIWidget(QtGui.QWidget):
             else:
                 self.plot_widget.clear()
 
-        self.plot_widget.plot(x_values, avg_intensity, clear=True)
+        try:
+            self.plot_widget.plot(x_values, avg_intensity, clear=True)
+        except Exception:
+            self.plot_widget.clear()
+
+        self.avg_intensity = avg_intensity
 
 # ==============================================================================
 
@@ -835,6 +863,29 @@ class ROISubtractionWidget(QtGui.QWidget):
 
         self.layout.addWidget(self.info_gbox, 0, 0)
         self.layout.addWidget(self.plot_widget, 0, 1)
+
+        self.first_roi_cbox.currentTextChanged.connect(self.plotData)
+        self.second_roi_cbox.currentTextChanged.connect(self.plotData)
+
+        self.roi_dict = {
+            "ROI 1" : self.roi_analysis_widget.roi_1,
+            "ROI 2" : self.roi_analysis_widget.roi_2,
+            "ROI 3" : self.roi_analysis_widget.roi_3,
+            "ROI 4" : self.roi_analysis_widget.roi_4
+        }
+
+    # --------------------------------------------------------------------------
+
+    def plotData(self):
+        try:
+            avg_intensity_1 = self.roi_dict[self.first_roi_cbox.currentText()].avg_intensity
+            avg_intensity_2 = self.roi_dict[self.second_roi_cbox.currentText()].avg_intensity
+
+            #print(avg_intensity_1, avg_intensity_2)
+            avg_intensity_diff = np.subtract(avg_intensity_1, avg_intensity_2)
+            self.plot_widget.plot(avg_intensity_diff, clear=True)
+        except Exception:
+            self.plot_widget.clear()
 
 # ==============================================================================
 
@@ -919,6 +970,7 @@ class LineROIWidget(QtGui.QWidget):
         self.y2_sbox.setMinimum(-1000)
         self.y2_sbox.setMaximum(1000)
         self.y2_sbox.setDecimals(6)
+        self.center_btn = QtGui.QPushButton("Center")
 
         self.info_layout.addWidget(self.visible_chkbox, 0, 0)
         self.info_layout.addWidget(self.color_btn, 0, 1)
@@ -930,6 +982,7 @@ class LineROIWidget(QtGui.QWidget):
         self.info_layout.addWidget(self.x2_sbox, 3, 1)
         self.info_layout.addWidget(self.y2_lbl, 4, 0)
         self.info_layout.addWidget(self.y2_sbox, 4, 1)
+        self.info_layout.addWidget(self.center_btn, 5, 0, 1, 2)
 
         self.roi.sigRegionChanged.connect(self.update)
         self.visible_chkbox.clicked.connect(self.toggleVisibility)
@@ -939,7 +992,7 @@ class LineROIWidget(QtGui.QWidget):
         self.x2_sbox.valueChanged.connect(self.updatePosition)
         self.y2_sbox.valueChanged.connect(self.updatePosition)
         self.roi.sigRegionChanged.connect(self.updateAnalysis)
-        self.roi.sigClicked.connect(self.updateAnalysis)
+        self.center_btn.clicked.connect(self.center)
 
         self.updating = ""
 
@@ -1024,6 +1077,28 @@ class LineROIWidget(QtGui.QWidget):
             self.x2_sbox.setValue(self.roi.listPoints()[1].x())
             self.y2_sbox.setValue(self.roi.listPoints()[1].y())
             self.updating = ""
+
+    # --------------------------------------------------------------------------
+
+    def center(self):
+        rect = self.main_widget.data_widget.dataset_rect
+        slice_direction = self.main_widget.data_widget.slice_direction
+
+        if slice_direction == None or slice_direction == "X(H)":
+            x1, y1 = round(rect[2][0], 6), round(rect[1][0], 6)
+            x2, y2 = round(rect[2][-1], 6), round(rect[1][-1], 6)
+        elif slice_direction == "Y(K)":
+            x1, y1 = round(rect[0][0], 6), round(rect[2][0], 6)
+            x2, y2 = round(rect[0][-1], 6), round(rect[2][-1], 6)
+        else:
+            x1, y1 = round(rect[1][0], 6), round(rect[0][0], 6)
+            x2, y2 = round(rect[1][-1], 6), round(rect[0][-1], 6)
+
+        self.updating = "roi"
+        self.roi.movePoint(self.handle_1, (x1, y1))
+        self.roi.movePoint(self.handle_2, (x2, y2))
+        self.updating = ""
+        self.updateAnalysis()
 
 # ==============================================================================
 
