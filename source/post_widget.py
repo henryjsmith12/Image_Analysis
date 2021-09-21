@@ -25,6 +25,8 @@ from rsMap3D.utils.srange import srange
 from scipy import ndimage
 import tifffile as tiff
 import time
+import vtk
+from vtk.util import numpy_support as npSup
 import warnings
 import xrayutilities as xu
 
@@ -62,7 +64,7 @@ class PostPlottingWidget(QtGui.QWidget):
         self.analysis_dock = Dock("Analysis", size=(200, 100))
         self.roi_analysis_dock = Dock("ROI", size=(200, 100))
         self.data_dock = Dock("Data", size=(100, 100), hideTitle=True)
-        self.line_roi_analysis_dock = Dock("Line ROI", size=(200, 100))
+        self.line_roi_analysis_dock = Dock("Slicing", size=(200, 100))
 
         # Docks are added in positions relative to docks already in area
         self.dock_area.addDock(self.data_selection_dock)
@@ -81,7 +83,7 @@ class PostPlottingWidget(QtGui.QWidget):
         - Creates instances of subwidgets
         - Adds each subwidget to its respective dock
         """
-        
+
         self.data_selection_widget = DataSelectionWidget(self)
         self.options_widget = OptionsWidget(self)
         self.analysis_widget = AnalysisWidget(self)
@@ -99,6 +101,13 @@ class PostPlottingWidget(QtGui.QWidget):
 # ==============================================================================
 
 class DataSelectionWidget(QtGui.QWidget):
+    """
+    Allows user to select:
+    - A project file
+    - A SPEC scan
+    - Which scan to view
+    - Parameters to convert scan to reciprocal space
+    """
 
     def __init__ (self, parent):
         super(DataSelectionWidget, self).__init__(parent)
@@ -124,6 +133,7 @@ class DataSelectionWidget(QtGui.QWidget):
         self.layout.addWidget(self.conversion_btn, 3, 1)
         self.layout.addWidget(self.process_btn, 4, 0, 1, 2)
 
+        # Signals
         self.project_btn.clicked.connect(self.setProjectDirectory)
         self.spec_list.itemClicked.connect(self.setScanList)
         self.conversion_btn.clicked.connect(self.showConversionDialog)
@@ -132,6 +142,11 @@ class DataSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def setProjectDirectory(self):
+        """
+        - Opens directory dialog
+        - Sets project directory
+        """
+
         self.project_path = QtGui.QFileDialog.getExistingDirectory(self,
             "Open Project Directory")
 
@@ -152,6 +167,10 @@ class DataSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def setScanList(self, list_item):
+        """
+        Adds scans to scans list widget
+        """
+
         self.spec_base = list_item.text()
         self.scans_path = f"{self.project_path}/images/{self.spec_base}"
 
@@ -163,12 +182,20 @@ class DataSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def showConversionDialog(self):
+        """
+        Displays modal conversion dialog widget
+        """
+
         self.main_widget.conversion_dialog.show()
         self.main_widget.conversion_dialog.finished.connect(self.setConversionParameters)
 
     # --------------------------------------------------------------------------
 
     def setConversionParameters(self):
+        """
+        Sets values given from dialog
+        """
+
         dialog = self.main_widget.conversion_dialog
 
         self.spec_path = f"{self.project_path}/{self.spec_base}.spec"
@@ -181,6 +208,10 @@ class DataSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def loadData(self):
+        """
+        Creates dataset that is displayed in the data widget (top right in GUI)
+        """
+
         self.dataset = []
         self.dataset_rect = None
 
@@ -189,6 +220,7 @@ class DataSelectionWidget(QtGui.QWidget):
         scan_path = f"{self.scans_path}/{scan.text()}"
         files = sorted(os.listdir(scan_path))
 
+        # Maps/interpolates data into reciprocal space
         if self.conversion_chkbox.isChecked():
             vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_path, \
                 self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
@@ -197,6 +229,8 @@ class DataSelectionWidget(QtGui.QWidget):
 
             self.dataset_rect = [(self.axes[0][0], self.axes[0][-1]), (self.axes[1][0], \
                 self.axes[1][-1]), (self.axes[2][0], self.axes[2][-1])]
+
+        # Appends raw, unaltered images together to create a 3D array
         else:
             for i in range(0, len(files)):
                 if files[i] != "alignment.tif":
@@ -221,6 +255,7 @@ class OptionsWidget(QtGui.QWidget):
         super(OptionsWidget, self).__init__(parent)
         self.main_widget = parent
 
+        self.setEnabled(False)
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
@@ -357,6 +392,11 @@ class DataWidget(pg.ImageView):
             xvals=slider_ticks)
         self.setCurrentIndex(0)
 
+        self.main_widget.options_widget.setEnabled(True)
+        self.main_widget.analysis_widget.setEnabled(True)
+        self.main_widget.roi_analysis_widget.setEnabled(True)
+        self.main_widget.line_roi_analysis_widget.setEnabled(True)
+
         self.view_box.scene().sigMouseMoved.connect(self.updateMouse)
         self.updateMouse()
         self.main_widget.analysis_widget.updateScanInfo(self.dataset)
@@ -390,6 +430,7 @@ class AnalysisWidget(pg.LayoutWidget):
         super(AnalysisWidget, self).__init__(parent)
         self.main_widget = parent
 
+        self.setEnabled(False)
         self.scan_gbox = QtGui.QGroupBox("Scan")
         self.slice_gbox = QtGui.QGroupBox("Slice")
         self.mouse_gbox = QtGui.QGroupBox("Mouse")
@@ -538,17 +579,20 @@ class ROIAnalysisWidget(pg.LayoutWidget):
         super(ROIAnalysisWidget, self).__init__(parent)
         self.main_widget = parent
 
+        self.setEnabled(False)
         self.roi_tabs = QtGui.QTabWidget()
 
         self.roi_1 = ROIWidget(self)
         self.roi_2 = ROIWidget(self)
         self.roi_3 = ROIWidget(self)
         self.roi_4 = ROIWidget(self)
+        self.roi_sub = ROISubtractionWidget(self)
 
         self.roi_tabs.addTab(self.roi_1, "ROI 1")
         self.roi_tabs.addTab(self.roi_2, "ROI 2")
         self.roi_tabs.addTab(self.roi_3, "ROI 3")
         self.roi_tabs.addTab(self.roi_4, "ROI 4")
+        self.roi_tabs.addTab(self.roi_sub, "Subtraction")
 
         self.addWidget(self.roi_tabs)
 
@@ -763,12 +807,44 @@ class ROIWidget(QtGui.QWidget):
 
 # ==============================================================================
 
+class ROISubtractionWidget(QtGui.QWidget):
+    def __init__ (self, parent):
+        super(ROISubtractionWidget, self).__init__(parent)
+        self.roi_analysis_widget = parent
+        self.main_widget = self.roi_analysis_widget.main_widget
+
+        self.first_roi_lbl = QtGui.QLabel("First ROI")
+        self.first_roi_cbox = QtGui.QComboBox()
+        self.first_roi_cbox.addItems(["ROI 1", "ROI 2", "ROI 3", "ROI 4"])
+        self.second_roi_lbl = QtGui.QLabel("Second ROI")
+        self.second_roi_cbox = QtGui.QComboBox()
+        self.second_roi_cbox.addItems(["ROI 1", "ROI 2", "ROI 3", "ROI 4"])
+
+        self.info_gbox = QtGui.QGroupBox()
+        self.info_layout = QtGui.QGridLayout()
+        self.info_gbox.setLayout(self.info_layout)
+        self.info_layout.addWidget(self.first_roi_lbl, 0, 0)
+        self.info_layout.addWidget(self.first_roi_cbox, 0, 1)
+        self.info_layout.addWidget(self.second_roi_lbl, 1, 0)
+        self.info_layout.addWidget(self.second_roi_cbox, 1, 1)
+
+        self.plot_widget = pg.PlotWidget()
+
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+
+        self.layout.addWidget(self.info_gbox, 0, 0)
+        self.layout.addWidget(self.plot_widget, 0, 1)
+
+# ==============================================================================
+
 class LineROIAnalysisWidget(pg.LayoutWidget):
 
     def __init__ (self, parent):
         super(LineROIAnalysisWidget, self).__init__(parent)
         self.main_widget = parent
 
+        self.setEnabled(False)
         self.line_roi_tabs = QtGui.QTabWidget()
 
         self.line_roi_1 = LineROIWidget(self)
