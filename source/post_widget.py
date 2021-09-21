@@ -52,6 +52,11 @@ class PostPlottingWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def createDocks(self):
+        """
+        - Creates docks
+        - Adds docks to dock area in main widget
+        """
+
         self.data_selection_dock = Dock("Data Selection", size=(100, 100), hideTitle=True)
         self.options_dock = Dock("Options", size=(100, 100), hideTitle=True)
         self.analysis_dock = Dock("Analysis", size=(200, 100))
@@ -59,6 +64,7 @@ class PostPlottingWidget(QtGui.QWidget):
         self.data_dock = Dock("Data", size=(100, 100), hideTitle=True)
         self.line_roi_analysis_dock = Dock("Line ROI", size=(200, 100))
 
+        # Docks are added in positions relative to docks already in area
         self.dock_area.addDock(self.data_selection_dock)
         self.dock_area.addDock(self.data_dock, "right", self.data_selection_dock)
         self.dock_area.addDock(self.options_dock, "bottom", self.data_selection_dock)
@@ -71,6 +77,11 @@ class PostPlottingWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def createWidgets(self):
+        """
+        - Creates instances of subwidgets
+        - Adds each subwidget to its respective dock
+        """
+        
         self.data_selection_widget = DataSelectionWidget(self)
         self.options_widget = OptionsWidget(self)
         self.analysis_widget = AnalysisWidget(self)
