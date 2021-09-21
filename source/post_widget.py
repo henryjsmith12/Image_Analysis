@@ -13,11 +13,6 @@ import os
 import pyqtgraph as pg
 from pyqtgraph.dockarea import *
 from pyqtgraph.Qt import QtGui, QtCore
-from scipy import ndimage
-import tifffile as tiff
-import time
-import warnings
-
 from rsMap3D.config.rsmap3dconfigparser import RSMap3DConfigParser
 from rsMap3D.datasource.Sector33SpecDataSource import Sector33SpecDataSource
 from rsMap3D.datasource.DetectorGeometryForXrayutilitiesReader import DetectorGeometryForXrayutilitiesReader as detReader
@@ -27,13 +22,18 @@ from rsMap3D.mappers.gridmapper import QGridMapper
 from rsMap3D.mappers.output.vtigridwriter import VTIGridWriter
 from rsMap3D.transforms.unitytransform3d import UnityTransform3D
 from rsMap3D.utils.srange import srange
-import vtk
-from vtk.util import numpy_support as npSup
+from scipy import ndimage
+import tifffile as tiff
+import time
+import warnings
 import xrayutilities as xu
 
 # ==============================================================================
 
 class PostPlottingWidget(QtGui.QWidget):
+    """
+    Houses docked widgets components for Post Plotting widget
+    """
 
     def __init__ (self):
         super().__init__()
@@ -787,18 +787,25 @@ class LineROIWidget(QtGui.QWidget):
         self.roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
         self.main_widget.data_widget.addItem(self.roi)
         self.roi.hide()
-        self.info_gbox = QtGui.QGroupBox()
-        self.image_view = pg.ImageView()
-        self.image_view.ui.histogram.hide()
-        self.image_view.ui.roiBtn.hide()
-        self.image_view.ui.menuBtn.hide()
         self.pen = pg.mkPen(width=3)
         self.roi.setPen(self.pen)
         self.handle_1 = self.roi.getHandles()[0]
         self.handle_2 = self.roi.getHandles()[1]
+        self.info_gbox = QtGui.QGroupBox()
+
+        self.plot_tabs = QtGui.QTabWidget()
+
+        self.image_view = pg.ImageView()
+        self.image_view.ui.histogram.hide()
+        self.image_view.ui.roiBtn.hide()
+        self.image_view.ui.menuBtn.hide()
+        self.plot_widget = pg.PlotWidget()
+
+        self.plot_tabs.addTab(self.image_view, "Slice")
+        self.plot_tabs.addTab(self.plot_widget, "Avg Intensity")
 
         self.layout.addWidget(self.info_gbox, 0, 0)
-        self.layout.addWidget(self.image_view, 0, 1)
+        self.layout.addWidget(self.plot_tabs, 0, 1)
 
         self.info_layout = QtGui.QGridLayout()
         self.info_gbox.setLayout(self.info_layout)
@@ -825,8 +832,6 @@ class LineROIWidget(QtGui.QWidget):
         self.y2_sbox.setMinimum(-1000)
         self.y2_sbox.setMaximum(1000)
         self.y2_sbox.setDecimals(6)
-        #self.outline_btn = QtGui.QPushButton("Outline Image")
-        #self.plot_gbox = QtGui.QGroupBox("Plot")
 
         self.info_layout.addWidget(self.visible_chkbox, 0, 0)
         self.info_layout.addWidget(self.color_btn, 0, 1)
@@ -839,7 +844,7 @@ class LineROIWidget(QtGui.QWidget):
         self.info_layout.addWidget(self.y2_lbl, 4, 0)
         self.info_layout.addWidget(self.y2_sbox, 4, 1)
 
-        self.roi.sigRegionChanged.connect(self.displaySlice)
+        self.roi.sigRegionChanged.connect(self.update)
         self.visible_chkbox.clicked.connect(self.toggleVisibility)
         self.color_btn.sigColorChanged.connect(self.changeColor)
         self.x1_sbox.valueChanged.connect(self.updatePosition)
@@ -853,10 +858,12 @@ class LineROIWidget(QtGui.QWidget):
 
     # --------------------------------------------------------------------------
 
-    def displaySlice(self):
+    def update(self):
         dataset = self.main_widget.data_widget.dataset
+        rect = self.main_widget.data_widget.dataset_rect
         image_item = self.main_widget.data_widget.imageItem
         axes = self.main_widget.data_widget.axes
+        slice_direction = self.main_widget.data_widget.slice_direction
 
         if dataset != [] or dataset != None:
             try:
@@ -868,9 +875,28 @@ class LineROIWidget(QtGui.QWidget):
                 norm_slice = norm(slice)
                 color_slice = plt.cm.jet(norm_slice)
 
+                if slice_direction == None or slice_direction == "X(H)":
+                    x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
+                    intensities = np.mean(slice, axis=1)
+                    self.plot_widget.setLabel(axis="left", text="Average Intensity")
+                    self.plot_widget.setLabel(axis="bottom", text="H")
+                elif slice_direction == "Y(K)":
+                    x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
+                    intensities = np.mean(slice, axis=0)
+                    self.plot_widget.setLabel(axis="left", text="Average Intensity")
+                    self.plot_widget.setLabel(axis="bottom", text="K")
+                else:
+                    x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
+                    intensities = np.mean(slice, axis=0)
+                    self.plot_widget.setLabel(axis="left", text="Average Intensity")
+                    self.plot_widget.setLabel(axis="bottom", text="L")
+
                 self.image_view.setImage(color_slice)
+                self.plot_widget.plot(x_values, intensities, clear=True)
+
             except ValueError:
                 self.image_view.clear()
+                self.plot_widget.clear()
 
     # --------------------------------------------------------------------------
 
