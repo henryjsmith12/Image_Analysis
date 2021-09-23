@@ -933,10 +933,11 @@ class LineROIWidget(QtGui.QWidget):
 
         self.plot_tabs = QtGui.QTabWidget()
 
-        self.image_view = pg.ImageView()
+        self.image_view = pg.ImageView(view=pg.PlotItem())
         self.image_view.ui.histogram.hide()
         self.image_view.ui.roiBtn.hide()
         self.image_view.ui.menuBtn.hide()
+        self.image_view.view.hideAxis('left')
         self.plot_widget = pg.PlotWidget()
 
         self.plot_tabs.addTab(self.image_view, "Slice")
@@ -1018,16 +1019,22 @@ class LineROIWidget(QtGui.QWidget):
                 if slice_direction == None or slice_direction == "X(H)":
                     x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
                     intensities = np.mean(slice, axis=1)
+
+                    self.image_view.view.setLabel(axis="bottom", text="H")
                     self.plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.plot_widget.setLabel(axis="bottom", text="H")
                 elif slice_direction == "Y(K)":
                     x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
                     intensities = np.mean(slice, axis=0)
+
+                    self.image_view.view.setLabel(axis="bottom", text="K")
                     self.plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.plot_widget.setLabel(axis="bottom", text="K")
                 else:
                     x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
                     intensities = np.mean(slice, axis=0)
+
+                    self.image_view.view.setLabel(axis="bottom", text="L")
                     self.plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.plot_widget.setLabel(axis="bottom", text="L")
 
