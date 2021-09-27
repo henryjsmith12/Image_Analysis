@@ -919,35 +919,13 @@ class LineROIWidget(QtGui.QWidget):
         self.line_roi_analysis_widget = parent
         self.main_widget = self.line_roi_analysis_widget.main_widget
 
-        self.layout = QtGui.QGridLayout()
-        self.setLayout(self.layout)
-
-        self.roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
-        self.main_widget.data_widget.addItem(self.roi)
-        self.roi.hide()
-        self.pen = pg.mkPen(width=3)
-        self.roi.setPen(self.pen)
-        self.handle_1 = self.roi.getHandles()[0]
-        self.handle_2 = self.roi.getHandles()[1]
         self.info_gbox = QtGui.QGroupBox()
-
-        self.plot_tabs = QtGui.QTabWidget()
-
-        self.image_view = pg.ImageView(view=pg.PlotItem())
-        self.image_view.ui.histogram.hide()
-        self.image_view.ui.roiBtn.hide()
-        self.image_view.ui.menuBtn.hide()
-        self.image_view.view.hideAxis('left')
-        self.plot_widget = pg.PlotWidget()
-
-        self.plot_tabs.addTab(self.image_view, "Slice")
-        self.plot_tabs.addTab(self.plot_widget, "Avg Intensity")
-
-        self.layout.addWidget(self.info_gbox, 0, 0)
-        self.layout.addWidget(self.plot_tabs, 0, 1)
-
         self.info_layout = QtGui.QGridLayout()
         self.info_gbox.setLayout(self.info_layout)
+        self.info_gbox.setMinimumSize(100, 400)
+        self.info_scroll_area = QtGui.QScrollArea()
+        self.info_scroll_area.setWidget(self.info_gbox)
+        self.info_scroll_area.setWidgetResizable(True)
 
         self.visible_chkbox = QtGui.QCheckBox("Visible")
         self.color_btn = pg.ColorButton()
@@ -972,6 +950,18 @@ class LineROIWidget(QtGui.QWidget):
         self.y2_sbox.setMaximum(1000)
         self.y2_sbox.setDecimals(6)
         self.center_btn = QtGui.QPushButton("Center")
+        self.mouse_intensity_lbl = QtGui.QLabel("Intensity:")
+        self.mouse_intensity_txtbox = QtGui.QLineEdit()
+        self.mouse_intensity_txtbox.setReadOnly(True)
+        self.mouse_h_lbl = QtGui.QLabel("H:")
+        self.mouse_h_txtbox = QtGui.QLineEdit()
+        self.mouse_h_txtbox.setReadOnly(True)
+        self.mouse_k_lbl = QtGui.QLabel("K:")
+        self.mouse_k_txtbox = QtGui.QLineEdit()
+        self.mouse_k_txtbox.setReadOnly(True)
+        self.mouse_l_lbl = QtGui.QLabel("L:")
+        self.mouse_l_txtbox = QtGui.QLineEdit()
+        self.mouse_l_txtbox.setReadOnly(True)
 
         self.info_layout.addWidget(self.visible_chkbox, 0, 0)
         self.info_layout.addWidget(self.color_btn, 0, 1)
@@ -984,6 +974,39 @@ class LineROIWidget(QtGui.QWidget):
         self.info_layout.addWidget(self.y2_lbl, 4, 0)
         self.info_layout.addWidget(self.y2_sbox, 4, 1)
         self.info_layout.addWidget(self.center_btn, 5, 0, 1, 2)
+        self.info_layout.addWidget(self.mouse_intensity_lbl, 6, 0)
+        self.info_layout.addWidget(self.mouse_intensity_txtbox, 6, 1)
+        self.info_layout.addWidget(self.mouse_h_lbl, 7, 0)
+        self.info_layout.addWidget(self.mouse_h_txtbox, 7, 1)
+        self.info_layout.addWidget(self.mouse_k_lbl, 8, 0)
+        self.info_layout.addWidget(self.mouse_k_txtbox, 8, 1)
+        self.info_layout.addWidget(self.mouse_l_lbl, 9, 0)
+        self.info_layout.addWidget(self.mouse_l_txtbox, 9, 1)
+
+        self.roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
+        self.main_widget.data_widget.addItem(self.roi)
+        self.roi.hide()
+        self.pen = pg.mkPen(width=3)
+        self.roi.setPen(self.pen)
+        self.handle_1 = self.roi.getHandles()[0]
+        self.handle_2 = self.roi.getHandles()[1]
+        self.image_view = pg.ImageView(view=pg.PlotItem())
+        self.image_view.ui.histogram.hide()
+        self.image_view.ui.roiBtn.hide()
+        self.image_view.ui.menuBtn.hide()
+        self.image_view.view.hideAxis('left')
+        self.slice_plot_widget = pg.PlotWidget()
+        self.linecut_plot_widget = pg.PlotWidget()
+
+        self.plot_tabs = QtGui.QTabWidget()
+        self.plot_tabs.addTab(self.image_view, "Slice")
+        self.plot_tabs.addTab(self.slice_plot_widget, "Slice Intensity")
+        self.plot_tabs.addTab(self.linecut_plot_widget, "Line Cut Intensity")
+        
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+        self.layout.addWidget(self.info_scroll_area, 0, 0)
+        self.layout.addWidget(self.plot_tabs, 0, 1)
 
         self.roi.sigRegionChanged.connect(self.update)
         self.visible_chkbox.clicked.connect(self.toggleVisibility)
@@ -1021,29 +1044,29 @@ class LineROIWidget(QtGui.QWidget):
                     intensities = np.mean(slice, axis=1)
 
                     self.image_view.view.setLabel(axis="bottom", text="H")
-                    self.plot_widget.setLabel(axis="left", text="Average Intensity")
-                    self.plot_widget.setLabel(axis="bottom", text="H")
+                    self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
+                    self.slice_plot_widget.setLabel(axis="bottom", text="H")
                 elif slice_direction == "Y(K)":
                     x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
                     intensities = np.mean(slice, axis=0)
 
                     self.image_view.view.setLabel(axis="bottom", text="K")
-                    self.plot_widget.setLabel(axis="left", text="Average Intensity")
-                    self.plot_widget.setLabel(axis="bottom", text="K")
+                    self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
+                    self.slice_plot_widget.setLabel(axis="bottom", text="K")
                 else:
                     x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
                     intensities = np.mean(slice, axis=0)
 
                     self.image_view.view.setLabel(axis="bottom", text="L")
-                    self.plot_widget.setLabel(axis="left", text="Average Intensity")
-                    self.plot_widget.setLabel(axis="bottom", text="L")
+                    self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
+                    self.slice_plot_widget.setLabel(axis="bottom", text="L")
 
                 self.image_view.setImage(color_slice)
-                self.plot_widget.plot(x_values, intensities, clear=True)
+                self.slice_plot_widget.plot(x_values, intensities, clear=True)
 
             except ValueError:
                 self.image_view.clear()
-                self.plot_widget.clear()
+                self.slice_plot_widget.clear()
 
     # --------------------------------------------------------------------------
 
