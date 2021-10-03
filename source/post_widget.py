@@ -997,12 +997,15 @@ class LineROIWidget(QtGui.QWidget):
         self.image_view.view.hideAxis('left')
         self.slice_plot_widget = pg.PlotWidget()
         self.linecut_plot_widget = pg.PlotWidget()
+        self.scene_point = None
+        self.view_box = self.image_view.view.getViewBox()
+        self.view_box.setAspectLocked(False)
 
         self.plot_tabs = QtGui.QTabWidget()
         self.plot_tabs.addTab(self.image_view, "Slice")
         self.plot_tabs.addTab(self.slice_plot_widget, "Slice Intensity")
         self.plot_tabs.addTab(self.linecut_plot_widget, "Line Cut Intensity")
-        
+
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
         self.layout.addWidget(self.info_scroll_area, 0, 0)
@@ -1017,6 +1020,7 @@ class LineROIWidget(QtGui.QWidget):
         self.y2_sbox.valueChanged.connect(self.updatePosition)
         self.roi.sigRegionChanged.connect(self.updateAnalysis)
         self.center_btn.clicked.connect(self.center)
+        self.view_box.scene().sigMouseMoved.connect(self.updateMouseInfo)
 
         self.updating = ""
 
@@ -1031,38 +1035,51 @@ class LineROIWidget(QtGui.QWidget):
 
         if dataset != [] or dataset != None:
             try:
-                slice = self.roi.getArrayRegion(dataset, image_item, \
-                    axes=(axes.get("x"), axes.get("y")))
+                self.slice, self.slice_coords = self.roi.getArrayRegion(dataset, image_item, \
+                    axes=(axes.get("x"), axes.get("y")), returnMappedCoords=True)
+                self.slice_coords = self.slice_coords.astype(int)
 
                 colormap_max = np.amax(dataset)
                 norm = colors.LogNorm(vmax=colormap_max)
-                norm_slice = norm(slice)
+                norm_slice = norm(self.slice)
                 color_slice = plt.cm.jet(norm_slice)
 
                 if slice_direction == None or slice_direction == "X(H)":
-                    x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
-                    intensities = np.mean(slice, axis=1)
+                    self.x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
+                    self.image_x_coords = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
+                    self.image_y_coords = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
+                    intensities = np.mean(self.slice, axis=1)
+                    pos = (rect[0][0], 0)
+                    scale = ((rect[0][-1] - rect[0][0]) / dataset.shape[0], 1)
 
                     self.image_view.view.setLabel(axis="bottom", text="H")
                     self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.slice_plot_widget.setLabel(axis="bottom", text="H")
                 elif slice_direction == "Y(K)":
-                    x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
-                    intensities = np.mean(slice, axis=0)
+                    self.x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
+                    self.image_x_coords = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
+                    self.image_y_coords = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
+                    intensities = np.mean(self.slice, axis=0)
+                    pos = (rect[1][0], 0)
+                    scale = ((rect[1][-1] - rect[1][0]) / dataset.shape[1], 1)
 
                     self.image_view.view.setLabel(axis="bottom", text="K")
                     self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.slice_plot_widget.setLabel(axis="bottom", text="K")
                 else:
-                    x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
-                    intensities = np.mean(slice, axis=0)
+                    self.x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
+                    self.image_x_coords = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
+                    self.image_y_coords = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
+                    intensities = np.mean(self.slice, axis=0)
+                    pos = (rect[2][0], 0)
+                    scale = ((rect[2][-1] - rect[2][0]) / dataset.shape[2], 1)
 
                     self.image_view.view.setLabel(axis="bottom", text="L")
                     self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.slice_plot_widget.setLabel(axis="bottom", text="L")
 
-                self.image_view.setImage(color_slice)
-                self.slice_plot_widget.plot(x_values, intensities, clear=True)
+                self.image_view.setImage(color_slice, pos=pos, scale=scale)
+                self.slice_plot_widget.plot(self.x_values, intensities, clear=True)
 
             except ValueError:
                 self.image_view.clear()
@@ -1129,6 +1146,51 @@ class LineROIWidget(QtGui.QWidget):
         self.roi.movePoint(self.handle_2, (x2, y2))
         self.updating = ""
         self.updateAnalysis()
+
+    # --------------------------------------------------------------------------
+
+    def updateMouseInfo(self, scene_point=None):
+        dataset = self.main_widget.data_widget.dataset
+        rect = self.main_widget.data_widget.dataset_rect
+        slice_direction = self.main_widget.data_widget.slice_direction
+
+        if scene_point != None:
+            self.scene_point = scene_point
+        if self.scene_point != None:
+            self.view_point = self.view_box.mapSceneToView(self.scene_point)
+
+            # x and y values of mouse
+            x, y = self.view_point.x(), self.view_point.y()
+        else:
+            return
+
+        if slice_direction == None or slice_direction == "X(H)":
+            h_index = int(dataset.shape[0] * (x - rect[0][0]) / (rect[0][-1] - rect[0][0]))
+            k_index = self.slice_coords[1][int(y)]
+            l_index = self.slice_coords[0][int(y)]
+            self.mouse_h_txtbox.setText(str(x))
+            self.mouse_k_txtbox.setText(str(self.image_y_coords[k_index]))
+            self.mouse_l_txtbox.setText(str(self.image_x_coords[l_index]))
+        elif slice_direction == "Y(K)":
+            h_index = self.slice_coords[1][int(y)]
+            k_index = int(dataset.shape[1] * (x - rect[1][0]) / (rect[1][-1] - rect[1][0]))
+            l_index = self.slice_coords[0][int(y)]
+            self.mouse_h_txtbox.setText(str(self.image_y_coords[h_index]))
+            self.mouse_k_txtbox.setText(str(x))
+            self.mouse_l_txtbox.setText(str(self.image_x_coords[l_index]))
+        else:
+            h_index = self.slice_coords[1][int(y)]
+            k_index = self.slice_coords[0][int(y)]
+            l_index = int(dataset.shape[2] * (x - rect[2][0]) / (rect[2][-1] - rect[2][0]))
+            self.mouse_h_txtbox.setText(str(self.image_y_coords[h_index]))
+            self.mouse_k_txtbox.setText(str(self.image_x_coords[k_index]))
+            self.mouse_l_txtbox.setText(str(x))
+
+        try:
+            intensity = int(dataset[h_index][k_index][l_index])
+            self.mouse_intensity_txtbox.setText(str(intensity))
+        except IndexError:
+            self.mouse_intensity_txtbox.setText("")
 
 # ==============================================================================
 
