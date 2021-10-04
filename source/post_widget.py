@@ -1056,6 +1056,7 @@ class LineROIWidget(QtGui.QWidget):
                     self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.slice_plot_widget.setLabel(axis="bottom", text="H")
                 elif slice_direction == "Y(K)":
+                    color_slice = np.swapaxes(color_slice, 0, 1)
                     self.x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
                     self.image_x_coords = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
                     self.image_y_coords = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
@@ -1067,6 +1068,7 @@ class LineROIWidget(QtGui.QWidget):
                     self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.slice_plot_widget.setLabel(axis="bottom", text="K")
                 else:
+                    color_slice = np.swapaxes(color_slice, 0, 1)
                     self.x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
                     self.image_x_coords = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
                     self.image_y_coords = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
@@ -1135,8 +1137,8 @@ class LineROIWidget(QtGui.QWidget):
             x1, y1 = round(rect[2][0], 6), round(rect[1][0], 6)
             x2, y2 = round(rect[2][-1], 6), round(rect[1][-1], 6)
         elif slice_direction == "Y(K)":
-            x1, y1 = round(rect[0][0], 6), round(rect[2][0], 6)
-            x2, y2 = round(rect[0][-1], 6), round(rect[2][-1], 6)
+            x1, y1 = round(rect[2][0], 6), round(rect[0][0], 6)
+            x2, y2 = round(rect[2][-1], 6), round(rect[0][-1], 6)
         else:
             x1, y1 = round(rect[1][0], 6), round(rect[0][0], 6)
             x2, y2 = round(rect[1][-1], 6), round(rect[0][-1], 6)
@@ -1166,25 +1168,26 @@ class LineROIWidget(QtGui.QWidget):
 
         if slice_direction == None or slice_direction == "X(H)":
             h_index = int(dataset.shape[0] * (x - rect[0][0]) / (rect[0][-1] - rect[0][0]))
-            k_index = self.slice_coords[1][int(y)]
-            l_index = self.slice_coords[0][int(y)]
-            self.mouse_h_txtbox.setText(str(x))
-            self.mouse_k_txtbox.setText(str(self.image_y_coords[k_index]))
-            self.mouse_l_txtbox.setText(str(self.image_x_coords[l_index]))
+            k_index = self.slice_coords[1][int(y) + 1]
+            l_index = self.slice_coords[0][int(y) + 1]
+            self.mouse_h_txtbox.setText(str(round(x, 8)))
+            self.mouse_k_txtbox.setText(str(round(self.image_y_coords[k_index], 8)))
+            self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 8)))
         elif slice_direction == "Y(K)":
-            h_index = self.slice_coords[1][int(y)]
+            h_index = self.slice_coords[1][int(y) + 1]
             k_index = int(dataset.shape[1] * (x - rect[1][0]) / (rect[1][-1] - rect[1][0]))
-            l_index = self.slice_coords[0][int(y)]
-            self.mouse_h_txtbox.setText(str(self.image_y_coords[h_index]))
-            self.mouse_k_txtbox.setText(str(x))
-            self.mouse_l_txtbox.setText(str(self.image_x_coords[l_index]))
+            l_index = self.slice_coords[0][int(y) + 1]
+
+            self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 8)))
+            self.mouse_k_txtbox.setText(str(round(x, 8)))
+            self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 8)))
         else:
-            h_index = self.slice_coords[1][int(y)]
-            k_index = self.slice_coords[0][int(y)]
+            h_index = self.slice_coords[1][int(y) + 1]
+            k_index = self.slice_coords[0][int(y) + 1]
             l_index = int(dataset.shape[2] * (x - rect[2][0]) / (rect[2][-1] - rect[2][0]))
-            self.mouse_h_txtbox.setText(str(self.image_y_coords[h_index]))
-            self.mouse_k_txtbox.setText(str(self.image_x_coords[k_index]))
-            self.mouse_l_txtbox.setText(str(x))
+            self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 8)))
+            self.mouse_k_txtbox.setText(str(round(self.image_x_coords[k_index], 8)))
+            self.mouse_l_txtbox.setText(str(round(x, 8)))
 
         try:
             intensity = int(dataset[h_index][k_index][l_index])
