@@ -740,8 +740,8 @@ class ROIWidget(QtGui.QWidget):
             self.roi.setPos((rect[2][0], rect[1][0]))
             self.roi.setSize((rect[2][-1] - rect[2][0], rect[1][-1] - rect[1][0]))
         elif slice_direction == "Y(K)":
-            self.roi.setPos((rect[0][0], rect[2][0]))
-            self.roi.setSize((rect[0][-1] - rect[0][0], rect[2][-1] - rect[2][0]))
+            self.roi.setPos((rect[2][0], rect[0][0]))
+            self.roi.setSize((rect[2][-1] - rect[2][0], rect[0][-1] - rect[0][0]))
         else:
             self.roi.setPos((rect[1][0], rect[0][0]))
             self.roi.setSize((rect[1][-1] - rect[1][0], rect[0][-1] - rect[0][0]))
@@ -1038,6 +1038,7 @@ class LineROIWidget(QtGui.QWidget):
         self.y2_sbox.valueChanged.connect(self.updatePosition)
         self.roi.sigRegionChanged.connect(self.updateAnalysis)
         self.center_btn.clicked.connect(self.center)
+        self.line_cut_center_btn.clicked.connect(self.centerLineCut)
         self.view_box.scene().sigMouseMoved.connect(self.updateMouseInfo)
 
         self.updating = ""
@@ -1069,9 +1070,7 @@ class LineROIWidget(QtGui.QWidget):
                     intensities = np.mean(self.slice, axis=1)
                     pos = (rect[0][0], 0)
                     scale = ((rect[0][-1] - rect[0][0]) / dataset.shape[0], 1)
-
                     self.image_view.view.setLabel(axis="bottom", text="H")
-                    self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.slice_plot_widget.setLabel(axis="bottom", text="H")
                 elif slice_direction == "Y(K)":
                     color_slice = np.swapaxes(color_slice, 0, 1)
@@ -1081,9 +1080,7 @@ class LineROIWidget(QtGui.QWidget):
                     intensities = np.mean(self.slice, axis=0)
                     pos = (rect[1][0], 0)
                     scale = ((rect[1][-1] - rect[1][0]) / dataset.shape[1], 1)
-
                     self.image_view.view.setLabel(axis="bottom", text="K")
-                    self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.slice_plot_widget.setLabel(axis="bottom", text="K")
                 else:
                     color_slice = np.swapaxes(color_slice, 0, 1)
@@ -1093,13 +1090,15 @@ class LineROIWidget(QtGui.QWidget):
                     intensities = np.mean(self.slice, axis=0)
                     pos = (rect[2][0], 0)
                     scale = ((rect[2][-1] - rect[2][0]) / dataset.shape[2], 1)
-
                     self.image_view.view.setLabel(axis="bottom", text="L")
-                    self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
                     self.slice_plot_widget.setLabel(axis="bottom", text="L")
+
+                self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
+                self.line_cut_plot_widget.setLabel(axis="left", text="Intensity")
 
                 self.image_view.setImage(color_slice, pos=pos, scale=scale)
                 self.slice_plot_widget.plot(self.x_values, intensities, clear=True)
+                self.updateLineCut()
 
             except ValueError:
                 self.image_view.clear()
@@ -1108,9 +1107,19 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updateLineCut(self):
+        slice_direction = self.main_widget.data_widget.slice_direction
+
         if self.slice != [] or self.slice != None:
             try:
-                self.line_cut = self.line_cut_roi.getArrayRegion(self.slice, self.image_view.imageItem)
+                if slice_direction == None or slice_direction == "X(H)":
+                    self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(self.slice, \
+                            self.image_view.getImageItem(), returnMappedCoords=True)
+                    self.line_cut_coords = self.line_cut_coords.astype(int)
+                else:
+                    self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(np.swapaxes(self.slice, 0, 1), \
+                            self.image_view.getImageItem(), returnMappedCoords=True)
+                    self.line_cut_coords = self.line_cut_coords.astype(int)
+
                 self.line_cut_plot_widget.plot(self.line_cut, clear=True)
             except ValueError:
                 self.line_cut_plot_widget.clear()
@@ -1194,6 +1203,25 @@ class LineROIWidget(QtGui.QWidget):
 
     # --------------------------------------------------------------------------
 
+    def centerLineCut(self):
+        rect = self.main_widget.data_widget.dataset_rect
+        slice_direction = self.main_widget.data_widget.slice_direction
+
+        if slice_direction == None or slice_direction == "X(H)":
+            x1, y1 = round(rect[0][0], 6), 0
+            x2, y2 = round(rect[0][-1], 6), self.slice.shape[1]
+        elif slice_direction == "Y(K)":
+            x1, y1 = round(rect[1][0], 6), 0
+            x2, y2 = round(rect[1][-1], 6), self.slice.shape[1]
+        else:
+            x1, y1 = round(rect[2][0], 6), 0
+            x2, y2 = round(rect[2][-1], 6), self.slice.shape[1]
+
+        self.line_cut_roi.movePoint(self.line_cut_handle_1, (x1, y1))
+        self.line_cut_roi.movePoint(self.line_cut_handle_2, (x2, y2))
+
+    # --------------------------------------------------------------------------
+
     def updateMouseInfo(self, scene_point=None):
         dataset = self.main_widget.data_widget.dataset
         rect = self.main_widget.data_widget.dataset_rect
@@ -1211,13 +1239,13 @@ class LineROIWidget(QtGui.QWidget):
 
         if slice_direction == None or slice_direction == "X(H)":
             h_index = int(dataset.shape[0] * (x - rect[0][0]) / (rect[0][-1] - rect[0][0]))
-            k_index = self.slice_coords[1][int(y) + 1]
+            k_index = self.slice_coords[1][int(y)]
             l_index = self.slice_coords[0][int(y) + 1]
             self.mouse_h_txtbox.setText(str(round(x, 8)))
             self.mouse_k_txtbox.setText(str(round(self.image_y_coords[k_index], 8)))
             self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 8)))
         elif slice_direction == "Y(K)":
-            h_index = self.slice_coords[1][int(y) + 1]
+            h_index = self.slice_coords[1][int(y)]
             k_index = int(dataset.shape[1] * (x - rect[1][0]) / (rect[1][-1] - rect[1][0]))
             l_index = self.slice_coords[0][int(y) + 1]
 
@@ -1225,7 +1253,7 @@ class LineROIWidget(QtGui.QWidget):
             self.mouse_k_txtbox.setText(str(round(x, 8)))
             self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 8)))
         else:
-            h_index = self.slice_coords[1][int(y) + 1]
+            h_index = self.slice_coords[1][int(y)]
             k_index = self.slice_coords[0][int(y) + 1]
             l_index = int(dataset.shape[2] * (x - rect[2][0]) / (rect[2][-1] - rect[2][0]))
             self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 8)))
