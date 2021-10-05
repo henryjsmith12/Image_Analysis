@@ -962,6 +962,9 @@ class LineROIWidget(QtGui.QWidget):
         self.mouse_l_lbl = QtGui.QLabel("L:")
         self.mouse_l_txtbox = QtGui.QLineEdit()
         self.mouse_l_txtbox.setReadOnly(True)
+        self.line_cut_visible_chkbox = QtGui.QCheckBox("Line Cut")
+        self.line_cut_color_btn = pg.ColorButton()
+        self.line_cut_center_btn = QtGui.QPushButton("Center ")
 
         self.info_layout.addWidget(self.visible_chkbox, 0, 0)
         self.info_layout.addWidget(self.color_btn, 0, 1)
@@ -982,6 +985,9 @@ class LineROIWidget(QtGui.QWidget):
         self.info_layout.addWidget(self.mouse_k_txtbox, 8, 1)
         self.info_layout.addWidget(self.mouse_l_lbl, 9, 0)
         self.info_layout.addWidget(self.mouse_l_txtbox, 9, 1)
+        self.info_layout.addWidget(self.line_cut_visible_chkbox, 10, 0)
+        self.info_layout.addWidget(self.line_cut_color_btn, 10, 1)
+        self.info_layout.addWidget(self.line_cut_center_btn, 11, 0, 1, 2)
 
         self.roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
         self.main_widget.data_widget.addItem(self.roi)
@@ -996,15 +1002,24 @@ class LineROIWidget(QtGui.QWidget):
         self.image_view.ui.menuBtn.hide()
         self.image_view.view.hideAxis('left')
         self.slice_plot_widget = pg.PlotWidget()
-        self.linecut_plot_widget = pg.PlotWidget()
+        self.line_cut_plot_widget = pg.PlotWidget()
+        self.line_cut_plot_widget.hideAxis('bottom')
         self.scene_point = None
         self.view_box = self.image_view.view.getViewBox()
         self.view_box.setAspectLocked(False)
 
+        self.line_cut_roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
+        self.image_view.addItem(self.line_cut_roi)
+        self.line_cut_roi.hide()
+        self.line_cut_pen = pg.mkPen(width=3)
+        self.line_cut_roi.setPen(self.line_cut_pen)
+        self.line_cut_handle_1 = self.line_cut_roi.getHandles()[0]
+        self.line_cut_handle_2 = self.line_cut_roi.getHandles()[1]
+
         self.plot_tabs = QtGui.QTabWidget()
         self.plot_tabs.addTab(self.image_view, "Slice")
         self.plot_tabs.addTab(self.slice_plot_widget, "Slice Intensity")
-        self.plot_tabs.addTab(self.linecut_plot_widget, "Line Cut Intensity")
+        self.plot_tabs.addTab(self.line_cut_plot_widget, "Line Cut Intensity")
 
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
@@ -1014,6 +1029,9 @@ class LineROIWidget(QtGui.QWidget):
         self.roi.sigRegionChanged.connect(self.update)
         self.visible_chkbox.clicked.connect(self.toggleVisibility)
         self.color_btn.sigColorChanged.connect(self.changeColor)
+        self.line_cut_roi.sigRegionChanged.connect(self.updateLineCut)
+        self.line_cut_visible_chkbox.clicked.connect(self.toggleLineCutVisibility)
+        self.line_cut_color_btn.sigColorChanged.connect(self.changeLineCutColor)
         self.x1_sbox.valueChanged.connect(self.updatePosition)
         self.y1_sbox.valueChanged.connect(self.updatePosition)
         self.x2_sbox.valueChanged.connect(self.updatePosition)
@@ -1089,6 +1107,16 @@ class LineROIWidget(QtGui.QWidget):
 
     # --------------------------------------------------------------------------
 
+    def updateLineCut(self):
+        if self.slice != [] or self.slice != None:
+            try:
+                self.line_cut = self.line_cut_roi.getArrayRegion(self.slice, self.image_view.imageItem)
+                self.line_cut_plot_widget.plot(self.line_cut, clear=True)
+            except ValueError:
+                self.line_cut_plot_widget.clear()
+
+    # --------------------------------------------------------------------------
+
     def toggleVisibility(self, state):
         if state:
             self.roi.show()
@@ -1097,10 +1125,25 @@ class LineROIWidget(QtGui.QWidget):
 
     # --------------------------------------------------------------------------
 
+    def toggleLineCutVisibility(self, state):
+        if state:
+            self.line_cut_roi.show()
+        else:
+            self.line_cut_roi.hide()
+
+    # --------------------------------------------------------------------------
+
     def changeColor(self):
         color = self.color_btn.color()
         pen = pg.mkPen(color, width=3)
         self.roi.setPen(pen)
+
+    # --------------------------------------------------------------------------
+
+    def changeLineCutColor(self):
+        color = self.line_cut_color_btn.color()
+        pen = pg.mkPen(color, width=3)
+        self.line_cut_roi.setPen(pen)
 
     # --------------------------------------------------------------------------
 
