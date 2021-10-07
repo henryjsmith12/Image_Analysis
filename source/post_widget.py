@@ -60,21 +60,33 @@ class PostPlottingWidget(QtGui.QWidget):
         """
 
         self.data_selection_dock = Dock("Data Selection", size=(100, 100), hideTitle=True)
-        self.options_dock = Dock("Options", size=(100, 100), hideTitle=True)
-        self.analysis_dock = Dock("Analysis", size=(200, 100))
-        self.roi_analysis_dock = Dock("ROI", size=(200, 100))
-        self.data_dock = Dock("Data", size=(100, 100), hideTitle=True)
-        self.line_roi_analysis_dock = Dock("Slicing", size=(200, 100))
+        #self.options_dock = Dock("Options", size=(100, 100), hideTitle=True)
+        self.analysis_dock = Dock("Analysis", size=(400, 100))
+        self.roi_analysis_dock = Dock("ROI", size=(400, 100))
+        self.data_dock = Dock("Data", size=(400, 100), hideTitle=True)
+        self.line_roi_analysis_dock = Dock("Slicing", size=(400, 100))
 
         # Docks are added in positions relative to docks already in area
         self.dock_area.addDock(self.data_selection_dock)
+        self.dock_area.addDock(self.line_roi_analysis_dock, "bottom", self.data_selection_dock)
+        self.dock_area.addDock(self.analysis_dock, "above", self.line_roi_analysis_dock)
+        self.dock_area.addDock(self.roi_analysis_dock, "above", self.analysis_dock)
+
+
+        """self.dock_area.addDock(self.line_roi_analysis_dock, "bottom", self.data_selection_dock)
+        self.dock_area.addDock(self.line_roi_analysis_dock, "above", self.line_roi_analysis_dock)
+        self.dock_area.addDock(self.roi_analysis_dock, "above", self.line_roi_analysis_dock)"""
+
+
         self.dock_area.addDock(self.data_dock, "right", self.data_selection_dock)
-        self.dock_area.addDock(self.options_dock, "bottom", self.data_selection_dock)
-        self.dock_area.addDock(self.analysis_dock, "bottom", self.data_dock)
-        self.dock_area.addDock(self.line_roi_analysis_dock, "above", self.analysis_dock)
-        self.dock_area.addDock(self.roi_analysis_dock, "above", self.line_roi_analysis_dock)
+        """
+        #self.dock_area.addDock(self.options_dock, "bottom", self.data_selection_dock)
+
+        self.dock_area.moveDock(self.analysis_dock, "bottom", self.data_selection_dock)
+        self.dock_area.moveDock(self.data_dock, "top", self.analysis_dock)
+
         self.dock_area.moveDock(self.analysis_dock, "above", self.roi_analysis_dock)
-        self.dock_area.moveDock(self.analysis_dock, "above", self.line_roi_analysis_dock)
+        self.dock_area.moveDock(self.analysis_dock, "above", self.line_roi_analysis_dock)"""
 
     # --------------------------------------------------------------------------
 
@@ -85,14 +97,14 @@ class PostPlottingWidget(QtGui.QWidget):
         """
 
         self.data_selection_widget = DataSelectionWidget(self)
-        self.options_widget = OptionsWidget(self)
+        #self.options_widget = OptionsWidget(self)
         self.analysis_widget = AnalysisWidget(self)
         self.roi_analysis_widget = ROIAnalysisWidget(self)
         self.data_widget = DataWidget(self)
         self.line_roi_analysis_widget = LineROIAnalysisWidget(self)
 
         self.data_selection_dock.addWidget(self.data_selection_widget)
-        self.options_dock.addWidget(self.options_widget)
+        #self.options_dock.addWidget(self.options_widget)
         self.analysis_dock.addWidget(self.analysis_widget)
         self.roi_analysis_dock.addWidget(self.roi_analysis_widget)
         self.line_roi_analysis_dock.addWidget(self.line_roi_analysis_widget)
@@ -124,6 +136,9 @@ class DataSelectionWidget(QtGui.QWidget):
         self.conversion_chkbox = QtGui.QCheckBox("Convert Scan to HKL")
         self.conversion_btn = QtGui.QPushButton("Parameters")
         self.process_btn = QtGui.QPushButton("Process")
+        self.slice_direction_lbl = QtGui.QLabel("Slice Direction:")
+        self.slice_direction_cbox = QtGui.QComboBox()
+        self.slice_direction_cbox.addItems(["X(H)", "Y(K)", "Z(L)"])
 
         self.layout.addWidget(self.project_btn, 0, 0)
         self.layout.addWidget(self.project_txtbox, 0, 1)
@@ -132,12 +147,15 @@ class DataSelectionWidget(QtGui.QWidget):
         self.layout.addWidget(self.conversion_chkbox, 3, 0)
         self.layout.addWidget(self.conversion_btn, 3, 1)
         self.layout.addWidget(self.process_btn, 4, 0, 1, 2)
+        self.layout.addWidget(self.slice_direction_lbl, 5, 0)
+        self.layout.addWidget(self.slice_direction_cbox, 5, 1, 1, 2)
 
         # Signals
         self.project_btn.clicked.connect(self.setProjectDirectory)
         self.spec_list.itemClicked.connect(self.setScanList)
         self.conversion_btn.clicked.connect(self.showConversionDialog)
         self.process_btn.clicked.connect(self.loadData)
+        self.slice_direction_cbox.currentTextChanged.connect(self.changeSliceDirection)
 
     # --------------------------------------------------------------------------
 
@@ -246,6 +264,12 @@ class DataSelectionWidget(QtGui.QWidget):
 
         self.main_widget.data_widget.displayDataset(self.dataset, new_dataset=True, \
             dataset_rect=self.dataset_rect)
+
+    # --------------------------------------------------------------------------
+
+    def changeSliceDirection(self):
+        direction = self.sender().currentText()
+        self.main_widget.data_widget.displayDataset(self.main_widget.data_widget.dataset, direction)
 
 # ==============================================================================
 
@@ -392,7 +416,7 @@ class DataWidget(pg.ImageView):
             xvals=slider_ticks)
         self.setCurrentIndex(0)
 
-        self.main_widget.options_widget.setEnabled(True)
+        #self.main_widget.options_widget.setEnabled(True)
         self.main_widget.analysis_widget.setEnabled(True)
         self.main_widget.roi_analysis_widget.setEnabled(True)
         self.main_widget.line_roi_analysis_widget.setEnabled(True)
@@ -922,13 +946,77 @@ class LineROIWidget(QtGui.QWidget):
         self.info_gbox = QtGui.QGroupBox()
         self.info_layout = QtGui.QGridLayout()
         self.info_gbox.setLayout(self.info_layout)
-        self.info_gbox.setMinimumSize(100, 400)
+        self.info_gbox.setMinimumSize(100, 500)
         self.info_scroll_area = QtGui.QScrollArea()
         self.info_scroll_area.setWidget(self.info_gbox)
         self.info_scroll_area.setWidgetResizable(True)
 
+        # Slice info -----------------------------------------------------------
         self.visible_chkbox = QtGui.QCheckBox("Visible")
         self.color_btn = pg.ColorButton()
+        self.center_btn = QtGui.QPushButton("Center")
+        self.mouse_intensity_lbl = QtGui.QLabel("Intensity:")
+        self.mouse_intensity_txtbox = QtGui.QLineEdit()
+        self.mouse_intensity_txtbox.setReadOnly(True)
+        self.mouse_h_lbl = QtGui.QLabel("H:")
+        self.mouse_h_txtbox = QtGui.QLineEdit()
+        self.mouse_h_txtbox.setReadOnly(True)
+        self.mouse_k_lbl = QtGui.QLabel("K:")
+        self.mouse_k_txtbox = QtGui.QLineEdit()
+        self.mouse_k_txtbox.setReadOnly(True)
+        self.mouse_l_lbl = QtGui.QLabel("L:")
+        self.mouse_l_txtbox = QtGui.QLineEdit()
+        self.mouse_l_txtbox.setReadOnly(True)
+
+        self.slice_info_gbox = QtGui.QGroupBox("Slice")
+        self.slice_info_layout = QtGui.QGridLayout()
+        self.slice_info_gbox.setLayout(self.slice_info_layout)
+
+        self.slice_info_layout.addWidget(self.visible_chkbox, 0, 0, 1, 2)
+        self.slice_info_layout.addWidget(self.color_btn, 0, 2, 1, 2)
+        self.slice_info_layout.addWidget(self.center_btn, 1, 0, 1, 4)
+        self.slice_info_layout.addWidget(self.mouse_intensity_lbl, 2, 0, 1, 2)
+        self.slice_info_layout.addWidget(self.mouse_intensity_txtbox, 2, 2, 1, 2)
+        self.slice_info_layout.addWidget(self.mouse_h_lbl, 3, 0)
+        self.slice_info_layout.addWidget(self.mouse_h_txtbox, 3, 1, 1, 3)
+        self.slice_info_layout.addWidget(self.mouse_k_lbl, 4, 0)
+        self.slice_info_layout.addWidget(self.mouse_k_txtbox, 4, 1, 1, 3)
+        self.slice_info_layout.addWidget(self.mouse_l_lbl, 5, 0)
+        self.slice_info_layout.addWidget(self.mouse_l_txtbox, 5, 1, 1, 3)
+
+        # Line Cut info --------------------------------------------------------
+        self.line_cut_visible_chkbox = QtGui.QCheckBox("Visible")
+        self.line_cut_color_btn = pg.ColorButton()
+        self.line_cut_center_btn = QtGui.QPushButton("Center")
+        self.line_cut_h_lbl = QtGui.QLabel("H:")
+        self.line_cut_h_txtbox = QtGui.QLineEdit()
+        self.line_cut_h_txtbox.setReadOnly(True)
+        self.line_cut_k_lbl = QtGui.QLabel("K:")
+        self.line_cut_k_txtbox = QtGui.QLineEdit()
+        self.line_cut_k_txtbox.setReadOnly(True)
+        self.line_cut_l_lbl = QtGui.QLabel("L:")
+        self.line_cut_l_txtbox = QtGui.QLineEdit()
+        self.line_cut_l_txtbox.setReadOnly(True)
+
+        self.line_cut_info_gbox = QtGui.QGroupBox("Line Cut")
+        self.line_cut_info_layout = QtGui.QGridLayout()
+        self.line_cut_info_gbox.setLayout(self.line_cut_info_layout)
+
+        self.line_cut_info_layout.addWidget(self.line_cut_visible_chkbox, 0, 0, 1, 2)
+        self.line_cut_info_layout.addWidget(self.line_cut_color_btn, 0, 2, 1, 3)
+        self.line_cut_info_layout.addWidget(self.line_cut_center_btn, 1, 0, 1, 5)
+        self.line_cut_info_layout.addWidget(self.line_cut_h_lbl, 2, 0)
+        self.line_cut_info_layout.addWidget(self.line_cut_h_txtbox, 2, 1, 1, 4)
+        self.line_cut_info_layout.addWidget(self.line_cut_k_lbl, 3, 0)
+        self.line_cut_info_layout.addWidget(self.line_cut_k_txtbox, 3, 1, 1, 4)
+        self.line_cut_info_layout.addWidget(self.line_cut_l_lbl, 4, 0)
+        self.line_cut_info_layout.addWidget(self.line_cut_l_txtbox, 4, 1, 1, 4)
+
+        # Adding groupboxes to Info layout -------------------------------------
+        self.info_layout.addWidget(self.slice_info_gbox, 0, 0)
+        self.info_layout.addWidget(self.line_cut_info_gbox, 1, 0)
+
+        # Unused ===============================
         self.x1_lbl = QtGui.QLabel("x1 Pos:")
         self.x1_sbox = QtGui.QDoubleSpinBox()
         self.x1_sbox.setMinimum(-1000)
@@ -949,23 +1037,7 @@ class LineROIWidget(QtGui.QWidget):
         self.y2_sbox.setMinimum(-1000)
         self.y2_sbox.setMaximum(1000)
         self.y2_sbox.setDecimals(6)
-        self.center_btn = QtGui.QPushButton("Center")
-        self.mouse_intensity_lbl = QtGui.QLabel("Intensity:")
-        self.mouse_intensity_txtbox = QtGui.QLineEdit()
-        self.mouse_intensity_txtbox.setReadOnly(True)
-        self.mouse_h_lbl = QtGui.QLabel("H:")
-        self.mouse_h_txtbox = QtGui.QLineEdit()
-        self.mouse_h_txtbox.setReadOnly(True)
-        self.mouse_k_lbl = QtGui.QLabel("K:")
-        self.mouse_k_txtbox = QtGui.QLineEdit()
-        self.mouse_k_txtbox.setReadOnly(True)
-        self.mouse_l_lbl = QtGui.QLabel("L:")
-        self.mouse_l_txtbox = QtGui.QLineEdit()
-        self.mouse_l_txtbox.setReadOnly(True)
-        self.line_cut_visible_chkbox = QtGui.QCheckBox("Line Cut")
-        self.line_cut_color_btn = pg.ColorButton()
-        self.line_cut_center_btn = QtGui.QPushButton("Center ")
-
+        """
         self.info_layout.addWidget(self.visible_chkbox, 0, 0)
         self.info_layout.addWidget(self.color_btn, 0, 1)
         self.info_layout.addWidget(self.x1_lbl, 1, 0)
@@ -988,6 +1060,7 @@ class LineROIWidget(QtGui.QWidget):
         self.info_layout.addWidget(self.line_cut_visible_chkbox, 10, 0)
         self.info_layout.addWidget(self.line_cut_color_btn, 10, 1)
         self.info_layout.addWidget(self.line_cut_center_btn, 11, 0, 1, 2)
+        """
 
         self.roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
         self.main_widget.data_widget.addItem(self.roi)
@@ -1001,9 +1074,10 @@ class LineROIWidget(QtGui.QWidget):
         self.image_view.ui.roiBtn.hide()
         self.image_view.ui.menuBtn.hide()
         self.image_view.view.hideAxis('left')
-        self.slice_plot_widget = pg.PlotWidget()
-        self.line_cut_plot_widget = pg.PlotWidget()
+        self.slice_plot_widget = pg.PlotWidget(title="Slice")
+        self.line_cut_plot_widget = pg.PlotWidget(title="Line Cut")
         self.line_cut_plot_widget.hideAxis('bottom')
+
         self.scene_point = None
         self.view_box = self.image_view.view.getViewBox()
         self.view_box.setAspectLocked(False)
@@ -1016,15 +1090,16 @@ class LineROIWidget(QtGui.QWidget):
         self.line_cut_handle_1 = self.line_cut_roi.getHandles()[0]
         self.line_cut_handle_2 = self.line_cut_roi.getHandles()[1]
 
-        self.plot_tabs = QtGui.QTabWidget()
-        self.plot_tabs.addTab(self.image_view, "Slice")
-        self.plot_tabs.addTab(self.slice_plot_widget, "Slice Intensity")
-        self.plot_tabs.addTab(self.line_cut_plot_widget, "Line Cut Intensity")
+        self.image_view.setFixedWidth(350)
+        self.slice_plot_widget.setFixedWidth(350)
+        self.line_cut_plot_widget.setFixedWidth(350)
 
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
         self.layout.addWidget(self.info_scroll_area, 0, 0)
-        self.layout.addWidget(self.plot_tabs, 0, 1)
+        self.layout.addWidget(self.image_view, 0, 1)
+        self.layout.addWidget(self.slice_plot_widget, 0, 2)
+        self.layout.addWidget(self.line_cut_plot_widget, 0, 3)
 
         self.roi.sigRegionChanged.connect(self.update)
         self.visible_chkbox.clicked.connect(self.toggleVisibility)
@@ -1107,6 +1182,7 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updateLineCut(self):
+        rect = self.main_widget.data_widget.dataset_rect
         slice_direction = self.main_widget.data_widget.slice_direction
 
         if self.slice != [] or self.slice != None:
@@ -1115,12 +1191,27 @@ class LineROIWidget(QtGui.QWidget):
                     self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(self.slice, \
                             self.image_view.getImageItem(), returnMappedCoords=True)
                     self.line_cut_coords = self.line_cut_coords.astype(int)
+                    h_1 = round(self.x_values[self.line_cut_coords[0][0]], 5)
+                    h_2 = round(self.x_values[self.line_cut_coords[0][-1]], 5)
+                    k_1 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
+                    k_2 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
+                    l_1 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
+                    l_2 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
+
                 else:
                     self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(np.swapaxes(self.slice, 0, 1), \
                             self.image_view.getImageItem(), returnMappedCoords=True)
                     self.line_cut_coords = self.line_cut_coords.astype(int)
 
                 self.line_cut_plot_widget.plot(self.line_cut, clear=True)
+                h_interval = f"({h_1}, {h_2})"
+                k_interval = f"({k_1}, {k_2})"
+                l_interval = f"({l_1}, {l_2})"
+                self.line_cut_h_txtbox.setText(h_interval)
+                self.line_cut_k_txtbox.setText(k_interval)
+                self.line_cut_l_txtbox.setText(l_interval)
+
+
             except ValueError:
                 self.line_cut_plot_widget.clear()
 
@@ -1241,24 +1332,24 @@ class LineROIWidget(QtGui.QWidget):
             h_index = int(dataset.shape[0] * (x - rect[0][0]) / (rect[0][-1] - rect[0][0]))
             k_index = self.slice_coords[1][int(y)]
             l_index = self.slice_coords[0][int(y) + 1]
-            self.mouse_h_txtbox.setText(str(round(x, 8)))
-            self.mouse_k_txtbox.setText(str(round(self.image_y_coords[k_index], 8)))
-            self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 8)))
+            self.mouse_h_txtbox.setText(str(round(x, 5)))
+            self.mouse_k_txtbox.setText(str(round(self.image_y_coords[k_index], 5)))
+            self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 5)))
         elif slice_direction == "Y(K)":
             h_index = self.slice_coords[1][int(y)]
             k_index = int(dataset.shape[1] * (x - rect[1][0]) / (rect[1][-1] - rect[1][0]))
             l_index = self.slice_coords[0][int(y) + 1]
 
-            self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 8)))
-            self.mouse_k_txtbox.setText(str(round(x, 8)))
-            self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 8)))
+            self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 5)))
+            self.mouse_k_txtbox.setText(str(round(x, 5)))
+            self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 5)))
         else:
             h_index = self.slice_coords[1][int(y)]
             k_index = self.slice_coords[0][int(y) + 1]
             l_index = int(dataset.shape[2] * (x - rect[2][0]) / (rect[2][-1] - rect[2][0]))
-            self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 8)))
-            self.mouse_k_txtbox.setText(str(round(self.image_x_coords[k_index], 8)))
-            self.mouse_l_txtbox.setText(str(round(x, 8)))
+            self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 5)))
+            self.mouse_k_txtbox.setText(str(round(self.image_x_coords[k_index], 5)))
+            self.mouse_l_txtbox.setText(str(round(x, 5)))
 
         try:
             intensity = int(dataset[h_index][k_index][l_index])
