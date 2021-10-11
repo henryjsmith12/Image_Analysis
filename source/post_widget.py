@@ -1198,10 +1198,27 @@ class LineROIWidget(QtGui.QWidget):
                     l_1 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
                     l_2 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
 
+                elif slice_direction == "Y(K)":
+                    self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(np.swapaxes(self.slice, 0, 1), \
+                            self.image_view.getImageItem(), returnMappedCoords=True)
+                    self.line_cut_coords = self.line_cut_coords.astype(int)
+                    h_1 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
+                    h_2 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
+                    k_1 = round(self.x_values[self.line_cut_coords[0][0]], 5)
+                    k_2 = round(self.x_values[self.line_cut_coords[0][-1]], 5)
+                    l_1 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
+                    l_2 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
+
                 else:
                     self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(np.swapaxes(self.slice, 0, 1), \
                             self.image_view.getImageItem(), returnMappedCoords=True)
                     self.line_cut_coords = self.line_cut_coords.astype(int)
+                    h_1 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
+                    h_2 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
+                    k_1 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
+                    k_2 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
+                    l_1 = round(self.x_values[self.line_cut_coords[0][0]], 5)
+                    l_2 = round(self.x_values[self.line_cut_coords[0][-1]], 5)
 
                 self.line_cut_plot_widget.plot(self.line_cut, clear=True)
                 h_interval = f"({h_1}, {h_2})"
@@ -1210,7 +1227,6 @@ class LineROIWidget(QtGui.QWidget):
                 self.line_cut_h_txtbox.setText(h_interval)
                 self.line_cut_k_txtbox.setText(k_interval)
                 self.line_cut_l_txtbox.setText(l_interval)
-
 
             except ValueError:
                 self.line_cut_plot_widget.clear()
