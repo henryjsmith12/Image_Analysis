@@ -60,7 +60,6 @@ class PostPlottingWidget(QtGui.QWidget):
         """
 
         self.data_selection_dock = Dock("Data Selection", size=(100, 100), hideTitle=True)
-        #self.options_dock = Dock("Options", size=(100, 100), hideTitle=True)
         self.analysis_dock = Dock("Analysis", size=(400, 100))
         self.roi_analysis_dock = Dock("ROI", size=(400, 100))
         self.data_dock = Dock("Data", size=(400, 100), hideTitle=True)
@@ -71,22 +70,8 @@ class PostPlottingWidget(QtGui.QWidget):
         self.dock_area.addDock(self.line_roi_analysis_dock, "bottom", self.data_selection_dock)
         self.dock_area.addDock(self.analysis_dock, "above", self.line_roi_analysis_dock)
         self.dock_area.addDock(self.roi_analysis_dock, "above", self.analysis_dock)
-
-
-        """self.dock_area.addDock(self.line_roi_analysis_dock, "bottom", self.data_selection_dock)
-        self.dock_area.addDock(self.line_roi_analysis_dock, "above", self.line_roi_analysis_dock)
-        self.dock_area.addDock(self.roi_analysis_dock, "above", self.line_roi_analysis_dock)"""
-
-
         self.dock_area.addDock(self.data_dock, "right", self.data_selection_dock)
-        """
-        #self.dock_area.addDock(self.options_dock, "bottom", self.data_selection_dock)
-
-        self.dock_area.moveDock(self.analysis_dock, "bottom", self.data_selection_dock)
-        self.dock_area.moveDock(self.data_dock, "top", self.analysis_dock)
-
         self.dock_area.moveDock(self.analysis_dock, "above", self.roi_analysis_dock)
-        self.dock_area.moveDock(self.analysis_dock, "above", self.line_roi_analysis_dock)"""
 
     # --------------------------------------------------------------------------
 
@@ -97,14 +82,12 @@ class PostPlottingWidget(QtGui.QWidget):
         """
 
         self.data_selection_widget = DataSelectionWidget(self)
-        #self.options_widget = OptionsWidget(self)
         self.analysis_widget = AnalysisWidget(self)
         self.roi_analysis_widget = ROIAnalysisWidget(self)
         self.data_widget = DataWidget(self)
         self.line_roi_analysis_widget = LineROIAnalysisWidget(self)
 
         self.data_selection_dock.addWidget(self.data_selection_widget)
-        #self.options_dock.addWidget(self.options_widget)
         self.analysis_dock.addWidget(self.analysis_widget)
         self.roi_analysis_dock.addWidget(self.roi_analysis_widget)
         self.line_roi_analysis_dock.addWidget(self.line_roi_analysis_widget)
@@ -270,58 +253,6 @@ class DataSelectionWidget(QtGui.QWidget):
     def changeSliceDirection(self):
         direction = self.sender().currentText()
         self.main_widget.data_widget.displayDataset(self.main_widget.data_widget.dataset, direction)
-
-# ==============================================================================
-
-class OptionsWidget(QtGui.QWidget):
-
-    def __init__ (self, parent):
-        super(OptionsWidget, self).__init__(parent)
-        self.main_widget = parent
-
-        self.setEnabled(False)
-        self.layout = QtGui.QGridLayout()
-        self.setLayout(self.layout)
-
-        self.slice_direction_lbl = QtGui.QLabel("Slice Direction:")
-        self.slice_direction_cbox = QtGui.QComboBox()
-        self.slice_direction_cbox.addItems(["X(H)", "Y(K)", "Z(L)"])
-
-        self.crosshair_chkbox = QtGui.QCheckBox("Crosshair")
-        self.crosshair_colorbtn = pg.ColorButton()
-
-        self.layout.addWidget(self.slice_direction_lbl, 0, 0)
-        self.layout.addWidget(self.slice_direction_cbox, 0, 1, 1, 2)
-        self.layout.addWidget(self.crosshair_chkbox, 1, 0)
-        self.layout.addWidget(self.crosshair_colorbtn, 1, 1, 1, 2)
-
-        self.slice_direction_cbox.currentTextChanged.connect(self.changeSliceDirection)
-        self.crosshair_chkbox.stateChanged.connect(self.toggleCrosshair)
-        self.crosshair_colorbtn .sigColorChanged.connect(self.changeCrosshairColor)
-
-    # --------------------------------------------------------------------------
-
-    def changeSliceDirection(self):
-        direction = self.sender().currentText()
-        self.main_widget.data_widget.displayDataset(self.main_widget.data_widget.dataset, direction)
-
-    # --------------------------------------------------------------------------
-
-    def toggleCrosshair(self, state):
-        if state == 2:
-            self.main_widget.data_widget.v_line.setVisible(True)
-            self.main_widget.data_widget.h_line.setVisible(True)
-        else:
-            self.main_widget.data_widget.v_line.setVisible(False)
-            self.main_widget.data_widget.h_line.setVisible(False)
-
-    # --------------------------------------------------------------------------
-
-    def changeCrosshairColor(self):
-        color = self.crosshair_colorbtn.color()
-
-        self.main_widget.data_widget.v_line.setPen(pg.mkPen(color))
-        self.main_widget.data_widget.h_line.setPen(pg.mkPen(color))
 
 # ==============================================================================
 
@@ -637,6 +568,11 @@ class ROIWidget(QtGui.QWidget):
         self.roi = pg.ROI([-0.25, -0.25], [0.5, 0.5])
         self.roi.hide()
         self.info_gbox = QtGui.QGroupBox()
+        self.image_view = pg.ImageView(view=pg.PlotItem())
+        self.image_view.setFixedWidth(350)
+        self.image_view.ui.histogram.hide()
+        self.image_view.ui.roiBtn.hide()
+        self.image_view.ui.menuBtn.hide()
         self.plot_widget = pg.PlotWidget()
         self.pen = pg.mkPen(width=3)
         self.roi.setPen(self.pen)
@@ -645,7 +581,8 @@ class ROIWidget(QtGui.QWidget):
         self.roi.addScaleHandle([0, 0], [0.5, 0.5])
 
         self.layout.addWidget(self.info_gbox, 0, 0)
-        self.layout.addWidget(self.plot_widget, 0, 1)
+        self.layout.addWidget(self.image_view, 0, 1)
+        self.layout.addWidget(self.plot_widget, 0, 2)
 
         self.info_layout = QtGui.QGridLayout()
         self.info_gbox.setLayout(self.info_layout)
@@ -673,7 +610,6 @@ class ROIWidget(QtGui.QWidget):
         self.height_sbox.setMaximum(1000)
         self.height_sbox.setDecimals(6)
         self.outline_btn = QtGui.QPushButton("Outline Image")
-        self.plot_gbox = QtGui.QGroupBox("Plot")
 
         self.info_layout.addWidget(self.visible_chkbox, 0, 0)
         self.info_layout.addWidget(self.color_btn, 0, 1)
@@ -791,12 +727,12 @@ class ROIWidget(QtGui.QWidget):
             if x_min >= 0 and x_max <= dataset.shape[2] and \
                 y_min >= 0 and y_max <= dataset.shape[1]:
                 # Region throughout all slice in a direction
-                data_roi = dataset[:, y_min:y_max, x_min:x_max]
+                self.data_roi = dataset[:, y_min:y_max, x_min:x_max]
                 x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
 
                 # Takes average intensity of all slices and creates a list
-                for i in range(data_roi.shape[0]):
-                    avg = np.mean(data_roi[i, :, :])
+                for i in range(self.data_roi.shape[0]):
+                    avg = np.mean(self.data_roi[i, :, :])
                     avg_intensity.append(avg)
 
                 self.plot_widget.setLabel(axis="left", text="Average Intensity")
@@ -814,12 +750,12 @@ class ROIWidget(QtGui.QWidget):
             if x_min >= 0 and x_max <= dataset.shape[0] and \
                 y_min >= 0 and y_max <= dataset.shape[1]:
                 # Region throughout all slice in a direction
-                data_roi = dataset[y_min:y_max, :, x_min:x_max]
+                self.data_roi = dataset[y_min:y_max, :, x_min:x_max]
                 x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
 
                 # Takes average intensity of all slices and creates a list
-                for i in range(data_roi.shape[1]):
-                    avg = np.mean(data_roi[:, i, :])
+                for i in range(self.data_roi.shape[1]):
+                    avg = np.mean(self.data_roi[:, i, :])
                     avg_intensity.append(avg)
 
                 self.plot_widget.setLabel(axis="left", text="Average Intensity")
@@ -837,12 +773,12 @@ class ROIWidget(QtGui.QWidget):
             if x_min >= 0 and x_max <= dataset.shape[0] and \
                 y_min >= 0 and y_max <= dataset.shape[2]:
                 # Region throughout all slice in a direction
-                data_roi = dataset[y_min:y_max, x_min:x_max, :]
+                self.data_roi = dataset[y_min:y_max, x_min:x_max, :]
                 x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
 
                 # Takes average intensity of all slices and creates a list
-                for i in range(data_roi.shape[2]):
-                    avg = np.mean(data_roi[:, :, i])
+                for i in range(self.data_roi.shape[2]):
+                    avg = np.mean(self.data_roi[:, :, i])
                     avg_intensity.append(avg)
 
                 self.plot_widget.setLabel(axis="left", text="Average Intensity")
@@ -852,6 +788,7 @@ class ROIWidget(QtGui.QWidget):
 
         try:
             self.plot_widget.plot(x_values, avg_intensity, clear=True)
+            self.image_view.setImage(self.data_roi)
         except Exception:
             self.plot_widget.clear()
 
@@ -1178,6 +1115,7 @@ class LineROIWidget(QtGui.QWidget):
             except ValueError:
                 self.image_view.clear()
                 self.slice_plot_widget.clear()
+                self.line_cut_plot_widget.clear()
 
     # --------------------------------------------------------------------------
 
