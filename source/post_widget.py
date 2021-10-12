@@ -309,7 +309,7 @@ class DataWidget(pg.ImageView):
             pos = (self.dataset_rect[2][0], self.dataset_rect[1][0])
             scale = ((self.dataset_rect[2][-1] - self.dataset_rect[2][0]) / self.dataset.shape[2],
                 (self.dataset_rect[1][-1] - self.dataset_rect[1][0]) / self.dataset.shape[1])
-            slider_ticks = np.linspace(self.dataset_rect[0][0], self.dataset_rect[0][-1], \
+            self.slider_ticks = np.linspace(self.dataset_rect[0][0], self.dataset_rect[0][-1], \
                 self.dataset.shape[0])
             self.view.setLabel(axis="left", text="K")
             self.view.setLabel(axis="bottom", text="L")
@@ -319,7 +319,7 @@ class DataWidget(pg.ImageView):
             pos = (self.dataset_rect[2][0], self.dataset_rect[0][0])
             scale = ((self.dataset_rect[2][-1] - self.dataset_rect[2][0]) / self.dataset.shape[2],
                 (self.dataset_rect[0][-1] - self.dataset_rect[0][0]) / self.dataset.shape[0])
-            slider_ticks = np.linspace(self.dataset_rect[1][0], self.dataset_rect[1][-1], \
+            self.slider_ticks = np.linspace(self.dataset_rect[1][0], self.dataset_rect[1][-1], \
                 self.dataset.shape[1])
             self.view.setLabel(axis="left", text="H")
             self.view.setLabel(axis="bottom", text="L")
@@ -329,7 +329,7 @@ class DataWidget(pg.ImageView):
             pos = (self.dataset_rect[1][0], self.dataset_rect[0][0])
             scale = ((self.dataset_rect[1][-1] - self.dataset_rect[1][0]) / self.dataset.shape[1],
                 (self.dataset_rect[0][-1] - self.dataset_rect[0][0]) / self.dataset.shape[0])
-            slider_ticks = np.linspace(self.dataset_rect[2][0], self.dataset_rect[2][-1], \
+            self.slider_ticks = np.linspace(self.dataset_rect[2][0], self.dataset_rect[2][-1], \
                 self.dataset.shape[2])
             self.view.setLabel(axis="left", text="H")
             self.view.setLabel(axis="bottom", text="K")
@@ -344,7 +344,7 @@ class DataWidget(pg.ImageView):
             self.color_dataset = plt.cm.jet(norm_dataset)
 
         self.setImage(self.color_dataset, axes=self.plot_axes, pos=pos, scale=scale, \
-            xvals=slider_ticks)
+            xvals=self.slider_ticks)
         self.setCurrentIndex(0)
 
         #self.main_widget.options_widget.setEnabled(True)
@@ -568,8 +568,8 @@ class ROIWidget(QtGui.QWidget):
         self.roi = pg.ROI([-0.25, -0.25], [0.5, 0.5])
         self.roi.hide()
         self.info_gbox = QtGui.QGroupBox()
-        self.image_view = pg.ImageView(view=pg.PlotItem())
-        self.image_view.setFixedWidth(350)
+        self.image_view = pg.ImageView()
+        self.image_view.setFixedWidth(400)
         self.image_view.ui.histogram.hide()
         self.image_view.ui.roiBtn.hide()
         self.image_view.ui.menuBtn.hide()
@@ -706,16 +706,17 @@ class ROIWidget(QtGui.QWidget):
             self.roi.setPos((rect[1][0], rect[0][0]))
             self.roi.setSize((rect[1][-1] - rect[1][0], rect[0][-1] - rect[0][0]))
 
-        print(rect[0][0], rect[1][0])
-        print(rect[0][-1] - rect[0][0], rect[1][-1] - rect[1][0])
-
     # --------------------------------------------------------------------------
 
     def plotAverageIntensity(self):
         avg_intensity = []
         dataset = self.main_widget.data_widget.dataset
+        color_dataset = self.main_widget.data_widget.color_dataset
         rect = self.main_widget.data_widget.dataset_rect
         slice_direction = self.main_widget.data_widget.slice_direction
+        slider_ticks = self.main_widget.data_widget.slider_ticks
+        index, tick_value = self.main_widget.data_widget.timeIndex(
+            self.main_widget.data_widget.timeLine)
 
         if slice_direction == None or slice_direction == "X(H)":
             #x:L y:K
@@ -728,6 +729,7 @@ class ROIWidget(QtGui.QWidget):
                 y_min >= 0 and y_max <= dataset.shape[1]:
                 # Region throughout all slice in a direction
                 self.data_roi = dataset[:, y_min:y_max, x_min:x_max]
+                self.color_data_roi = color_dataset[:, y_min:y_max, x_min:x_max]
                 x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
 
                 # Takes average intensity of all slices and creates a list
@@ -751,6 +753,7 @@ class ROIWidget(QtGui.QWidget):
                 y_min >= 0 and y_max <= dataset.shape[1]:
                 # Region throughout all slice in a direction
                 self.data_roi = dataset[y_min:y_max, :, x_min:x_max]
+                self.color_data_roi = color_dataset[y_min:y_max, :, x_min:x_max]
                 x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
 
                 # Takes average intensity of all slices and creates a list
@@ -774,6 +777,7 @@ class ROIWidget(QtGui.QWidget):
                 y_min >= 0 and y_max <= dataset.shape[2]:
                 # Region throughout all slice in a direction
                 self.data_roi = dataset[y_min:y_max, x_min:x_max, :]
+                self.color_data_roi = color_dataset[y_min:y_max, x_min:x_max, :]
                 x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
 
                 # Takes average intensity of all slices and creates a list
@@ -788,7 +792,8 @@ class ROIWidget(QtGui.QWidget):
 
         try:
             self.plot_widget.plot(x_values, avg_intensity, clear=True)
-            self.image_view.setImage(self.data_roi)
+            self.image_view.setImage(self.color_data_roi, xvals=slider_ticks)
+            self.image_view.setCurrentIndex(index)
         except Exception:
             self.plot_widget.clear()
 
