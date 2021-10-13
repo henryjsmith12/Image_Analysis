@@ -1048,6 +1048,10 @@ class LineROIWidget(QtGui.QWidget):
         self.layout.addWidget(self.image_view, 0, 1)
         self.layout.addWidget(self.slice_plot_widget, 0, 2)
         self.layout.addWidget(self.line_cut_plot_widget, 0, 3)
+        self.layout.setColumnStretch(0,2)
+        self.layout.setColumnStretch(1,3)
+        self.layout.setColumnStretch(2,3)
+        self.layout.setColumnStretch(3,3)
 
         self.roi.sigRegionChanged.connect(self.update)
         self.visible_chkbox.clicked.connect(self.toggleVisibility)
