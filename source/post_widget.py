@@ -108,6 +108,8 @@ class DataSelectionWidget(QtGui.QWidget):
     - A SPEC file
     - Which scan in SPEC file to view
     - Parameters to convert scan to reciprocal space
+
+    *** TODO: Add VTI Creation dialog and use experimental layout
     """
 
     def __init__ (self, parent):
@@ -119,8 +121,8 @@ class DataSelectionWidget(QtGui.QWidget):
         self.project_txtbox = QtGui.QLineEdit()
         self.project_txtbox.setReadOnly(True)
         self.spec_file_listbox = QtGui.QListWidget()
-        self.vti_file_listbox = QtGui.QListWidget()
-        self.create_vti_btn = QtGui.QPushButton("Create VTI File")
+        self.vti_file_listbox = QtGui.QListWidget() # Not in use yet
+        self.create_vti_btn = QtGui.QPushButton("Create VTI File") # Not in use yet
         self.scan_directory_listbox = QtGui.QListWidget()
         self.conversion_btn = QtGui.QPushButton("Parameters")
         self.process_btn = QtGui.QPushButton("Process")
@@ -199,24 +201,6 @@ class DataSelectionWidget(QtGui.QWidget):
 
     # --------------------------------------------------------------------------
 
-        """
-        def setVTIList(self, spec_base_list_item):
-
-        self.vti_files = []
-
-        # Base path for SPEC directory
-        self.spec_base_path = spec_base_list_item.text()
-
-        # Adds SPEC file basenames in directory to list
-        for file in os.listdir(self.project_path):
-            if file.includes(self.spec_base_path):
-                self.vti_files.append(os.path.splitext(file)[0])
-
-        print()
-        """
-
-    # --------------------------------------------------------------------------
-
     def setScanList(self, spec_base_list_item):
         """
         Adds scans to scans list widget
@@ -235,6 +219,7 @@ class DataSelectionWidget(QtGui.QWidget):
             # Refreshes scans in ListBox
             self.scan_directory_listbox.clear()
             self.scan_directory_listbox.addItems(scans)
+
         except:
             return
 
@@ -281,27 +266,44 @@ class DataSelectionWidget(QtGui.QWidget):
         Creates dataset that is displayed in data widget
         """
 
-        dataset = []
-        dataset_rect = None
+        try:
+            dataset = []
+            dataset_rect = None
 
-        scan_name = self.scan_directory_listbox.currentItem().text()
-        scan_number = scan_name[1:]
-        scan_path = f"{self.spec_directory_path}/{scan_name}"
+            # For VTI file creation
+            scan_name = self.scan_directory_listbox.currentItem().text()
+            scan_number = scan_name[1:]
 
-        # Maps/interpolates data into reciprocal space
-        vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_file_path, \
-            self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
-            self.pixel_count_ny, self.pixel_count_nz)
-        axes, dataset = ConversionLogic.loadData(vti_file)
+            # Maps/interpolates data into reciprocal space
+            vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_file_path, \
+                self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
+                self.pixel_count_ny, self.pixel_count_nz)
 
-        dataset_rect = [(axes[0][0], axes[0][-1]), (axes[1][0], axes[1][-1]), (axes[2][0], axes[2][-1])]
+            # Creates axis limits and dataset
+            axes, dataset = ConversionLogic.loadData(vti_file)
 
-        self.main_widget.data_widget.displayDataset(dataset, new_dataset=True, \
-            dataset_rect=dataset_rect)
+            # Bounds of dataset in HKL
+            dataset_rect = [(axes[0][0], axes[0][-1]), (axes[1][0], axes[1][-1]), (axes[2][0], axes[2][-1])]
+
+            # Loads dataset into datawidget image window
+            self.main_widget.data_widget.displayDataset(dataset, new_dataset=True, \
+                dataset_rect=dataset_rect)
+
+        except Exception:
+            msg_box = QtGui.QMessageBox()
+            msg_box.setWindowTitle("Error")
+            msg_box.setText("Error Loading Data")
+            msg_box.exec_()
 
     # --------------------------------------------------------------------------
 
     def changeSliceDirection(self):
+        """
+        Changes slice direction in data widget.
+        (Function exists in this class because the spinbox is housed in the
+            DataSelection layout)
+        """
+        
         direction = self.sender().currentText()
         self.main_widget.data_widget.displayDataset(self.main_widget.data_widget.dataset, direction)
 
@@ -1082,11 +1084,6 @@ class LineROIWidget(QtGui.QWidget):
         self.line_cut_roi.setPen(self.line_cut_pen)
         self.line_cut_handle_1 = self.line_cut_roi.getHandles()[0]
         self.line_cut_handle_2 = self.line_cut_roi.getHandles()[1]
-
-        '''self.image_view.setFixedWidth(350)
-        self.slice_plot_widget.setFixedWidth(350)
-        self.line_cut_plot_widget.setFixedWidth(350)'''
-
 
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
