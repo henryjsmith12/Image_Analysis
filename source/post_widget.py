@@ -40,15 +40,18 @@ class PostPlottingWidget(QtGui.QWidget):
     def __init__ (self):
         super().__init__()
 
-        self.layout = QtGui.QVBoxLayout()
-        self.setLayout(self.layout)
-
+        # Docks & Widgets ------------------------------------------------------
         self.dock_area = DockArea()
         self.createDocks()
         self.createWidgets()
 
+        # Layout ---------------------------------------------------------------
+        self.layout = QtGui.QVBoxLayout()
         self.layout.addWidget(self.dock_area)
+        self.setLayout(self.layout)
 
+        # Conversion parameter dialog ------------------------------------------
+        # Instantiated for later use
         self.conversion_dialog = ConversionParametersDialog()
 
     # --------------------------------------------------------------------------
@@ -59,13 +62,14 @@ class PostPlottingWidget(QtGui.QWidget):
         - Adds docks to dock area in main widget
         """
 
+        # Dock Creation --------------------------------------------------------
         self.data_selection_dock = Dock("Data Selection", size=(100, 100), hideTitle=True)
         self.analysis_dock = Dock("Analysis", size=(400, 100))
         self.roi_analysis_dock = Dock("ROI", size=(400, 100))
         self.data_dock = Dock("Data", size=(400, 100), hideTitle=True)
         self.line_roi_analysis_dock = Dock("Slicing", size=(400, 100))
 
-        # Docks are added in positions relative to docks already in area
+        # Adding Docks to Area -------------------------------------------------
         self.dock_area.addDock(self.data_selection_dock)
         self.dock_area.addDock(self.line_roi_analysis_dock, "bottom", self.data_selection_dock)
         self.dock_area.addDock(self.analysis_dock, "above", self.line_roi_analysis_dock)
@@ -81,12 +85,14 @@ class PostPlottingWidget(QtGui.QWidget):
         - Adds each subwidget to its respective dock
         """
 
+        # Widget Creation ------------------------------------------------------
         self.data_selection_widget = DataSelectionWidget(self)
         self.analysis_widget = AnalysisWidget(self)
         self.roi_analysis_widget = ROIAnalysisWidget(self)
         self.data_widget = DataWidget(self)
         self.line_roi_analysis_widget = LineROIAnalysisWidget(self)
 
+        # Adding Widgets to Docks ----------------------------------------------
         self.data_selection_dock.addWidget(self.data_selection_widget)
         self.analysis_dock.addWidget(self.analysis_widget)
         self.roi_analysis_dock.addWidget(self.roi_analysis_widget)
@@ -99,8 +105,8 @@ class DataSelectionWidget(QtGui.QWidget):
     """
     Allows user to select:
     - A project file
-    - A SPEC scan
-    - Which scan to view
+    - A SPEC file
+    - Which scan in SPEC file to view
     - Parameters to convert scan to reciprocal space
     """
 
