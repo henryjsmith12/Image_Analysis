@@ -114,34 +114,51 @@ class DataSelectionWidget(QtGui.QWidget):
         super(DataSelectionWidget, self).__init__(parent)
         self.main_widget = parent
 
-        self.layout = QtGui.QGridLayout()
-        self.setLayout(self.layout)
-
+        # Widget Creation ------------------------------------------------------
         self.project_btn = QtGui.QPushButton("Set Project")
         self.project_txtbox = QtGui.QLineEdit()
         self.project_txtbox.setReadOnly(True)
-        self.spec_list = QtGui.QListWidget()
-        self.scan_list = QtGui.QListWidget()
-        self.conversion_chkbox = QtGui.QCheckBox("Convert Scan to HKL")
+        self.spec_file_listbox = QtGui.QListWidget()
+        self.vti_file_listbox = QtGui.QListWidget()
+        self.create_vti_btn = QtGui.QPushButton("Create VTI File")
+        self.scan_directory_listbox = QtGui.QListWidget()
         self.conversion_btn = QtGui.QPushButton("Parameters")
         self.process_btn = QtGui.QPushButton("Process")
         self.slice_direction_lbl = QtGui.QLabel("Slice Direction:")
         self.slice_direction_cbox = QtGui.QComboBox()
         self.slice_direction_cbox.addItems(["X(H)", "Y(K)", "Z(L)"])
 
+        # Layout ---------------------------------------------------------------
+        # Current Layout
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
         self.layout.addWidget(self.project_btn, 0, 0)
         self.layout.addWidget(self.project_txtbox, 0, 1)
-        self.layout.addWidget(self.spec_list, 1, 0, 1, 2)
-        self.layout.addWidget(self.scan_list, 2, 0, 1, 2)
-        self.layout.addWidget(self.conversion_chkbox, 3, 0)
-        self.layout.addWidget(self.conversion_btn, 3, 1)
+        self.layout.addWidget(self.spec_file_listbox, 1, 0, 1, 2)
+        self.layout.addWidget(self.scan_directory_listbox, 2, 0, 1, 2)
+        self.layout.addWidget(self.conversion_btn, 3, 0, 1, 2)
         self.layout.addWidget(self.process_btn, 4, 0, 1, 2)
         self.layout.addWidget(self.slice_direction_lbl, 5, 0)
         self.layout.addWidget(self.slice_direction_cbox, 5, 1, 1, 2)
 
-        # Signals
+        # Experimental Layout
+        """
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+        self.layout.addWidget(self.project_btn, 0, 0)
+        self.layout.addWidget(self.project_txtbox, 0, 1)
+        self.layout.addWidget(self.spec_file_listbox, 1, 0, 1, 2)
+        self.layout.addWidget(self.vti_file_listbox, 2, 0, 1, 2)
+        self.layout.addWidget(self.create_vti_btn, 3, 0, 1, 2)
+        self.layout.addWidget(self.scan_directory_listbox, 4, 0, 1, 2)
+        self.layout.addWidget(self.process_btn, 5, 0, 1, 2)
+        self.layout.addWidget(self.slice_direction_lbl, 6, 0)
+        self.layout.addWidget(self.slice_direction_cbox, 6, 1)
+        """
+
+        # Signals --------------------------------------------------------------
         self.project_btn.clicked.connect(self.setProjectDirectory)
-        self.spec_list.itemClicked.connect(self.setScanList)
+        self.spec_file_listbox.itemClicked.connect(self.setScanList)
         self.conversion_btn.clicked.connect(self.showConversionDialog)
         self.process_btn.clicked.connect(self.loadData)
         self.slice_direction_cbox.currentTextChanged.connect(self.changeSliceDirection)
@@ -154,37 +171,72 @@ class DataSelectionWidget(QtGui.QWidget):
         - Sets project directory
         """
 
-        self.project_path = QtGui.QFileDialog.getExistingDirectory(self,
+        # Selecting a Project Directory ----------------------------------------
+        project_path = QtGui.QFileDialog.getExistingDirectory(self,
             "Open Project Directory")
 
-        if self.project_path != "" and "images" in os.listdir(self.project_path):
+        # Adding SPEC Files to a ListBox ---------------------------------------
+        if project_path != "":
             self.spec_files = []
-            for file in os.listdir(self.project_path):
+
+            # Adds SPEC file basenames in directory to list
+            for file in os.listdir(project_path):
                 if file.endswith(".spec"):
                     self.spec_files.append(os.path.splitext(file)[0])
 
-            if self.spec_files == []:
-                return
-
-            self.project_txtbox.setText(os.path.basename(self.project_path))
-            self.spec_list.clear()
-            self.scan_list.clear()
-            self.spec_list.addItems(self.spec_files)
+            # Checks if directory has a SPEC file
+            if self.spec_files != []:
+                self.project_path = project_path
+                self.project_txtbox.setText(os.path.basename(self.project_path))
+                self.spec_file_listbox.clear()
+                self.scan_directory_listbox.clear()
+                self.spec_file_listbox.addItems(self.spec_files)
+            else:
+                msg_box = QtGui.QMessageBox()
+                msg_box.setWindowTitle("Error")
+                msg_box.setText("Invalid Project Directory")
+                msg_box.exec_()
 
     # --------------------------------------------------------------------------
 
-    def setScanList(self, list_item):
+        """
+        def setVTIList(self, spec_base_list_item):
+
+        self.vti_files = []
+
+        # Base path for SPEC directory
+        self.spec_base_path = spec_base_list_item.text()
+
+        # Adds SPEC file basenames in directory to list
+        for file in os.listdir(self.project_path):
+            if file.includes(self.spec_base_path):
+                self.vti_files.append(os.path.splitext(file)[0])
+
+        print()
+        """
+
+    # --------------------------------------------------------------------------
+
+    def setScanList(self, spec_base_list_item):
         """
         Adds scans to scans list widget
         """
 
-        self.spec_base = list_item.text()
-        self.scans_path = f"{self.project_path}/images/{self.spec_base}"
+        try:
+            # Base path for SPEC directory
+            self.spec_base_path = spec_base_list_item.text()
 
-        self.scans = sorted(os.listdir(self.scans_path))
+            # Full path name for SPEC directory with scans (e.g. S001, S002, etc.)
+            self.spec_directory_path = f"{self.project_path}/images/{self.spec_base_path}"
 
-        self.scan_list.clear()
-        self.scan_list.addItems(self.scans)
+            # List of scans in SPEC directory
+            scans = sorted(os.listdir(self.spec_directory_path))
+
+            # Refreshes scans in ListBox
+            self.scan_directory_listbox.clear()
+            self.scan_directory_listbox.addItems(scans)
+        except:
+            return
 
     # --------------------------------------------------------------------------
 
@@ -193,6 +245,7 @@ class DataSelectionWidget(QtGui.QWidget):
         Displays modal conversion dialog widget
         """
 
+        # Displays dialog and calls functions to set parameters
         self.main_widget.conversion_dialog.show()
         self.main_widget.conversion_dialog.finished.connect(self.setConversionParameters)
 
@@ -203,56 +256,48 @@ class DataSelectionWidget(QtGui.QWidget):
         Sets values given from dialog
         """
 
+        # Creates instance of conversion param dialog
         dialog = self.main_widget.conversion_dialog
 
-        self.spec_path = f"{self.project_path}/{self.spec_base}.spec"
-        self.detector_path = dialog.detector_config_name
-        self.instrument_path = dialog.instrument_config_name
-        self.pixel_count_nx = dialog.pixel_count_nx
-        self.pixel_count_ny = dialog.pixel_count_ny
-        self.pixel_count_nz = dialog.pixel_count_nz
+        # Checks if configuration files were selected in dialog
+        if "" not in [dialog.detector_config_name, dialog.instrument_config_name]:
+            self.spec_file_path = f"{self.project_path}/{self.spec_base_path}.spec"
+            self.detector_path = dialog.detector_config_name
+            self.instrument_path = dialog.instrument_config_name
+            self.pixel_count_nx = dialog.pixel_count_nx
+            self.pixel_count_ny = dialog.pixel_count_ny
+            self.pixel_count_nz = dialog.pixel_count_nz
+        else:
+            msg_box = QtGui.QMessageBox()
+            msg_box.setWindowTitle("Error")
+            msg_box.setText("Missing Parameters")
+            msg_box.exec_()
+            dialog.open()
 
     # --------------------------------------------------------------------------
 
     def loadData(self):
         """
-        Creates dataset that is displayed in the data widget (top right in GUI)
+        Creates dataset that is displayed in data widget
         """
 
-        self.dataset = []
-        self.dataset_rect = None
+        dataset = []
+        dataset_rect = None
 
-        scan = self.scan_list.currentItem()
-        scan_number = scan.text()[1:]
-        scan_path = f"{self.scans_path}/{scan.text()}"
-        files = sorted(os.listdir(scan_path))
+        scan_name = self.scan_directory_listbox.currentItem().text()
+        scan_number = scan_name[1:]
+        scan_path = f"{self.spec_directory_path}/{scan_name}"
 
         # Maps/interpolates data into reciprocal space
-        if self.conversion_chkbox.isChecked():
-            vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_path, \
-                self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
-                self.pixel_count_ny, self.pixel_count_nz)
-            self.axes, self.dataset = ConversionLogic.loadData(vti_file)
+        vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_file_path, \
+            self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
+            self.pixel_count_ny, self.pixel_count_nz)
+        axes, dataset = ConversionLogic.loadData(vti_file)
 
-            self.dataset_rect = [(self.axes[0][0], self.axes[0][-1]), (self.axes[1][0], \
-                self.axes[1][-1]), (self.axes[2][0], self.axes[2][-1])]
+        dataset_rect = [(axes[0][0], axes[0][-1]), (axes[1][0], axes[1][-1]), (axes[2][0], axes[2][-1])]
 
-        # Appends raw, unaltered images together to create a 3D array
-        else:
-            for i in range(0, len(files)):
-                if files[i] != "alignment.tif":
-                    file_path = f"{scan_path}/{files[i]}"
-                    image = ndimage.rotate(tiff.imread(file_path), 90)
-                    self.dataset.append(image)
-
-            self.dataset = np.stack(self.dataset)
-            self.dataset = np.swapaxes(self.dataset, 0, 2)
-
-            self.dataset_rect = [(0, self.dataset.shape[0]), (0, self.dataset.shape[1]), \
-                (0, self.dataset.shape[2])]
-
-        self.main_widget.data_widget.displayDataset(self.dataset, new_dataset=True, \
-            dataset_rect=self.dataset_rect)
+        self.main_widget.data_widget.displayDataset(dataset, new_dataset=True, \
+            dataset_rect=dataset_rect)
 
     # --------------------------------------------------------------------------
 
@@ -1038,9 +1083,10 @@ class LineROIWidget(QtGui.QWidget):
         self.line_cut_handle_1 = self.line_cut_roi.getHandles()[0]
         self.line_cut_handle_2 = self.line_cut_roi.getHandles()[1]
 
-        self.image_view.setFixedWidth(350)
+        '''self.image_view.setFixedWidth(350)
         self.slice_plot_widget.setFixedWidth(350)
-        self.line_cut_plot_widget.setFixedWidth(350)
+        self.line_cut_plot_widget.setFixedWidth(350)'''
+
 
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
