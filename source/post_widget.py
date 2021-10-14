@@ -266,6 +266,7 @@ class DataSelectionWidget(QtGui.QWidget):
         Creates dataset that is displayed in data widget
         """
 
+        '''
         try:
             dataset = []
             dataset_rect = None
@@ -294,6 +295,29 @@ class DataSelectionWidget(QtGui.QWidget):
             msg_box.setWindowTitle("Error")
             msg_box.setText("Error Loading Data")
             msg_box.exec_()
+        '''
+
+        dataset = []
+        dataset_rect = None
+
+        # For VTI file creation
+        scan_name = self.scan_directory_listbox.currentItem().text()
+        scan_number = scan_name[1:]
+
+        # Maps/interpolates data into reciprocal space
+        vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_file_path, \
+            self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
+            self.pixel_count_ny, self.pixel_count_nz)
+
+        # Creates axis limits and dataset
+        axes, dataset = ConversionLogic.loadData(vti_file)
+
+        # Bounds of dataset in HKL
+        dataset_rect = [(axes[0][0], axes[0][-1]), (axes[1][0], axes[1][-1]), (axes[2][0], axes[2][-1])]
+
+        # Loads dataset into datawidget image window
+        self.main_widget.data_widget.displayDataset(dataset, new_dataset=True, \
+            dataset_rect=dataset_rect)
 
     # --------------------------------------------------------------------------
 
@@ -303,32 +327,35 @@ class DataSelectionWidget(QtGui.QWidget):
         (Function exists in this class because the spinbox is housed in the
             DataSelection layout)
         """
-        
+
         direction = self.sender().currentText()
         self.main_widget.data_widget.displayDataset(self.main_widget.data_widget.dataset, direction)
 
 # ==============================================================================
 
 class DataWidget(pg.ImageView):
+    """
+    Plots 3d dataset
+    """
 
     def __init__ (self, parent):
         super(DataWidget, self).__init__(parent, view=pg.PlotItem(), imageItem=pg.ImageItem())
         self.main_widget = parent
 
-        self.ui.histogram.hide()
-        self.ui.roiBtn.hide()
-        self.ui.menuBtn.hide()
-
         self.dataset = []
-        self.slice_direction = None
         self.color_dataset = None
+        self.slice_direction = None
         self.dataset_rect = None
         self.scene_point = None
 
         self.view_box = self.view.getViewBox()
         self.view.setAspectLocked(False)
 
-        # Crosshair
+        self.ui.histogram.hide()
+        self.ui.roiBtn.hide()
+        self.ui.menuBtn.hide()
+
+        # Crosshair ------------------------------------------------------------
         self.v_line = pg.InfiniteLine(angle=90, movable=False)
         self.h_line = pg.InfiniteLine(angle=0, movable=False)
         self.v_line.setVisible(False)
@@ -336,7 +363,7 @@ class DataWidget(pg.ImageView):
         self.view.addItem(self.v_line, ignoreBounds=True)
         self.view.addItem(self.h_line, ignoreBounds=True)
 
-        #ROIs
+        #ROIs ------------------------------------------------------------------
         self.roi_1 = self.main_widget.roi_analysis_widget.roi_1.roi
         self.roi_2 = self.main_widget.roi_analysis_widget.roi_2.roi
         self.roi_3 = self.main_widget.roi_analysis_widget.roi_3.roi
@@ -349,6 +376,12 @@ class DataWidget(pg.ImageView):
     # --------------------------------------------------------------------------
 
     def displayDataset(self, dataset, slice_direction=None, new_dataset=False, dataset_rect=None):
+        """
+        Displays 3d dataset in plot
+
+        TODO Fix colormap
+        """
+
         self.dataset = dataset
 
         if dataset_rect != None:
@@ -357,36 +390,35 @@ class DataWidget(pg.ImageView):
         if slice_direction != None:
             self.slice_direction = slice_direction
 
+        # Checking Slice Direction ---------------------------------------------
+        # Decides how the dataset is oriented in the viewing window
+        # x_dir: direction of x-axis
+        # y_dir: direction of y-axis
+        # t_dir: direction of timeline
         if self.slice_direction == None or self.slice_direction == "X(H)":
-            self.plot_axes = {"t":0, "x":2, "y":1, "c":3}
-            pos = (self.dataset_rect[2][0], self.dataset_rect[1][0])
-            scale = ((self.dataset_rect[2][-1] - self.dataset_rect[2][0]) / self.dataset.shape[2],
-                (self.dataset_rect[1][-1] - self.dataset_rect[1][0]) / self.dataset.shape[1])
-            self.slider_ticks = np.linspace(self.dataset_rect[0][0], self.dataset_rect[0][-1], \
-                self.dataset.shape[0])
+            x_dir, y_dir, t_dir = 2, 1, 0
             self.view.setLabel(axis="left", text="K")
             self.view.setLabel(axis="bottom", text="L")
-
         elif self.slice_direction == "Y(K)":
-            self.plot_axes = {"t":1, "x":2, "y":0, "c":3}
-            pos = (self.dataset_rect[2][0], self.dataset_rect[0][0])
-            scale = ((self.dataset_rect[2][-1] - self.dataset_rect[2][0]) / self.dataset.shape[2],
-                (self.dataset_rect[0][-1] - self.dataset_rect[0][0]) / self.dataset.shape[0])
-            self.slider_ticks = np.linspace(self.dataset_rect[1][0], self.dataset_rect[1][-1], \
-                self.dataset.shape[1])
+            x_dir, y_dir, t_dir = 2, 0, 1
             self.view.setLabel(axis="left", text="H")
             self.view.setLabel(axis="bottom", text="L")
-
         else:
-            self.plot_axes = {"t":2, "x":1, "y":0, "c":3}
-            pos = (self.dataset_rect[1][0], self.dataset_rect[0][0])
-            scale = ((self.dataset_rect[1][-1] - self.dataset_rect[1][0]) / self.dataset.shape[1],
-                (self.dataset_rect[0][-1] - self.dataset_rect[0][0]) / self.dataset.shape[0])
-            self.slider_ticks = np.linspace(self.dataset_rect[2][0], self.dataset_rect[2][-1], \
-                self.dataset.shape[2])
+            x_dir, y_dir, t_dir = 1, 0, 2
             self.view.setLabel(axis="left", text="H")
             self.view.setLabel(axis="bottom", text="K")
 
+        # Sets Scaling, Postion, and Orientation of Dataset --------------------
+        plot_axes = {"t":t_dir, "x":x_dir, "y":y_dir, "c":3}
+        x_bounds, y_bounds = self.dataset_rect[x_dir], self.dataset_rect[y_dir]
+        t_bounds = self.dataset_rect[t_dir]
+        position = (x_bounds[0], y_bounds[0])
+        x_scale = (x_bounds[-1] - x_bounds[0]) / self.dataset.shape[x_dir]
+        y_scale = (y_bounds[-1] - y_bounds[0]) / self.dataset.shape[y_dir]
+        scale = (x_scale, y_scale)
+        self.slider_ticks = np.linspace(t_bounds[0], t_bounds[-1], self.dataset.shape[t_dir])
+
+        # Sets colormap for new datasets
         if new_dataset == True:
             # Normalize image with logarithmic colormap
             colormap_max = np.amax(self.dataset)
@@ -396,11 +428,11 @@ class DataWidget(pg.ImageView):
             norm_dataset = np.reshape(norm(temp_reshaped_dataset), shape)
             self.color_dataset = plt.cm.jet(norm_dataset)
 
-        self.setImage(self.color_dataset, axes=self.plot_axes, pos=pos, scale=scale, \
+        self.setImage(self.color_dataset, axes=plot_axes, pos=position, scale=scale, \
             xvals=self.slider_ticks)
         self.setCurrentIndex(0)
 
-        #self.main_widget.options_widget.setEnabled(True)
+        # Enables widgets
         self.main_widget.analysis_widget.setEnabled(True)
         self.main_widget.roi_analysis_widget.setEnabled(True)
         self.main_widget.line_roi_analysis_widget.setEnabled(True)
@@ -413,6 +445,9 @@ class DataWidget(pg.ImageView):
     # --------------------------------------------------------------------------
 
     def updateMouse(self, scene_point=None):
+        """
+        Updates mouse/crosshair positions
+        """
         if scene_point != None:
             self.scene_point = scene_point
         if self.scene_point != None:
@@ -633,9 +668,15 @@ class ROIWidget(QtGui.QWidget):
         self.roi.addScaleHandle([0, 0.5], [0.5, 0.5])
         self.roi.addScaleHandle([0, 0], [0.5, 0.5])
 
+        # Layout when completed
+        """
         self.layout.addWidget(self.info_gbox, 0, 0)
         self.layout.addWidget(self.image_view, 0, 1)
         self.layout.addWidget(self.plot_widget, 0, 2)
+        """
+
+        self.layout.addWidget(self.info_gbox, 0, 0)
+        self.layout.addWidget(self.plot_widget, 0, 1)
 
         self.info_layout = QtGui.QGridLayout()
         self.info_gbox.setLayout(self.info_layout)
@@ -896,13 +937,29 @@ class ROISubtractionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def plotData(self):
+        dataset = self.main_widget.data_widget.dataset
+        slice_direction = self.main_widget.data_widget.slice_direction
+        rect = self.main_widget.data_widget.dataset_rect
+
         try:
             avg_intensity_1 = self.roi_dict[self.first_roi_cbox.currentText()].avg_intensity
             avg_intensity_2 = self.roi_dict[self.second_roi_cbox.currentText()].avg_intensity
-
-            #print(avg_intensity_1, avg_intensity_2)
             avg_intensity_diff = np.subtract(avg_intensity_1, avg_intensity_2)
-            self.plot_widget.plot(avg_intensity_diff, clear=True)
+
+            self.plot_widget.setLabel(axis="left", text="Average Intensity")
+
+            if slice_direction == None or slice_direction == "X(H)":
+                x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
+                self.plot_widget.setLabel(axis="bottom", text="H")
+            elif slice_direction == "Y(K)":
+                x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
+                self.plot_widget.setLabel(axis="bottom", text="K")
+            else:
+                x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
+                self.plot_widget.setLabel(axis="bottom", text="L")
+
+            self.plot_widget.plot(x_values, avg_intensity_diff, clear=True)
+
         except Exception:
             self.plot_widget.clear()
 
