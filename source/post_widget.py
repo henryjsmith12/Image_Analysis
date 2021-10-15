@@ -266,7 +266,6 @@ class DataSelectionWidget(QtGui.QWidget):
         Creates dataset that is displayed in data widget
         """
 
-        '''
         try:
             dataset = []
             dataset_rect = None
@@ -295,29 +294,6 @@ class DataSelectionWidget(QtGui.QWidget):
             msg_box.setWindowTitle("Error")
             msg_box.setText("Error Loading Data")
             msg_box.exec_()
-        '''
-
-        dataset = []
-        dataset_rect = None
-
-        # For VTI file creation
-        scan_name = self.scan_directory_listbox.currentItem().text()
-        scan_number = scan_name[1:]
-
-        # Maps/interpolates data into reciprocal space
-        vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_file_path, \
-            self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
-            self.pixel_count_ny, self.pixel_count_nz)
-
-        # Creates axis limits and dataset
-        axes, dataset = ConversionLogic.loadData(vti_file)
-
-        # Bounds of dataset in HKL
-        dataset_rect = [(axes[0][0], axes[0][-1]), (axes[1][0], axes[1][-1]), (axes[2][0], axes[2][-1])]
-
-        # Loads dataset into datawidget image window
-        self.main_widget.data_widget.displayDataset(dataset, new_dataset=True, \
-            dataset_rect=dataset_rect)
 
     # --------------------------------------------------------------------------
 
@@ -468,29 +444,18 @@ class DataWidget(pg.ImageView):
 # ==============================================================================
 
 class AnalysisWidget(pg.LayoutWidget):
+    """
+    Houses basic information about data in datawidget viewing window
+    """
 
     def __init__ (self, parent):
         super(AnalysisWidget, self).__init__(parent)
         self.main_widget = parent
 
         self.setEnabled(False)
-        self.scan_gbox = QtGui.QGroupBox("Scan")
-        self.slice_gbox = QtGui.QGroupBox("Slice")
-        self.mouse_gbox = QtGui.QGroupBox("Mouse")
-        self.max_gbox = QtGui.QGroupBox("Max")
 
-        self.addWidget(self.scan_gbox, row=0, col=0)
-        self.addWidget(self.mouse_gbox, row=0, col=1)
-        self.addWidget(self.max_gbox, row=0, col=2)
-
-        self.scan_layout = QtGui.QGridLayout()
-        self.mouse_layout = QtGui.QGridLayout()
-        self.max_layout = QtGui.QGridLayout()
-
-        self.scan_gbox.setLayout(self.scan_layout)
-        self.mouse_gbox.setLayout(self.mouse_layout)
-        self.max_gbox.setLayout(self.max_layout)
-
+        # Widget Creation ------------------------------------------------------
+        # Scan Info
         self.scan_pixel_count_x_lbl = QtGui.QLabel("Pixel Count (x):")
         self.scan_pixel_count_x_txtbox = QtGui.QLineEdit()
         self.scan_pixel_count_x_txtbox.setReadOnly(True)
@@ -501,6 +466,7 @@ class AnalysisWidget(pg.LayoutWidget):
         self.scan_pixel_count_z_txtbox = QtGui.QLineEdit()
         self.scan_pixel_count_z_txtbox.setReadOnly(True)
 
+        # Mouse Info
         self.mouse_x_lbl = QtGui.QLabel("x Pos:")
         self.mouse_x_txtbox = QtGui.QLineEdit()
         self.mouse_x_txtbox.setReadOnly(True)
@@ -520,6 +486,7 @@ class AnalysisWidget(pg.LayoutWidget):
         self.mouse_l_txtbox = QtGui.QLineEdit()
         self.mouse_l_txtbox.setReadOnly(True)
 
+        # Max Info
         self.max_intensity_lbl = QtGui.QLabel("Intensity:")
         self.max_intensity_txtbox = QtGui.QLineEdit()
         self.max_intensity_txtbox.setReadOnly(True)
@@ -533,6 +500,25 @@ class AnalysisWidget(pg.LayoutWidget):
         self.max_l_txtbox = QtGui.QLineEdit()
         self.max_l_txtbox.setReadOnly(True)
 
+        # GroupBoxes -----------------------------------------------------------
+        self.scan_gbox = QtGui.QGroupBox("Scan")
+        self.slice_gbox = QtGui.QGroupBox("Slice")
+        self.mouse_gbox = QtGui.QGroupBox("Mouse")
+        self.max_gbox = QtGui.QGroupBox("Max")
+
+        self.addWidget(self.scan_gbox, row=0, col=0)
+        self.addWidget(self.mouse_gbox, row=0, col=1)
+        self.addWidget(self.max_gbox, row=0, col=2)
+
+        # Layouts --------------------------------------------------------------
+        self.scan_layout = QtGui.QGridLayout()
+        self.mouse_layout = QtGui.QGridLayout()
+        self.max_layout = QtGui.QGridLayout()
+        self.scan_gbox.setLayout(self.scan_layout)
+        self.mouse_gbox.setLayout(self.mouse_layout)
+        self.max_gbox.setLayout(self.max_layout)
+
+        # Scan
         self.scan_layout.addWidget(self.scan_pixel_count_x_lbl, 0, 0)
         self.scan_layout.addWidget(self.scan_pixel_count_x_txtbox, 0, 1)
         self.scan_layout.addWidget(self.scan_pixel_count_y_lbl, 1, 0)
@@ -540,6 +526,7 @@ class AnalysisWidget(pg.LayoutWidget):
         self.scan_layout.addWidget(self.scan_pixel_count_z_lbl, 2, 0)
         self.scan_layout.addWidget(self.scan_pixel_count_z_txtbox, 2, 1)
 
+        # Mouse
         self.mouse_layout.addWidget(self.mouse_x_lbl, 0, 0)
         self.mouse_layout.addWidget(self.mouse_x_txtbox, 0, 1)
         self.mouse_layout.addWidget(self.mouse_y_lbl, 1, 0)
@@ -553,6 +540,7 @@ class AnalysisWidget(pg.LayoutWidget):
         self.mouse_layout.addWidget(self.mouse_l_lbl, 5, 0)
         self.mouse_layout.addWidget(self.mouse_l_txtbox, 5, 1)
 
+        # Max
         self.max_layout.addWidget(self.max_intensity_lbl, 0, 0)
         self.max_layout.addWidget(self.max_intensity_txtbox, 0, 1)
         self.max_layout.addWidget(self.max_h_lbl, 1, 0)
@@ -1244,32 +1232,38 @@ class LineROIWidget(QtGui.QWidget):
                     self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(self.slice, \
                             self.image_view.getImageItem(), returnMappedCoords=True)
                     self.line_cut_coords = self.line_cut_coords.astype(int)
+                    print(self.line_cut.shape)
+                    print(self.line_cut_coords.shape)
+                    print(self.x_values.shape)
+                    print(self.image_x_coords.shape)
+                    print(self.image_y_coords.shape)
+                    print()
                     h_1 = round(self.x_values[self.line_cut_coords[0][0]], 5)
                     h_2 = round(self.x_values[self.line_cut_coords[0][-1]], 5)
-                    k_1 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
-                    k_2 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
-                    l_1 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
-                    l_2 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
+                    k_1 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
+                    k_2 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
+                    l_1 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
+                    l_2 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
 
                 elif slice_direction == "Y(K)":
                     self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(np.swapaxes(self.slice, 0, 1), \
                             self.image_view.getImageItem(), returnMappedCoords=True)
                     self.line_cut_coords = self.line_cut_coords.astype(int)
-                    h_1 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
-                    h_2 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
+                    h_1 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
+                    h_2 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
                     k_1 = round(self.x_values[self.line_cut_coords[0][0]], 5)
                     k_2 = round(self.x_values[self.line_cut_coords[0][-1]], 5)
-                    l_1 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
-                    l_2 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
+                    l_1 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
+                    l_2 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
 
                 else:
                     self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(np.swapaxes(self.slice, 0, 1), \
                             self.image_view.getImageItem(), returnMappedCoords=True)
                     self.line_cut_coords = self.line_cut_coords.astype(int)
-                    h_1 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
-                    h_2 = round(self.image_x_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
-                    k_1 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
-                    k_2 = round(self.image_y_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
+                    h_1 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
+                    h_2 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
+                    k_1 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
+                    k_2 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
                     l_1 = round(self.x_values[self.line_cut_coords[0][0]], 5)
                     l_2 = round(self.x_values[self.line_cut_coords[0][-1]], 5)
 
