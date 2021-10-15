@@ -779,14 +779,14 @@ class ROIWidget(QtGui.QWidget):
         slice_direction = self.main_widget.data_widget.slice_direction
 
         if slice_direction == None or slice_direction == "X(H)":
-            self.roi.setPos((rect[2][0], rect[1][0]))
-            self.roi.setSize((rect[2][-1] - rect[2][0], rect[1][-1] - rect[1][0]))
+            x_dir, y_dir = 2, 1
         elif slice_direction == "Y(K)":
-            self.roi.setPos((rect[2][0], rect[0][0]))
-            self.roi.setSize((rect[2][-1] - rect[2][0], rect[0][-1] - rect[0][0]))
+            x_dir, y_dir = 2, 0
         else:
-            self.roi.setPos((rect[1][0], rect[0][0]))
-            self.roi.setSize((rect[1][-1] - rect[1][0], rect[0][-1] - rect[0][0]))
+            x_dir, y_dir = 1, 0
+
+        self.roi.setPos((rect[x_dir][0], rect[y_dir][0]))
+        self.roi.setSize((rect[x_dir][-1] - rect[x_dir][0], rect[y_dir][-1] - rect[y_dir][0]))
 
     # --------------------------------------------------------------------------
 
@@ -1232,12 +1232,6 @@ class LineROIWidget(QtGui.QWidget):
                     self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(self.slice, \
                             self.image_view.getImageItem(), returnMappedCoords=True)
                     self.line_cut_coords = self.line_cut_coords.astype(int)
-                    print(self.line_cut.shape)
-                    print(self.line_cut_coords.shape)
-                    print(self.x_values.shape)
-                    print(self.image_x_coords.shape)
-                    print(self.image_y_coords.shape)
-                    print()
                     h_1 = round(self.x_values[self.line_cut_coords[0][0]], 5)
                     h_2 = round(self.x_values[self.line_cut_coords[0][-1]], 5)
                     k_1 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
