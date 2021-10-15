@@ -831,8 +831,8 @@ class ROIWidget(QtGui.QWidget):
             y_min = int((self.roi.pos()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
             y_max = int((self.roi.pos()[1] + self.roi.size()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
 
-            if x_min >= 0 and x_max <= dataset.shape[0] and \
-                y_min >= 0 and y_max <= dataset.shape[1]:
+            if x_min >= 0 and x_max <= dataset.shape[2] and \
+                y_min >= 0 and y_max <= dataset.shape[0]:
                 # Region throughout all slice in a direction
                 self.data_roi = dataset[y_min:y_max, :, x_min:x_max]
                 self.color_data_roi = color_dataset[y_min:y_max, :, x_min:x_max]
@@ -855,8 +855,8 @@ class ROIWidget(QtGui.QWidget):
             y_min = int((self.roi.pos()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
             y_max = int((self.roi.pos()[1] + self.roi.size()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
 
-            if x_min >= 0 and x_max <= dataset.shape[0] and \
-                y_min >= 0 and y_max <= dataset.shape[2]:
+            if x_min >= 0 and x_max <= dataset.shape[1] and \
+                y_min >= 0 and y_max <= dataset.shape[0]:
                 # Region throughout all slice in a direction
                 self.data_roi = dataset[y_min:y_max, x_min:x_max, :]
                 self.color_data_roi = color_dataset[y_min:y_max, x_min:x_max, :]
