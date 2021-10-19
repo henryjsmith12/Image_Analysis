@@ -5,6 +5,7 @@ See LICENSE file.
 
 # ==============================================================================
 
+import csv
 import math
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
@@ -295,7 +296,7 @@ class DataSelectionWidget(QtGui.QWidget):
             msg_box.setText("Error Loading Data")
             msg_box.exec_()
 
-    # --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
     def changeSliceDirection(self):
         """
@@ -440,6 +441,36 @@ class DataWidget(pg.ImageView):
 
         self.main_widget.analysis_widget.updateMouseInfo(self.dataset, \
             self.dataset_rect, x, y, self.currentIndex, self.slice_direction)
+
+    # --------------------------------------------------------------------------
+
+    def createCSV(self):
+        """
+        Creates CSV file with HKL positions and intensity
+        *** TEST FUNCTION
+        """
+        header = ["H", "K", "L", "Intensity"]
+        data = []
+
+        h_positions = np.linspace(self.dataset_rect[0][0], self.dataset_rect[0][-1], self.dataset.shape[0])
+        k_positions = np.linspace(self.dataset_rect[1][0], self.dataset_rect[1][-1], self.dataset.shape[1])
+        l_positions = np.linspace(self.dataset_rect[2][0], self.dataset_rect[2][-1], self.dataset.shape[2])
+
+        for i in range(h_positions.shape[0]):
+            for j in range(k_positions.shape[0]):
+                for k in range(l_positions.shape[0]):
+                    row = [h_positions[i], k_positions[j], l_positions[k], int(self.dataset[i][j][k])]
+                    data.append(row)
+            print(i, h_positions.shape[0])
+
+        with open('test.csv', 'w', encoding='UTF8', newline='') as f:
+            writer = csv.writer(f)
+
+            # write the header
+            writer.writerow(header)
+
+            # write multiple rows
+            writer.writerows(data)
 
 # ==============================================================================
 
