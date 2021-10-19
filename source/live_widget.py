@@ -49,10 +49,10 @@ class LivePlottingWidget(QtGui.QWidget):
         - Adds docks to dock area in main widget
         """
 
-        self.image_selection_dock = Dock("Image Selection", size=(100, 100), hideTitle=True)
+        self.image_selection_dock = Dock("Image Selection", size=(100, 300), hideTitle=True)
         self.options_dock = Dock("Options", size=(100, 100), hideTitle=True)
-        self.analysis_dock = Dock("Analysis", size=(200, 100), hideTitle=True)
-        self.image_dock = Dock("Image", size=(200, 100), hideTitle=True)
+        self.analysis_dock = Dock("Analysis", size=(300, 100), hideTitle=True)
+        self.image_dock = Dock("Image", size=(300, 300), hideTitle=True)
 
         # Docks are added in positions relative to docks already in area
         self.dock_area.addDock(self.image_selection_dock)
