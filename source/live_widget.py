@@ -688,6 +688,7 @@ class MappingParametersDialog(QtGui.QDialog):
         self.energy_sbox = QtGui.QSpinBox()
         self.energy_sbox.setMaximum(100000)
         self.ok_btn = QtGui.QPushButton("OK")
+        self.ok_btn.setDefault(True)
 
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
