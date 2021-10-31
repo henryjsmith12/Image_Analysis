@@ -584,6 +584,9 @@ class AnalysisWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def updateScanInfo(self, dataset):
+        """
+        Updates textboxes with dataset shape
+        """
         self.scan_pixel_count_x_txtbox.setText(str(dataset.shape[0]))
         self.scan_pixel_count_y_txtbox.setText(str(dataset.shape[1]))
         self.scan_pixel_count_z_txtbox.setText(str(dataset.shape[2]))
@@ -591,9 +594,15 @@ class AnalysisWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def updateMouseInfo(self, dataset, rect, x, y, index, slice_direction):
+        """
+        Updates mouse location and HKL value textboxes
+        """
+        # Mouse location in pixels
         self.mouse_x_txtbox.setText(str(x))
         self.mouse_y_txtbox.setText(str(y))
 
+        # Checks slice direction and sets HKL positions accordingly
+        # H direction
         if slice_direction == None or slice_direction == "X(H)":
             self.mouse_h_txtbox.setText(str(rect[0][0] + (rect[0][-1] - rect[0][0]) * index / dataset.shape[0]))
             self.mouse_k_txtbox.setText(str(y))
@@ -601,6 +610,7 @@ class AnalysisWidget(pg.LayoutWidget):
             h_index = index
             k_index = int(dataset.shape[1] * (y - rect[1][0]) / (rect[1][-1] - rect[1][0]))
             l_index = int(dataset.shape[2] * (x - rect[2][0]) / (rect[2][-1] - rect[2][0]))
+        # K direction
         elif slice_direction == "Y(K)":
             self.mouse_h_txtbox.setText(str(y))
             self.mouse_k_txtbox.setText(str(rect[1][0] + (rect[1][-1] - rect[1][0]) * index / dataset.shape[1]))
@@ -608,6 +618,7 @@ class AnalysisWidget(pg.LayoutWidget):
             h_index = int(dataset.shape[0] * (y - rect[0][0]) / (rect[0][-1] - rect[0][0]))
             k_index = index
             l_index = int(dataset.shape[2] * (x - rect[2][0]) / (rect[2][-1] - rect[2][0]))
+        # L direction
         else:
             self.mouse_h_txtbox.setText(str(y))
             self.mouse_k_txtbox.setText(str(x))
@@ -616,6 +627,7 @@ class AnalysisWidget(pg.LayoutWidget):
             k_index = int(dataset.shape[1] * (x - rect[1][0]) / (rect[1][-1] - rect[1][0]))
             l_index = index
 
+        # Sets intensity based on HKL positions
         try:
             intensity = int(dataset[h_index][k_index][l_index])
             self.mouse_intensity_txtbox.setText(str(intensity))
@@ -625,6 +637,9 @@ class AnalysisWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def updateMaxInfo(self, dataset, rect):
+        """
+        Updates maximum pixel position and intensity
+        """
         max = np.amax(dataset)
         h_index, k_index, l_index = np.unravel_index(dataset.argmax(), dataset.shape)
 
@@ -636,6 +651,9 @@ class AnalysisWidget(pg.LayoutWidget):
 # ==============================================================================
 
 class ROIAnalysisWidget(pg.LayoutWidget):
+    """
+    Widget that houses four ROIWidgets and an ROISubtractionWidget
+    """
 
     def __init__ (self, parent):
         super(ROIAnalysisWidget, self).__init__(parent)
@@ -661,6 +679,10 @@ class ROIAnalysisWidget(pg.LayoutWidget):
 # ==============================================================================
 
 class ROIWidget(QtGui.QWidget):
+    """
+    - Enables user to add a rectangular ROI to the dataset viewing Window
+    - Displays average intensity within ROI over a series of slices
+    """
 
     def __init__ (self, parent):
         super(ROIWidget, self).__init__(parent)
@@ -669,37 +691,20 @@ class ROIWidget(QtGui.QWidget):
 
         self.avg_intensity = None
 
-        self.layout = QtGui.QGridLayout()
-        self.setLayout(self.layout)
-
+        # Widget Creation ------------------------------------------------------
+        # ROI
         self.roi = pg.ROI([-0.25, -0.25], [0.5, 0.5])
         self.roi.hide()
-        self.info_gbox = QtGui.QGroupBox()
-        self.image_view = pg.ImageView()
-        self.image_view.setFixedWidth(400)
-        self.image_view.ui.histogram.hide()
-        self.image_view.ui.roiBtn.hide()
-        self.image_view.ui.menuBtn.hide()
-        self.plot_widget = pg.PlotWidget()
         self.pen = pg.mkPen(width=3)
         self.roi.setPen(self.pen)
         self.roi.addScaleHandle([0.5, 0], [0.5, 0.5])
         self.roi.addScaleHandle([0, 0.5], [0.5, 0.5])
         self.roi.addScaleHandle([0, 0], [0.5, 0.5])
 
-        # Layout when completed
-        """
-        self.layout.addWidget(self.info_gbox, 0, 0)
-        self.layout.addWidget(self.image_view, 0, 1)
-        self.layout.addWidget(self.plot_widget, 0, 2)
-        """
+        # Avg Intensity Plot
+        self.plot_widget = pg.PlotWidget()
 
-        self.layout.addWidget(self.info_gbox, 0, 0)
-        self.layout.addWidget(self.plot_widget, 0, 1)
-
-        self.info_layout = QtGui.QGridLayout()
-        self.info_gbox.setLayout(self.info_layout)
-
+        # Info
         self.visible_chkbox = QtGui.QCheckBox("Visible")
         self.color_btn = pg.ColorButton()
         self.x_lbl = QtGui.QLabel("x Pos:")
@@ -724,6 +729,19 @@ class ROIWidget(QtGui.QWidget):
         self.height_sbox.setDecimals(6)
         self.outline_btn = QtGui.QPushButton("Outline Image")
 
+        # Groupboxes -----------------------------------------------------------
+        self.info_gbox = QtGui.QGroupBox()
+
+        # Layout ---------------------------------------------------------------
+        self.layout = QtGui.QGridLayout()
+        self.info_layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+        self.info_gbox.setLayout(self.info_layout)
+
+        self.layout.addWidget(self.info_gbox, 0, 0)
+        self.layout.addWidget(self.plot_widget, 0, 1)
+
+        # Info
         self.info_layout.addWidget(self.visible_chkbox, 0, 0)
         self.info_layout.addWidget(self.color_btn, 0, 1)
         self.info_layout.addWidget(self.x_lbl, 1, 0)
@@ -736,6 +754,7 @@ class ROIWidget(QtGui.QWidget):
         self.info_layout.addWidget(self.height_sbox, 4, 1)
         self.info_layout.addWidget(self.outline_btn, 5, 0, 1, 2)
 
+        # Signals ------------------------------------------------------------
         self.visible_chkbox.clicked.connect(self.toggleVisibility)
         self.color_btn.sigColorChanged.connect(self.changeColor)
         self.width_sbox.valueChanged.connect(self.updateSize)
@@ -746,7 +765,7 @@ class ROIWidget(QtGui.QWidget):
         self.roi.sigRegionChanged.connect(self.plotAverageIntensity)
         self.outline_btn.clicked.connect(self.center)
 
-        # Keep track of whether textboxes or roi was updated last
+        # Keeps track of whether textboxes or roi was updated last
         # Helps avoid infinite loop of updating
         # Acts like a semaphore of sorts
         self.updating = ""
@@ -754,6 +773,10 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def toggleVisibility(self, state):
+        """
+        Changes ROI visibility
+        """
+
         if state:
             self.roi.show()
         else:
@@ -766,6 +789,10 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def changeColor(self):
+        """
+        Changes ROI color
+        """
+
         color = self.color_btn.color()
         pen = pg.mkPen(color, width=3)
         self.roi.setPen(pen)
@@ -773,6 +800,10 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updateSize(self):
+        """
+        Updates ROI dimensions
+        """
+
         if self.updating != "analysis":
             self.updating = "roi"
             width = self.width_sbox.value()
@@ -784,6 +815,10 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updatePosition(self):
+        """
+        Updates ROI position
+        """
+
         if self.updating != "analysis":
             self.updating = "roi"
             # Bottom lefthand corner of roi
@@ -795,6 +830,10 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updateAnalysis(self):
+        """
+        Updates textboxes that contain ROI size/position
+        """
+
         if self.updating != "roi":
             self.updating = "analysis"
             self.x_sbox.setValue(self.roi.pos()[0] + self.roi.size()[0] / 2)
@@ -806,6 +845,10 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def center(self):
+        """
+        Centers ROI around image
+        """
+
         rect = self.main_widget.data_widget.dataset_rect
         slice_direction = self.main_widget.data_widget.slice_direction
 
@@ -822,6 +865,10 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def plotAverageIntensity(self):
+        """
+        Creates list of average intensities from each slice of dataset
+        """
+
         avg_intensity = []
         dataset = self.main_widget.data_widget.dataset
         color_dataset = self.main_widget.data_widget.color_dataset
@@ -831,82 +878,57 @@ class ROIWidget(QtGui.QWidget):
         index, tick_value = self.main_widget.data_widget.timeIndex(
             self.main_widget.data_widget.timeLine)
 
+        # Sets x, y, and timeline (z) directions
         if slice_direction == None or slice_direction == "X(H)":
-            #x:L y:K
-            x_min = int((self.roi.pos()[0] - rect[2][0]) * dataset.shape[2] / (rect[2][-1] - rect[2][0]))
-            x_max = int((self.roi.pos()[0] + self.roi.size()[0] - rect[2][0]) * dataset.shape[2] / (rect[2][-1] - rect[2][0]))
-            y_min = int((self.roi.pos()[1] - rect[1][0]) * dataset.shape[1] / (rect[1][-1] - rect[1][0]))
-            y_max = int((self.roi.pos()[1] + self.roi.size()[1] - rect[1][0]) * dataset.shape[1] / (rect[1][-1] - rect[1][0]))
+            x_dir, y_dir, t_dir = 2, 1, 0
+        elif slice_direction == "Y(K)":
+            x_dir, y_dir, t_dir = 2, 0, 1
+        else:
+             x_dir, y_dir, t_dir = 1, 0, 2
 
-            if x_min >= 0 and x_max <= dataset.shape[2] and \
-                y_min >= 0 and y_max <= dataset.shape[1]:
-                # Region throughout all slice in a direction
+        # Shape and axis limits
+        x_shape, x_rect = dataset.shape[x_dir], rect[x_dir]
+        y_shape, y_rect = dataset.shape[y_dir], rect[y_dir]
+        t_shape, t_rect = dataset.shape[t_dir], rect[t_dir]
+
+        # Pixel indicies for ROI
+        x_min = int((self.roi.pos()[0] - x_rect[0]) * x_shape / (x_rect[-1] - x_rect[0]))
+        x_max = int((self.roi.pos()[0] + self.roi.size()[0] - x_rect[0]) * x_shape / (x_rect[-1] - x_rect[0]))
+        y_min = int((self.roi.pos()[1] - y_rect[0]) * y_shape / (y_rect[-1] - y_rect[0]))
+        y_max = int((self.roi.pos()[1] + self.roi.size()[1] - y_rect[0]) * y_shape / (y_rect[-1] - y_rect[0]))
+
+        if x_min >= 0 and x_max <= x_shape and y_min >= 0 and y_max <= y_shape:
+            if slice_direction == None or slice_direction == "X(H)":
                 self.data_roi = dataset[:, y_min:y_max, x_min:x_max]
                 self.color_data_roi = color_dataset[:, y_min:y_max, x_min:x_max]
-                x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
-
-                # Takes average intensity of all slices and creates a list
                 for i in range(self.data_roi.shape[0]):
                     avg = np.mean(self.data_roi[i, :, :])
                     avg_intensity.append(avg)
-
-                self.plot_widget.setLabel(axis="left", text="Average Intensity")
                 self.plot_widget.setLabel(axis="bottom", text="H")
-            else:
-                self.plot_widget.clear()
 
-        elif slice_direction == "Y(K)":
-            #x:L y:H
-            x_min = int((self.roi.pos()[0] - rect[2][0]) * dataset.shape[2] / (rect[2][-1] - rect[2][0]))
-            x_max = int((self.roi.pos()[0] + self.roi.size()[0] - rect[2][0]) * dataset.shape[2] / (rect[2][-1] - rect[2][0]))
-            y_min = int((self.roi.pos()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
-            y_max = int((self.roi.pos()[1] + self.roi.size()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
-
-            if x_min >= 0 and x_max <= dataset.shape[2] and \
-                y_min >= 0 and y_max <= dataset.shape[0]:
-                # Region throughout all slice in a direction
+            elif slice_direction == "Y(K)":
                 self.data_roi = dataset[y_min:y_max, :, x_min:x_max]
                 self.color_data_roi = color_dataset[y_min:y_max, :, x_min:x_max]
-                x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
-
-                # Takes average intensity of all slices and creates a list
                 for i in range(self.data_roi.shape[1]):
                     avg = np.mean(self.data_roi[:, i, :])
                     avg_intensity.append(avg)
-
-                self.plot_widget.setLabel(axis="left", text="Average Intensity")
                 self.plot_widget.setLabel(axis="bottom", text="K")
+
             else:
-                self.plot_widget.clear()
-
-        else:
-            #x:K y:H
-            x_min = int((self.roi.pos()[0] - rect[1][0]) * dataset.shape[1] / (rect[1][-1] - rect[1][0]))
-            x_max = int((self.roi.pos()[0] + self.roi.size()[0] - rect[1][0]) * dataset.shape[1] / (rect[1][-1] - rect[1][0]))
-            y_min = int((self.roi.pos()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
-            y_max = int((self.roi.pos()[1] + self.roi.size()[1] - rect[0][0]) * dataset.shape[0] / (rect[0][-1] - rect[0][0]))
-
-            if x_min >= 0 and x_max <= dataset.shape[1] and \
-                y_min >= 0 and y_max <= dataset.shape[0]:
-                # Region throughout all slice in a direction
                 self.data_roi = dataset[y_min:y_max, x_min:x_max, :]
                 self.color_data_roi = color_dataset[y_min:y_max, x_min:x_max, :]
-                x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
-
-                # Takes average intensity of all slices and creates a list
                 for i in range(self.data_roi.shape[2]):
                     avg = np.mean(self.data_roi[:, :, i])
                     avg_intensity.append(avg)
-
-                self.plot_widget.setLabel(axis="left", text="Average Intensity")
                 self.plot_widget.setLabel(axis="bottom", text="L")
-            else:
-                self.plot_widget.clear()
+
+            t_values = np.linspace(t_rect[0], t_rect[-1], t_shape)
+            self.plot_widget.setLabel(axis="left", text="Average Intensity")
+        else:
+            self.plot_widget.clear()
 
         try:
-            self.plot_widget.plot(x_values, avg_intensity, clear=True)
-            self.image_view.setImage(self.color_data_roi, xvals=slider_ticks)
-            self.image_view.setCurrentIndex(index)
+            self.plot_widget.plot(t_values, avg_intensity, clear=True)
         except Exception:
             self.plot_widget.clear()
 
@@ -915,11 +937,15 @@ class ROIWidget(QtGui.QWidget):
 # ==============================================================================
 
 class ROISubtractionWidget(QtGui.QWidget):
+    """
+    A widget that displays the difference between average intensities of two ROI's
+    """
     def __init__ (self, parent):
         super(ROISubtractionWidget, self).__init__(parent)
         self.roi_analysis_widget = parent
         self.main_widget = self.roi_analysis_widget.main_widget
 
+        # Widget Creation ------------------------------------------------------
         self.first_roi_lbl = QtGui.QLabel("First ROI")
         self.first_roi_cbox = QtGui.QComboBox()
         self.first_roi_cbox.addItems(["ROI 1", "ROI 2", "ROI 3", "ROI 4"])
@@ -927,25 +953,31 @@ class ROISubtractionWidget(QtGui.QWidget):
         self.second_roi_cbox = QtGui.QComboBox()
         self.second_roi_cbox.addItems(["ROI 1", "ROI 2", "ROI 3", "ROI 4"])
 
+        self.plot_widget = pg.PlotWidget()
+
+        # GroupBoxes -----------------------------------------------------------
         self.info_gbox = QtGui.QGroupBox()
+
+        # Layout ---------------------------------------------------------------
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
         self.info_layout = QtGui.QGridLayout()
         self.info_gbox.setLayout(self.info_layout)
+
+        self.layout.addWidget(self.info_gbox, 0, 0)
+        self.layout.addWidget(self.plot_widget, 0, 1)
+
         self.info_layout.addWidget(self.first_roi_lbl, 0, 0)
         self.info_layout.addWidget(self.first_roi_cbox, 0, 1)
         self.info_layout.addWidget(self.second_roi_lbl, 1, 0)
         self.info_layout.addWidget(self.second_roi_cbox, 1, 1)
 
-        self.plot_widget = pg.PlotWidget()
 
-        self.layout = QtGui.QGridLayout()
-        self.setLayout(self.layout)
-
-        self.layout.addWidget(self.info_gbox, 0, 0)
-        self.layout.addWidget(self.plot_widget, 0, 1)
-
+        # Singals --------------------------------------------------------------
         self.first_roi_cbox.currentTextChanged.connect(self.plotData)
         self.second_roi_cbox.currentTextChanged.connect(self.plotData)
 
+        # Representing each ROI with a string
         self.roi_dict = {
             "ROI 1" : self.roi_analysis_widget.roi_1,
             "ROI 2" : self.roi_analysis_widget.roi_2,
@@ -956,6 +988,10 @@ class ROISubtractionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def plotData(self):
+        """
+        Displays average intensity difference
+        """
+
         dataset = self.main_widget.data_widget.dataset
         slice_direction = self.main_widget.data_widget.slice_direction
         rect = self.main_widget.data_widget.dataset_rect
@@ -968,16 +1004,16 @@ class ROISubtractionWidget(QtGui.QWidget):
             self.plot_widget.setLabel(axis="left", text="Average Intensity")
 
             if slice_direction == None or slice_direction == "X(H)":
-                x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
+                t_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
                 self.plot_widget.setLabel(axis="bottom", text="H")
             elif slice_direction == "Y(K)":
-                x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
+                t_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
                 self.plot_widget.setLabel(axis="bottom", text="K")
             else:
-                x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
+                t_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
                 self.plot_widget.setLabel(axis="bottom", text="L")
 
-            self.plot_widget.plot(x_values, avg_intensity_diff, clear=True)
+            self.plot_widget.plot(t_values, avg_intensity_diff, clear=True)
 
         except Exception:
             self.plot_widget.clear()
@@ -985,6 +1021,9 @@ class ROISubtractionWidget(QtGui.QWidget):
 # ==============================================================================
 
 class LineROIAnalysisWidget(pg.LayoutWidget):
+    """
+    Widget that houses four LineROIWidgets
+    """
 
     def __init__ (self, parent):
         super(LineROIAnalysisWidget, self).__init__(parent)
@@ -1008,21 +1047,20 @@ class LineROIAnalysisWidget(pg.LayoutWidget):
 # ==============================================================================
 
 class LineROIWidget(QtGui.QWidget):
+    """
+    - Creates a line segment ROI
+    - Allows user to take arbitrary slices/line cuts of dataset
+    """
 
     def __init__ (self, parent):
         super(LineROIWidget, self).__init__(parent)
         self.line_roi_analysis_widget = parent
         self.main_widget = self.line_roi_analysis_widget.main_widget
 
-        self.info_gbox = QtGui.QGroupBox()
-        self.info_layout = QtGui.QGridLayout()
-        self.info_gbox.setLayout(self.info_layout)
-        self.info_gbox.setMinimumSize(100, 500)
-        self.info_scroll_area = QtGui.QScrollArea()
-        self.info_scroll_area.setWidget(self.info_gbox)
-        self.info_scroll_area.setWidgetResizable(True)
+        self.scene_point = None
 
-        # Slice info -----------------------------------------------------------
+        # Widget Creation ------------------------------------------------------
+        # Slice info
         self.visible_chkbox = QtGui.QCheckBox("Visible")
         self.color_btn = pg.ColorButton()
         self.center_btn = QtGui.QPushButton("Center")
@@ -1039,23 +1077,7 @@ class LineROIWidget(QtGui.QWidget):
         self.mouse_l_txtbox = QtGui.QLineEdit()
         self.mouse_l_txtbox.setReadOnly(True)
 
-        self.slice_info_gbox = QtGui.QGroupBox("Slice")
-        self.slice_info_layout = QtGui.QGridLayout()
-        self.slice_info_gbox.setLayout(self.slice_info_layout)
-
-        self.slice_info_layout.addWidget(self.visible_chkbox, 0, 0, 1, 2)
-        self.slice_info_layout.addWidget(self.color_btn, 0, 2, 1, 2)
-        self.slice_info_layout.addWidget(self.center_btn, 1, 0, 1, 4)
-        self.slice_info_layout.addWidget(self.mouse_intensity_lbl, 2, 0, 1, 2)
-        self.slice_info_layout.addWidget(self.mouse_intensity_txtbox, 2, 2, 1, 2)
-        self.slice_info_layout.addWidget(self.mouse_h_lbl, 3, 0)
-        self.slice_info_layout.addWidget(self.mouse_h_txtbox, 3, 1, 1, 3)
-        self.slice_info_layout.addWidget(self.mouse_k_lbl, 4, 0)
-        self.slice_info_layout.addWidget(self.mouse_k_txtbox, 4, 1, 1, 3)
-        self.slice_info_layout.addWidget(self.mouse_l_lbl, 5, 0)
-        self.slice_info_layout.addWidget(self.mouse_l_txtbox, 5, 1, 1, 3)
-
-        # Line Cut info --------------------------------------------------------
+        # Line Cut info
         self.line_cut_visible_chkbox = QtGui.QCheckBox("Visible")
         self.line_cut_color_btn = pg.ColorButton()
         self.line_cut_center_btn = QtGui.QPushButton("Center")
@@ -1069,10 +1091,85 @@ class LineROIWidget(QtGui.QWidget):
         self.line_cut_l_txtbox = QtGui.QLineEdit()
         self.line_cut_l_txtbox.setReadOnly(True)
 
+        # Slice ROI
+        self.roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
+        self.roi.hide()
+        self.pen = pg.mkPen(width=3)
+        self.roi.setPen(self.pen)
+        self.main_widget.data_widget.addItem(self.roi)
+        self.handle_1 = self.roi.getHandles()[0]
+        self.handle_2 = self.roi.getHandles()[1]
+
+        # Slice Image View
+        self.image_view = pg.ImageView(view=pg.PlotItem())
+        self.image_view.ui.histogram.hide()
+        self.image_view.ui.roiBtn.hide()
+        self.image_view.ui.menuBtn.hide()
+        self.image_view.view.hideAxis('left')
+        self.view_box = self.image_view.view.getViewBox()
+        self.view_box.setAspectLocked(False)
+
+        # Line Cut ROI
+        self.line_cut_roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
+        self.image_view.addItem(self.line_cut_roi)
+        self.line_cut_roi.hide()
+        self.line_cut_pen = pg.mkPen(width=3)
+        self.line_cut_roi.setPen(self.line_cut_pen)
+        self.line_cut_handle_1 = self.line_cut_roi.getHandles()[0]
+        self.line_cut_handle_2 = self.line_cut_roi.getHandles()[1]
+
+        # Intensity Plots
+        self.slice_plot_widget = pg.PlotWidget(title="Slice")
+        self.line_cut_plot_widget = pg.PlotWidget(title="Line Cut")
+        self.line_cut_plot_widget.hideAxis('bottom')
+
+        # GroupBoxes -----------------------------------------------------------
+        self.info_gbox = QtGui.QGroupBox()
+        self.info_gbox.setMinimumSize(100, 500)
+        self.slice_info_gbox = QtGui.QGroupBox("Slice")
         self.line_cut_info_gbox = QtGui.QGroupBox("Line Cut")
+
+        # ScrollArea -----------------------------------------------------------
+        self.info_scroll_area = QtGui.QScrollArea()
+        self.info_scroll_area.setWidget(self.info_gbox)
+        self.info_scroll_area.setWidgetResizable(True)
+
+        # Layouts --------------------------------------------------------------
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+        self.info_layout = QtGui.QGridLayout()
+        self.info_gbox.setLayout(self.info_layout)
+        self.slice_info_layout = QtGui.QGridLayout()
+        self.slice_info_gbox.setLayout(self.slice_info_layout)
         self.line_cut_info_layout = QtGui.QGridLayout()
         self.line_cut_info_gbox.setLayout(self.line_cut_info_layout)
 
+        self.layout.addWidget(self.info_scroll_area, 0, 0)
+        self.layout.addWidget(self.image_view, 0, 1)
+        self.layout.addWidget(self.slice_plot_widget, 0, 2)
+        self.layout.addWidget(self.line_cut_plot_widget, 0, 3)
+        self.layout.setColumnStretch(0,2)
+        self.layout.setColumnStretch(1,3)
+        self.layout.setColumnStretch(2,3)
+        self.layout.setColumnStretch(3,3)
+
+        self.info_layout.addWidget(self.slice_info_gbox, 0, 0)
+        self.info_layout.addWidget(self.line_cut_info_gbox, 1, 0)
+
+        # Slice Info
+        self.slice_info_layout.addWidget(self.visible_chkbox, 0, 0, 1, 2)
+        self.slice_info_layout.addWidget(self.color_btn, 0, 2, 1, 2)
+        self.slice_info_layout.addWidget(self.center_btn, 1, 0, 1, 4)
+        self.slice_info_layout.addWidget(self.mouse_intensity_lbl, 2, 0, 1, 2)
+        self.slice_info_layout.addWidget(self.mouse_intensity_txtbox, 2, 2, 1, 2)
+        self.slice_info_layout.addWidget(self.mouse_h_lbl, 3, 0)
+        self.slice_info_layout.addWidget(self.mouse_h_txtbox, 3, 1, 1, 3)
+        self.slice_info_layout.addWidget(self.mouse_k_lbl, 4, 0)
+        self.slice_info_layout.addWidget(self.mouse_k_txtbox, 4, 1, 1, 3)
+        self.slice_info_layout.addWidget(self.mouse_l_lbl, 5, 0)
+        self.slice_info_layout.addWidget(self.mouse_l_txtbox, 5, 1, 1, 3)
+
+        # Line Cut Info
         self.line_cut_info_layout.addWidget(self.line_cut_visible_chkbox, 0, 0, 1, 2)
         self.line_cut_info_layout.addWidget(self.line_cut_color_btn, 0, 2, 1, 3)
         self.line_cut_info_layout.addWidget(self.line_cut_center_btn, 1, 0, 1, 5)
@@ -1083,106 +1180,13 @@ class LineROIWidget(QtGui.QWidget):
         self.line_cut_info_layout.addWidget(self.line_cut_l_lbl, 4, 0)
         self.line_cut_info_layout.addWidget(self.line_cut_l_txtbox, 4, 1, 1, 4)
 
-        # Adding groupboxes to Info layout -------------------------------------
-        self.info_layout.addWidget(self.slice_info_gbox, 0, 0)
-        self.info_layout.addWidget(self.line_cut_info_gbox, 1, 0)
-
-        # Unused ===============================
-        self.x1_lbl = QtGui.QLabel("x1 Pos:")
-        self.x1_sbox = QtGui.QDoubleSpinBox()
-        self.x1_sbox.setMinimum(-1000)
-        self.x1_sbox.setMaximum(1000)
-        self.x1_sbox.setDecimals(6)
-        self.y1_lbl = QtGui.QLabel("y1 Pos:")
-        self.y1_sbox = QtGui.QDoubleSpinBox()
-        self.y1_sbox.setMinimum(-1000)
-        self.y1_sbox.setMaximum(1000)
-        self.y1_sbox.setDecimals(6)
-        self.x2_lbl = QtGui.QLabel("x2 Pos:")
-        self.x2_sbox = QtGui.QDoubleSpinBox()
-        self.x2_sbox.setMinimum(-1000)
-        self.x2_sbox.setMaximum(1000)
-        self.x2_sbox.setDecimals(6)
-        self.y2_lbl = QtGui.QLabel("y2 Pos:")
-        self.y2_sbox = QtGui.QDoubleSpinBox()
-        self.y2_sbox.setMinimum(-1000)
-        self.y2_sbox.setMaximum(1000)
-        self.y2_sbox.setDecimals(6)
-        """
-        self.info_layout.addWidget(self.visible_chkbox, 0, 0)
-        self.info_layout.addWidget(self.color_btn, 0, 1)
-        self.info_layout.addWidget(self.x1_lbl, 1, 0)
-        self.info_layout.addWidget(self.x1_sbox, 1, 1)
-        self.info_layout.addWidget(self.y1_lbl, 2, 0)
-        self.info_layout.addWidget(self.y1_sbox, 2, 1)
-        self.info_layout.addWidget(self.x2_lbl, 3, 0)
-        self.info_layout.addWidget(self.x2_sbox, 3, 1)
-        self.info_layout.addWidget(self.y2_lbl, 4, 0)
-        self.info_layout.addWidget(self.y2_sbox, 4, 1)
-        self.info_layout.addWidget(self.center_btn, 5, 0, 1, 2)
-        self.info_layout.addWidget(self.mouse_intensity_lbl, 6, 0)
-        self.info_layout.addWidget(self.mouse_intensity_txtbox, 6, 1)
-        self.info_layout.addWidget(self.mouse_h_lbl, 7, 0)
-        self.info_layout.addWidget(self.mouse_h_txtbox, 7, 1)
-        self.info_layout.addWidget(self.mouse_k_lbl, 8, 0)
-        self.info_layout.addWidget(self.mouse_k_txtbox, 8, 1)
-        self.info_layout.addWidget(self.mouse_l_lbl, 9, 0)
-        self.info_layout.addWidget(self.mouse_l_txtbox, 9, 1)
-        self.info_layout.addWidget(self.line_cut_visible_chkbox, 10, 0)
-        self.info_layout.addWidget(self.line_cut_color_btn, 10, 1)
-        self.info_layout.addWidget(self.line_cut_center_btn, 11, 0, 1, 2)
-        """
-
-        self.roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
-        self.main_widget.data_widget.addItem(self.roi)
-        self.roi.hide()
-        self.pen = pg.mkPen(width=3)
-        self.roi.setPen(self.pen)
-        self.handle_1 = self.roi.getHandles()[0]
-        self.handle_2 = self.roi.getHandles()[1]
-        self.image_view = pg.ImageView(view=pg.PlotItem())
-        self.image_view.ui.histogram.hide()
-        self.image_view.ui.roiBtn.hide()
-        self.image_view.ui.menuBtn.hide()
-        self.image_view.view.hideAxis('left')
-        self.slice_plot_widget = pg.PlotWidget(title="Slice")
-        self.line_cut_plot_widget = pg.PlotWidget(title="Line Cut")
-        self.line_cut_plot_widget.hideAxis('bottom')
-
-        self.scene_point = None
-        self.view_box = self.image_view.view.getViewBox()
-        self.view_box.setAspectLocked(False)
-
-        self.line_cut_roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
-        self.image_view.addItem(self.line_cut_roi)
-        self.line_cut_roi.hide()
-        self.line_cut_pen = pg.mkPen(width=3)
-        self.line_cut_roi.setPen(self.line_cut_pen)
-        self.line_cut_handle_1 = self.line_cut_roi.getHandles()[0]
-        self.line_cut_handle_2 = self.line_cut_roi.getHandles()[1]
-
-        self.layout = QtGui.QGridLayout()
-        self.setLayout(self.layout)
-        self.layout.addWidget(self.info_scroll_area, 0, 0)
-        self.layout.addWidget(self.image_view, 0, 1)
-        self.layout.addWidget(self.slice_plot_widget, 0, 2)
-        self.layout.addWidget(self.line_cut_plot_widget, 0, 3)
-        self.layout.setColumnStretch(0,2)
-        self.layout.setColumnStretch(1,3)
-        self.layout.setColumnStretch(2,3)
-        self.layout.setColumnStretch(3,3)
-
+        # Signals --------------------------------------------------------------
         self.roi.sigRegionChanged.connect(self.update)
         self.visible_chkbox.clicked.connect(self.toggleVisibility)
         self.color_btn.sigColorChanged.connect(self.changeColor)
         self.line_cut_roi.sigRegionChanged.connect(self.updateLineCut)
         self.line_cut_visible_chkbox.clicked.connect(self.toggleLineCutVisibility)
         self.line_cut_color_btn.sigColorChanged.connect(self.changeLineCutColor)
-        self.x1_sbox.valueChanged.connect(self.updatePosition)
-        self.y1_sbox.valueChanged.connect(self.updatePosition)
-        self.x2_sbox.valueChanged.connect(self.updatePosition)
-        self.y2_sbox.valueChanged.connect(self.updatePosition)
-        self.roi.sigRegionChanged.connect(self.updateAnalysis)
         self.center_btn.clicked.connect(self.center)
         self.line_cut_center_btn.clicked.connect(self.centerLineCut)
         self.view_box.scene().sigMouseMoved.connect(self.updateMouseInfo)
@@ -1192,120 +1196,130 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def update(self):
+        """
+        Updates slice image/plot to reflect current ROI position
+        """
         dataset = self.main_widget.data_widget.dataset
         rect = self.main_widget.data_widget.dataset_rect
         image_item = self.main_widget.data_widget.imageItem
         axes = self.main_widget.data_widget.axes
         slice_direction = self.main_widget.data_widget.slice_direction
+        self.slice_coords = []
 
-        if dataset != [] or dataset != None:
-            try:
-                self.slice, self.slice_coords = self.roi.getArrayRegion(dataset, image_item, \
-                    axes=(axes.get("x"), axes.get("y")), returnMappedCoords=True)
-                self.slice_coords = self.slice_coords.astype(int)
+        # Sets x, y, and timeline (z) directions
+        if slice_direction == None or slice_direction == "X(H)":
+            x_dir, y_dir, t_dir = 2, 1, 0
+        elif slice_direction == "Y(K)":
+            x_dir, y_dir, t_dir = 2, 0, 1
+        else:
+             x_dir, y_dir, t_dir = 1, 0, 2
 
-                colormap_max = np.amax(dataset)
-                norm = colors.LogNorm(vmax=colormap_max)
-                norm_slice = norm(self.slice)
-                color_slice = plt.cm.jet(norm_slice)
+        try:
+            self.slice, self.slice_coords = self.roi.getArrayRegion(dataset, image_item, \
+                axes=(axes.get("x"), axes.get("y")), returnMappedCoords=True)
+            self.slice_coords = self.slice_coords.astype(int)
 
-                if slice_direction == None or slice_direction == "X(H)":
-                    self.x_values = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
-                    self.image_x_coords = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
-                    self.image_y_coords = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
-                    intensities = np.mean(self.slice, axis=1)
-                    pos = (rect[0][0], 0)
-                    scale = ((rect[0][-1] - rect[0][0]) / dataset.shape[0], 1)
-                    self.image_view.view.setLabel(axis="bottom", text="H")
-                    self.slice_plot_widget.setLabel(axis="bottom", text="H")
-                elif slice_direction == "Y(K)":
-                    color_slice = np.swapaxes(color_slice, 0, 1)
-                    self.x_values = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
-                    self.image_x_coords = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
-                    self.image_y_coords = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
-                    intensities = np.mean(self.slice, axis=0)
-                    pos = (rect[1][0], 0)
-                    scale = ((rect[1][-1] - rect[1][0]) / dataset.shape[1], 1)
-                    self.image_view.view.setLabel(axis="bottom", text="K")
-                    self.slice_plot_widget.setLabel(axis="bottom", text="K")
-                else:
-                    color_slice = np.swapaxes(color_slice, 0, 1)
-                    self.x_values = np.linspace(rect[2][0], rect[2][-1], dataset.shape[2])
-                    self.image_x_coords = np.linspace(rect[1][0], rect[1][-1], dataset.shape[1])
-                    self.image_y_coords = np.linspace(rect[0][0], rect[0][-1], dataset.shape[0])
-                    intensities = np.mean(self.slice, axis=0)
-                    pos = (rect[2][0], 0)
-                    scale = ((rect[2][-1] - rect[2][0]) / dataset.shape[2], 1)
-                    self.image_view.view.setLabel(axis="bottom", text="L")
-                    self.slice_plot_widget.setLabel(axis="bottom", text="L")
+            colormap_max = np.amax(dataset)
+            norm = colors.LogNorm(vmax=colormap_max)
+            norm_slice = norm(self.slice)
+            color_slice = plt.cm.jet(norm_slice)
 
-                self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
-                self.line_cut_plot_widget.setLabel(axis="left", text="Intensity")
+            self.t_values = np.linspace(rect[t_dir][0], rect[t_dir][-1], dataset.shape[t_dir])
+            self.image_x_coords = np.linspace(rect[x_dir][0], rect[x_dir][-1], dataset.shape[x_dir])
+            self.image_y_coords = np.linspace(rect[y_dir][0], rect[y_dir][-1], dataset.shape[y_dir])
+            pos = (rect[t_dir][0], 0)
+            scale = ((rect[t_dir][-1] - rect[t_dir][0]) / dataset.shape[t_dir], 1)
 
-                self.image_view.setImage(color_slice, pos=pos, scale=scale)
-                self.slice_plot_widget.plot(self.x_values, intensities, clear=True)
-                self.updateLineCut()
+            if slice_direction == None or slice_direction == "X(H)":
+                intensities = np.mean(self.slice, axis=1)
+                self.image_view.view.setLabel(axis="bottom", text="H")
+                self.slice_plot_widget.setLabel(axis="bottom", text="H")
 
-            except ValueError:
-                self.image_view.clear()
-                self.slice_plot_widget.clear()
-                self.line_cut_plot_widget.clear()
+            elif slice_direction == "Y(K)":
+                color_slice = np.swapaxes(color_slice, 0, 1)
+                intensities = np.mean(self.slice, axis=0)
+                self.image_view.view.setLabel(axis="bottom", text="K")
+                self.slice_plot_widget.setLabel(axis="bottom", text="K")
+
+            else:
+                color_slice = np.swapaxes(color_slice, 0, 1)
+                intensities = np.mean(self.slice, axis=0)
+                self.image_view.view.setLabel(axis="bottom", text="L")
+                self.slice_plot_widget.setLabel(axis="bottom", text="L")
+
+            self.slice_plot_widget.setLabel(axis="left", text="Average Intensity")
+            self.line_cut_plot_widget.setLabel(axis="left", text="Intensity")
+
+            self.image_view.setImage(color_slice, pos=pos, scale=scale)
+            self.slice_plot_widget.plot(self.t_values, intensities, clear=True)
+            self.updateLineCut()
+
+        except Exception:
+            self.image_view.clear()
+            self.slice_plot_widget.clear()
+            self.line_cut_plot_widget.clear()
 
     # --------------------------------------------------------------------------
 
     def updateLineCut(self):
+        """
+        Updates line cut plot
+        """
+
         rect = self.main_widget.data_widget.dataset_rect
         slice_direction = self.main_widget.data_widget.slice_direction
 
-        if self.slice != [] or self.slice != None:
-            try:
-                if slice_direction == None or slice_direction == "X(H)":
-                    self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(self.slice, \
-                            self.image_view.getImageItem(), returnMappedCoords=True)
-                    self.line_cut_coords = self.line_cut_coords.astype(int)
-                    h_1 = round(self.x_values[self.line_cut_coords[0][0]], 5)
-                    h_2 = round(self.x_values[self.line_cut_coords[0][-1]], 5)
-                    k_1 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
-                    k_2 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
-                    l_1 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
-                    l_2 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
+        try:
+            if slice_direction == None or slice_direction == "X(H)":
+                self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(self.slice, \
+                        self.image_view.getImageItem(), returnMappedCoords=True)
+                self.line_cut_coords = self.line_cut_coords.astype(int)
+                h_1 = round(self.t_values[self.line_cut_coords[0][0]], 5)
+                h_2 = round(self.t_values[self.line_cut_coords[0][-1]], 5)
+                k_1 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
+                k_2 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
+                l_1 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
+                l_2 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
 
-                elif slice_direction == "Y(K)":
-                    self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(np.swapaxes(self.slice, 0, 1), \
-                            self.image_view.getImageItem(), returnMappedCoords=True)
-                    self.line_cut_coords = self.line_cut_coords.astype(int)
-                    h_1 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
-                    h_2 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
-                    k_1 = round(self.x_values[self.line_cut_coords[0][0]], 5)
-                    k_2 = round(self.x_values[self.line_cut_coords[0][-1]], 5)
-                    l_1 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
-                    l_2 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
+            elif slice_direction == "Y(K)":
+                self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(np.swapaxes(self.slice, 0, 1), \
+                        self.image_view.getImageItem(), returnMappedCoords=True)
+                self.line_cut_coords = self.line_cut_coords.astype(int)
+                h_1 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
+                h_2 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
+                k_1 = round(self.t_values[self.line_cut_coords[0][0]], 5)
+                k_2 = round(self.t_values[self.line_cut_coords[0][-1]], 5)
+                l_1 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
+                l_2 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
 
-                else:
-                    self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(np.swapaxes(self.slice, 0, 1), \
-                            self.image_view.getImageItem(), returnMappedCoords=True)
-                    self.line_cut_coords = self.line_cut_coords.astype(int)
-                    h_1 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
-                    h_2 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
-                    k_1 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
-                    k_2 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
-                    l_1 = round(self.x_values[self.line_cut_coords[0][0]], 5)
-                    l_2 = round(self.x_values[self.line_cut_coords[0][-1]], 5)
+            else:
+                self.line_cut, self.line_cut_coords = self.line_cut_roi.getArrayRegion(np.swapaxes(self.slice, 0, 1), \
+                        self.image_view.getImageItem(), returnMappedCoords=True)
+                self.line_cut_coords = self.line_cut_coords.astype(int)
+                h_1 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][0]]], 5)
+                h_2 = round(self.image_y_coords[self.slice_coords[1][self.line_cut_coords[1][-1]]], 5)
+                k_1 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][0]]], 5)
+                k_2 = round(self.image_x_coords[self.slice_coords[0][self.line_cut_coords[1][-1]]], 5)
+                l_1 = round(self.t_values[self.line_cut_coords[0][0]], 5)
+                l_2 = round(self.t_values[self.line_cut_coords[0][-1]], 5)
 
-                self.line_cut_plot_widget.plot(self.line_cut, clear=True)
-                h_interval = f"({h_1}, {h_2})"
-                k_interval = f"({k_1}, {k_2})"
-                l_interval = f"({l_1}, {l_2})"
-                self.line_cut_h_txtbox.setText(h_interval)
-                self.line_cut_k_txtbox.setText(k_interval)
-                self.line_cut_l_txtbox.setText(l_interval)
+            self.line_cut_plot_widget.plot(self.line_cut, clear=True)
+            h_interval = f"({h_1}, {h_2})"
+            k_interval = f"({k_1}, {k_2})"
+            l_interval = f"({l_1}, {l_2})"
+            self.line_cut_h_txtbox.setText(h_interval)
+            self.line_cut_k_txtbox.setText(k_interval)
+            self.line_cut_l_txtbox.setText(l_interval)
 
-            except ValueError:
-                self.line_cut_plot_widget.clear()
+        except Exception:
+            self.line_cut_plot_widget.clear()
 
     # --------------------------------------------------------------------------
 
     def toggleVisibility(self, state):
+        """
+        Changes visibility of slice ROI
+        """
         if state:
             self.roi.show()
         else:
@@ -1314,6 +1328,9 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def toggleLineCutVisibility(self, state):
+        """
+        Changes visibility of line cut ROI
+        """
         if state:
             self.line_cut_roi.show()
         else:
@@ -1335,32 +1352,10 @@ class LineROIWidget(QtGui.QWidget):
 
     # --------------------------------------------------------------------------
 
-    def updatePosition(self):
-        if self.updating != "analysis":
-            self.updating = "roi"
-            # Bottom lefthand corner of roi
-            x1 = self.x1_sbox.value()
-            y1 = self.y1_sbox.value()
-            self.roi.movePoint(self.handle_1, (x1, y1))
-            x2 = self.x2_sbox.value()
-            y2 = self.y2_sbox.value()
-            self.roi.movePoint(self.handle_2, (x2, y2))
-            self.updating = ""
-
-    # --------------------------------------------------------------------------
-
-    def updateAnalysis(self):
-        if self.updating != "roi":
-            self.updating = "analysis"
-            self.x1_sbox.setValue(self.roi.listPoints()[0].x())
-            self.y1_sbox.setValue(self.roi.listPoints()[0].y())
-            self.x2_sbox.setValue(self.roi.listPoints()[1].x())
-            self.y2_sbox.setValue(self.roi.listPoints()[1].y())
-            self.updating = ""
-
-    # --------------------------------------------------------------------------
-
     def center(self):
+        """
+        Centers slice ROI diagonally across image
+        """
         rect = self.main_widget.data_widget.dataset_rect
         slice_direction = self.main_widget.data_widget.slice_direction
 
@@ -1374,15 +1369,17 @@ class LineROIWidget(QtGui.QWidget):
             x1, y1 = round(rect[1][0], 6), round(rect[0][0], 6)
             x2, y2 = round(rect[1][-1], 6), round(rect[0][-1], 6)
 
-        self.updating = "roi"
         self.roi.movePoint(self.handle_1, (x1, y1))
         self.roi.movePoint(self.handle_2, (x2, y2))
-        self.updating = ""
-        self.updateAnalysis()
 
     # --------------------------------------------------------------------------
 
     def centerLineCut(self):
+
+        """
+        Centers line cut ROI diagonally across slice image
+        """
+
         rect = self.main_widget.data_widget.dataset_rect
         slice_direction = self.main_widget.data_widget.slice_direction
 
@@ -1402,6 +1399,11 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updateMouseInfo(self, scene_point=None):
+
+        """
+        Updates mouse position on slice and converts mouse position to HKL position
+        """
+
         dataset = self.main_widget.data_widget.dataset
         rect = self.main_widget.data_widget.dataset_rect
         slice_direction = self.main_widget.data_widget.slice_direction
@@ -1416,51 +1418,55 @@ class LineROIWidget(QtGui.QWidget):
         else:
             return
 
-        if slice_direction == None or slice_direction == "X(H)":
-            h_index = int(dataset.shape[0] * (x - rect[0][0]) / (rect[0][-1] - rect[0][0]))
-            k_index = self.slice_coords[1][int(y)]
-            l_index = self.slice_coords[0][int(y) + 1]
-            self.mouse_h_txtbox.setText(str(round(x, 5)))
-            self.mouse_k_txtbox.setText(str(round(self.image_y_coords[k_index], 5)))
-            self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 5)))
-        elif slice_direction == "Y(K)":
-            h_index = self.slice_coords[1][int(y)]
-            k_index = int(dataset.shape[1] * (x - rect[1][0]) / (rect[1][-1] - rect[1][0]))
-            l_index = self.slice_coords[0][int(y) + 1]
-
-            self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 5)))
-            self.mouse_k_txtbox.setText(str(round(x, 5)))
-            self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 5)))
-        else:
-            h_index = self.slice_coords[1][int(y)]
-            k_index = self.slice_coords[0][int(y) + 1]
-            l_index = int(dataset.shape[2] * (x - rect[2][0]) / (rect[2][-1] - rect[2][0]))
-            self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 5)))
-            self.mouse_k_txtbox.setText(str(round(self.image_x_coords[k_index], 5)))
-            self.mouse_l_txtbox.setText(str(round(x, 5)))
-
         try:
+            if slice_direction == None or slice_direction == "X(H)":
+                h_index = int(dataset.shape[0] * (x - rect[0][0]) / (rect[0][-1] - rect[0][0]))
+                k_index = self.slice_coords[1][int(y)]
+                l_index = self.slice_coords[0][int(y) + 1]
+                self.mouse_h_txtbox.setText(str(round(x, 5)))
+                self.mouse_k_txtbox.setText(str(round(self.image_y_coords[k_index], 5)))
+                self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 5)))
+
+            elif slice_direction == "Y(K)":
+                h_index = self.slice_coords[1][int(y)]
+                k_index = int(dataset.shape[1] * (x - rect[1][0]) / (rect[1][-1] - rect[1][0]))
+                l_index = self.slice_coords[0][int(y) + 1]
+                self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 5)))
+                self.mouse_k_txtbox.setText(str(round(x, 5)))
+                self.mouse_l_txtbox.setText(str(round(self.image_x_coords[l_index], 5)))
+
+            else:
+                h_index = self.slice_coords[1][int(y)]
+                k_index = self.slice_coords[0][int(y) + 1]
+                l_index = int(dataset.shape[2] * (x - rect[2][0]) / (rect[2][-1] - rect[2][0]))
+                self.mouse_h_txtbox.setText(str(round(self.image_y_coords[h_index], 5)))
+                self.mouse_k_txtbox.setText(str(round(self.image_x_coords[k_index], 5)))
+                self.mouse_l_txtbox.setText(str(round(x, 5)))
+
             intensity = int(dataset[h_index][k_index][l_index])
             self.mouse_intensity_txtbox.setText(str(intensity))
-        except IndexError:
+        except Exception:
             self.mouse_intensity_txtbox.setText("")
 
 # ==============================================================================
 
 class ConversionParametersDialog(QtGui.QDialog):
 
+    """
+    Houses dialog where user selects pixel interpolation values and config files for conversion
+    """
+
     def __init__ (self):
         super().__init__()
 
         self.setWindowModality(QtCore.Qt.ApplicationModal)
-
         self.detector_config_name = ""
         self.instrument_config_name = ""
         self.pixel_count_nx = 0
         self.pixel_count_ny = 0
         self.pixel_count_nz = 0
 
-        # Create widgets
+        # Widget Creation ------------------------------------------------------
         self.detector_lbl = QtGui.QLabel("Det. Config:")
         self.detector_txtbox = QtGui.QLineEdit()
         self.detector_txtbox.setReadOnly(True)
@@ -1479,11 +1485,10 @@ class ConversionParametersDialog(QtGui.QDialog):
         self.dialog_btnbox = QtGui.QDialogButtonBox()
         self.dialog_btnbox.addButton("OK", QtGui.QDialogButtonBox.AcceptRole)
 
-        # Create layout
+        # Layout ---------------------------------------------------------------
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
-        # Add widgets to layout
         self.layout.addWidget(self.detector_lbl, 1, 0)
         self.layout.addWidget(self.detector_txtbox, 1, 1, 1, 3)
         self.layout.addWidget(self.detector_btn, 1, 4)
@@ -1496,7 +1501,8 @@ class ConversionParametersDialog(QtGui.QDialog):
         self.layout.addWidget(self.pixel_count_nz_sbox, 3, 3)
         self.layout.addWidget(self.dialog_btnbox, 4, 3, 1, 2)
 
-        # Connect widgets to functions
+        # Signals --------------------------------------------------------------
+
         self.detector_btn.clicked.connect(self.selectDetectorConfigFile)
         self.instrument_btn.clicked.connect(self.selectInstrumentConfigFile)
         self.dialog_btnbox.accepted.connect(self.accept)
