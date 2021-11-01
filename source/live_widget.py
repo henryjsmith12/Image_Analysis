@@ -22,6 +22,7 @@ import xrayutilities as xu
 # ==============================================================================
 
 class LivePlottingWidget(QtGui.QWidget):
+    
     """
     Houses docked widgets components for Live Plotting widget
     """
@@ -44,6 +45,7 @@ class LivePlottingWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def createDocks(self):
+
         """
         - Creates docks
         - Adds docks to dock area in main widget
@@ -64,6 +66,7 @@ class LivePlottingWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def createWidgets(self):
+
         """
         - Creates instances of subwidgets
         - Adds each subwidget to its respective dock
@@ -82,6 +85,7 @@ class LivePlottingWidget(QtGui.QWidget):
 # ==============================================================================
 
 class ImageSelectionWidget(QtGui.QWidget):
+
     """
     - Allows user to select directory of TIFF images to view
     - Ablity to play through a directory of images
@@ -118,6 +122,7 @@ class ImageSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def setScanDirectory(self):
+
         """
         - Opens file dialog
         - Adds images of scan directory to list widget
@@ -140,6 +145,7 @@ class ImageSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def loadImage(self, list_item):
+
         """
         - Reads image from path
         - Calls function to display image in plot window
@@ -155,6 +161,7 @@ class ImageSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def playScan(self):
+
         """
         - Loops through images in list
         - Calls function to display image in plot window
@@ -168,6 +175,7 @@ class ImageSelectionWidget(QtGui.QWidget):
 # ==============================================================================
 
 class OptionsWidget(QtGui.QWidget):
+
     """
     - Ability to map image pixels to reciprocal space (HKL)
     - Gives user various viewing options for plot window
@@ -226,6 +234,7 @@ class OptionsWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def showMappingDialog(self):
+
         """
         - Displays mapping dialog
         - When finished, maps pixels
@@ -237,6 +246,7 @@ class OptionsWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def mapPixelsToHKL(self):
+
         """
         - Sets values given from dialog
         - Creates scan area
@@ -271,6 +281,7 @@ class OptionsWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def toggleCrosshair(self, state):
+
         """
         Sets crosshair to visible/invisible
         """
@@ -286,6 +297,7 @@ class OptionsWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def changeCrosshairColor(self):
+
         """
         Changes crosshair color to selected color in color button
         """
@@ -298,6 +310,7 @@ class OptionsWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def changeColormap(self):
+
         """
         Changes colormap to color selected in colormap combo box
         """
@@ -310,6 +323,7 @@ class OptionsWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def toggleColormapScale(self):
+
         """
         - Sets colormap scale to either linear or logarithmic
         *** TODO: Add power norm feature?
@@ -327,6 +341,7 @@ class OptionsWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def toggleBackgroundColor(self):
+
         """
         Sets plot background to either black (default) or white
         """
@@ -341,6 +356,7 @@ class OptionsWidget(QtGui.QWidget):
 # ==============================================================================
 
 class ImageWidget(pg.PlotWidget):
+
     """
     - Displays image (in units of pixels)
     - Tracks mouse location/information
@@ -373,6 +389,7 @@ class ImageWidget(pg.PlotWidget):
     # --------------------------------------------------------------------------
 
     def displayImage(self, image):
+
         """
         - Normalizes image
         - Adds colormap to widget
@@ -411,6 +428,7 @@ class ImageWidget(pg.PlotWidget):
     # --------------------------------------------------------------------------
 
     def setColormap(self, image):
+
         """
         Sets colormap for image
         """
@@ -433,6 +451,7 @@ class ImageWidget(pg.PlotWidget):
     # --------------------------------------------------------------------------
 
     def updateMouse(self, scene_point=None):
+
         """
         - Converts coordinates from scene to view
         - Sets crosshair position
@@ -458,6 +477,7 @@ class ImageWidget(pg.PlotWidget):
 # ==============================================================================
 
 class AnalysisWidget(pg.LayoutWidget):
+
     """
     - Holds groupbox with information about:
         - Mouse location/intensity
@@ -629,6 +649,7 @@ class AnalysisWidget(pg.LayoutWidget):
 # ==============================================================================
 
 class MappingParametersDialog(QtGui.QDialog):
+
     """
     - Allows user to set parameters used to map pixels to reciprocal space
     """
@@ -725,6 +746,7 @@ class MappingParametersDialog(QtGui.QDialog):
     # --------------------------------------------------------------------------
 
     def selectDetectorConfigFile(self):
+
         """
         Allows user to select a detector configuration .xml file.
         """
@@ -735,6 +757,7 @@ class MappingParametersDialog(QtGui.QDialog):
     # --------------------------------------------------------------------------
 
     def selectInstrumentConfigFile(self):
+
         """
         Allows user to select an instrument configuration .xml file.
         """
@@ -745,6 +768,7 @@ class MappingParametersDialog(QtGui.QDialog):
     # --------------------------------------------------------------------------
 
     def acceptDialog(self):
+
         """
         Sets class variables to values in dialog and closes the dialog window.
         """
@@ -764,12 +788,14 @@ class MappingParametersDialog(QtGui.QDialog):
 # ==============================================================================
 
 class MappingLogic():
+
     """
     Function(s) that deal with mapping images to reciprocal space
     """
 
     def createLiveScanArea(instrument_config_name, detector_config_name, mu, eta, \
         chi, phi, nu, delta, ub, energy):
+
         """
         Creates a scan area to map pixels to reciprocal space coordinates
         """
@@ -786,6 +812,7 @@ class MappingLogic():
         Object for the conversion of angular coordinates to momentum space for
         arbitrary goniometer geometries and X-ray energy. (from xru docs)
         """
+
         q_conv = xu.experiment.QConversion(sample_circle_dir, det_circle_dir, primary_beam_dir)
 
         # x+/-, y+/-, z+/-
@@ -797,6 +824,7 @@ class MappingLogic():
         calculating the angles of Bragg reflections as well as helps with analyzing
         measured data. (from xru docs)
         """
+
         hxrd = xu.HXRD(inplane_ref_dir, sample_norm_dir, en=energy, qconv=q_conv)
 
         detector = d_reader.getDetectors()[0]

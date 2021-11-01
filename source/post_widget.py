@@ -34,6 +34,7 @@ import xrayutilities as xu
 # ==============================================================================
 
 class PostPlottingWidget(QtGui.QWidget):
+
     """
     Houses docked widgets components for Post Plotting widget
     """
@@ -103,6 +104,7 @@ class PostPlottingWidget(QtGui.QWidget):
 # ==============================================================================
 
 class DataSelectionWidget(QtGui.QWidget):
+
     """
     Allows user to select:
     - A project file
@@ -169,6 +171,7 @@ class DataSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def setProjectDirectory(self):
+
         """
         - Opens directory dialog
         - Sets project directory
@@ -203,6 +206,7 @@ class DataSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def setScanList(self, spec_base_list_item):
+
         """
         Adds scans to scans list widget
         """
@@ -227,6 +231,7 @@ class DataSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def showConversionDialog(self):
+
         """
         Displays modal conversion dialog widget
         """
@@ -238,6 +243,7 @@ class DataSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def setConversionParameters(self):
+
         """
         Sets values given from dialog
         """
@@ -263,6 +269,7 @@ class DataSelectionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def loadData(self):
+
         """
         Creates dataset that is displayed in data widget
         """
@@ -299,6 +306,7 @@ class DataSelectionWidget(QtGui.QWidget):
 # --------------------------------------------------------------------------
 
     def changeSliceDirection(self):
+
         """
         Changes slice direction in data widget.
         (Function exists in this class because the spinbox is housed in the
@@ -311,6 +319,7 @@ class DataSelectionWidget(QtGui.QWidget):
 # ==============================================================================
 
 class DataWidget(pg.ImageView):
+
     """
     Plots 3d dataset
     """
@@ -353,6 +362,7 @@ class DataWidget(pg.ImageView):
     # --------------------------------------------------------------------------
 
     def displayDataset(self, dataset, slice_direction=None, new_dataset=False, dataset_rect=None):
+
         """
         Displays 3d dataset in plot
 
@@ -422,6 +432,7 @@ class DataWidget(pg.ImageView):
     # --------------------------------------------------------------------------
 
     def updateMouse(self, scene_point=None):
+
         """
         Updates mouse/crosshair positions
         """
@@ -445,6 +456,7 @@ class DataWidget(pg.ImageView):
     # --------------------------------------------------------------------------
 
     def createCSV(self):
+
         """
         Creates CSV file with HKL positions and intensity
         *** TEST FUNCTION
@@ -475,6 +487,7 @@ class DataWidget(pg.ImageView):
 # ==============================================================================
 
 class AnalysisWidget(pg.LayoutWidget):
+
     """
     Houses basic information about data in datawidget viewing window
     """
@@ -584,6 +597,7 @@ class AnalysisWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def updateScanInfo(self, dataset):
+
         """
         Updates textboxes with dataset shape
         """
@@ -594,6 +608,7 @@ class AnalysisWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def updateMouseInfo(self, dataset, rect, x, y, index, slice_direction):
+
         """
         Updates mouse location and HKL value textboxes
         """
@@ -637,6 +652,7 @@ class AnalysisWidget(pg.LayoutWidget):
     # --------------------------------------------------------------------------
 
     def updateMaxInfo(self, dataset, rect):
+
         """
         Updates maximum pixel position and intensity
         """
@@ -651,6 +667,7 @@ class AnalysisWidget(pg.LayoutWidget):
 # ==============================================================================
 
 class ROIAnalysisWidget(pg.LayoutWidget):
+
     """
     Widget that houses four ROIWidgets and an ROISubtractionWidget
     """
@@ -679,6 +696,7 @@ class ROIAnalysisWidget(pg.LayoutWidget):
 # ==============================================================================
 
 class ROIWidget(QtGui.QWidget):
+
     """
     - Enables user to add a rectangular ROI to the dataset viewing Window
     - Displays average intensity within ROI over a series of slices
@@ -773,6 +791,7 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def toggleVisibility(self, state):
+
         """
         Changes ROI visibility
         """
@@ -789,6 +808,7 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def changeColor(self):
+
         """
         Changes ROI color
         """
@@ -800,6 +820,7 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updateSize(self):
+
         """
         Updates ROI dimensions
         """
@@ -815,6 +836,7 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updatePosition(self):
+
         """
         Updates ROI position
         """
@@ -830,6 +852,7 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updateAnalysis(self):
+
         """
         Updates textboxes that contain ROI size/position
         """
@@ -845,6 +868,7 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def center(self):
+
         """
         Centers ROI around image
         """
@@ -865,6 +889,7 @@ class ROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def plotAverageIntensity(self):
+
         """
         Creates list of average intensities from each slice of dataset
         """
@@ -937,9 +962,11 @@ class ROIWidget(QtGui.QWidget):
 # ==============================================================================
 
 class ROISubtractionWidget(QtGui.QWidget):
+
     """
     A widget that displays the difference between average intensities of two ROI's
     """
+
     def __init__ (self, parent):
         super(ROISubtractionWidget, self).__init__(parent)
         self.roi_analysis_widget = parent
@@ -988,6 +1015,7 @@ class ROISubtractionWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def plotData(self):
+
         """
         Displays average intensity difference
         """
@@ -1021,6 +1049,7 @@ class ROISubtractionWidget(QtGui.QWidget):
 # ==============================================================================
 
 class LineROIAnalysisWidget(pg.LayoutWidget):
+
     """
     Widget that houses four LineROIWidgets
     """
@@ -1047,6 +1076,7 @@ class LineROIAnalysisWidget(pg.LayoutWidget):
 # ==============================================================================
 
 class LineROIWidget(QtGui.QWidget):
+
     """
     - Creates a line segment ROI
     - Allows user to take arbitrary slices/line cuts of dataset
@@ -1196,9 +1226,11 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def update(self):
+
         """
         Updates slice image/plot to reflect current ROI position
         """
+
         dataset = self.main_widget.data_widget.dataset
         rect = self.main_widget.data_widget.dataset_rect
         image_item = self.main_widget.data_widget.imageItem
@@ -1262,6 +1294,7 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updateLineCut(self):
+
         """
         Updates line cut plot
         """
@@ -1317,9 +1350,11 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def toggleVisibility(self, state):
+
         """
         Changes visibility of slice ROI
         """
+
         if state:
             self.roi.show()
         else:
@@ -1328,9 +1363,11 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def toggleLineCutVisibility(self, state):
+
         """
         Changes visibility of line cut ROI
         """
+
         if state:
             self.line_cut_roi.show()
         else:
@@ -1353,9 +1390,11 @@ class LineROIWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def center(self):
+
         """
         Centers slice ROI diagonally across image
         """
+
         rect = self.main_widget.data_widget.dataset_rect
         slice_direction = self.main_widget.data_widget.slice_direction
 
