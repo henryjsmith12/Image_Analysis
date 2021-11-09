@@ -55,6 +55,7 @@ class PostPlottingWidget(QtGui.QWidget):
         # Conversion parameter dialog ------------------------------------------
         # Instantiated for later use
         self.conversion_dialog = ConversionParametersDialog()
+        self.vti_creation_dialog = VTICreationDialog()
 
     # --------------------------------------------------------------------------
 
@@ -125,7 +126,24 @@ class DataSelectionWidget(QtGui.QWidget):
         self.project_txtbox.setReadOnly(True)
         self.spec_file_listbox = QtGui.QListWidget()
         self.vti_file_listbox = QtGui.QListWidget() # Not in use yet
+        self.select_vti_btn = QtGui.QPushButton("Select VTI File")
         self.create_vti_btn = QtGui.QPushButton("Create VTI File") # Not in use yet
+        self.vti_txtbox = QtGui.QLineEdit()
+        self.vti_txtbox.setReadOnly(True)
+        self.pixel_count_lbl = QtGui.QLabel("Pixel Count:")
+        self.pixel_count_txtbox = QtGui.QLineEdit()
+        self.pixel_count_txtbox.setReadOnly(True)
+        self.h_lbl = QtGui.QLabel("H Range:")
+        self.k_lbl = QtGui.QLabel("K Range:")
+        self.l_lbl = QtGui.QLabel("L Range:")
+        self.h_txtbox = QtGui.QLineEdit()
+        self.h_txtbox.setReadOnly(True)
+        self.k_txtbox = QtGui.QLineEdit()
+        self.k_txtbox.setReadOnly(True)
+        self.l_txtbox = QtGui.QLineEdit()
+        self.l_txtbox.setReadOnly(True)
+        self.vti_info_gbox = QtGui.QGroupBox("VTI");
+
         self.scan_directory_listbox = QtGui.QListWidget()
         self.conversion_btn = QtGui.QPushButton("Parameters")
         self.process_btn = QtGui.QPushButton("Process")
@@ -134,6 +152,7 @@ class DataSelectionWidget(QtGui.QWidget):
         self.slice_direction_cbox.addItems(["X(H)", "Y(K)", "Z(L)"])
 
         # Layout ---------------------------------------------------------------
+        """
         # Current Layout
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
@@ -150,16 +169,26 @@ class DataSelectionWidget(QtGui.QWidget):
         """
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
-        self.layout.addWidget(self.project_btn, 0, 0)
-        self.layout.addWidget(self.project_txtbox, 0, 1)
-        self.layout.addWidget(self.spec_file_listbox, 1, 0, 1, 2)
-        self.layout.addWidget(self.vti_file_listbox, 2, 0, 1, 2)
-        self.layout.addWidget(self.create_vti_btn, 3, 0, 1, 2)
-        self.layout.addWidget(self.scan_directory_listbox, 4, 0, 1, 2)
-        self.layout.addWidget(self.process_btn, 5, 0, 1, 2)
-        self.layout.addWidget(self.slice_direction_lbl, 6, 0)
-        self.layout.addWidget(self.slice_direction_cbox, 6, 1)
-        """
+
+        self.vti_info_layout = QtGui.QGridLayout()
+        self.vti_info_gbox.setLayout(self.vti_info_layout)
+
+        self.layout.addWidget(self.select_vti_btn, 0, 0)
+        self.layout.addWidget(self.create_vti_btn, 0, 1)
+        self.layout.addWidget(self.vti_txtbox, 1, 0, 1, 2)
+        self.layout.addWidget(self.vti_info_gbox, 2, 0, 1, 2)
+        self.layout.addWidget(self.process_btn, 3, 0, 1, 2)
+        self.layout.addWidget(self.slice_direction_lbl, 4, 0)
+        self.layout.addWidget(self.slice_direction_cbox, 4, 1)
+
+        self.vti_info_layout.addWidget(self.pixel_count_lbl, 0, 0, 1, 2)
+        self.vti_info_layout.addWidget(self.pixel_count_txtbox, 0, 2, 1, 2)
+        self.vti_info_layout.addWidget(self.h_lbl, 1, 0)
+        self.vti_info_layout.addWidget(self.h_txtbox, 1, 1, 1, 3)
+        self.vti_info_layout.addWidget(self.k_lbl, 2, 0)
+        self.vti_info_layout.addWidget(self.k_txtbox, 2, 1, 1, 3)
+        self.vti_info_layout.addWidget(self.l_lbl, 3, 0)
+        self.vti_info_layout.addWidget(self.l_txtbox, 3, 1, 1, 3)
 
         # Signals --------------------------------------------------------------
         self.project_btn.clicked.connect(self.setProjectDirectory)
@@ -167,6 +196,9 @@ class DataSelectionWidget(QtGui.QWidget):
         self.conversion_btn.clicked.connect(self.showConversionDialog)
         self.process_btn.clicked.connect(self.loadData)
         self.slice_direction_cbox.currentTextChanged.connect(self.changeSliceDirection)
+
+        self.select_vti_btn.clicked.connect(self.selectVTI)
+        self.create_vti_btn.clicked.connect(self.showVTICreationDialog)
 
     # --------------------------------------------------------------------------
 
@@ -202,6 +234,44 @@ class DataSelectionWidget(QtGui.QWidget):
                 msg_box.setWindowTitle("Error")
                 msg_box.setText("Invalid Project Directory")
                 msg_box.exec_()
+
+    # --------------------------------------------------------------------------
+
+    def selectVTI(self):
+
+        self.vti_path = QtGui.QFileDialog.getOpenFileName(self, "", "", "VTI Files (*.vti)")[0]
+        self.vti_txtbox.setText(self.vti_path)
+
+        reader = vtk.vtkXMLImageDataReader()
+        reader.SetFileName(self.vti_path)
+        reader.Update()
+
+        data = reader.GetOutput()
+        dim = data.GetDimensions()
+        origin = data.GetOrigin()
+        spacing = data.GetSpacing()
+        extent = data.GetExtent()
+
+        print(origin)
+        print(spacing)
+        print(extent)
+
+        h_count, k_count, l_count = extent[1] + 1, extent[3] + 1, extent[5] + 1
+        h_min, h_max = origin[0], origin[0] + extent[1] * spacing[0]
+        k_min, k_max = origin[1], origin[1] + extent[3] * spacing[1]
+        l_min, l_max = origin[2], origin[2] + extent[5] * spacing[2]
+
+        self.pixel_count_txtbox.setText(f"({h_count}, {k_count}, {l_count})")
+        self.h_txtbox.setText(f"({round(h_min, 5)},{round(h_max, 5)})")
+        self.k_txtbox.setText(f"({round(k_min, 5)},{round(k_max, 5)})")
+        self.l_txtbox.setText(f"({round(l_min, 5)},{round(l_max, 5)})")
+
+    # --------------------------------------------------------------------------
+
+    def showVTICreationDialog(self):
+
+        # Displays dialog and calls functions to set parameters
+        self.main_widget.vti_creation_dialog.show()
 
     # --------------------------------------------------------------------------
 
@@ -275,20 +345,23 @@ class DataSelectionWidget(QtGui.QWidget):
         """
 
         try:
-            dataset = []
-            dataset_rect = None
+            if self.vti_path == "":
+                dataset = []
+                dataset_rect = None
 
-            # For VTI file creation
-            scan_name = self.scan_directory_listbox.currentItem().text()
-            scan_number = scan_name[1:]
+                # For VTI file creation
+                scan_name = self.scan_directory_listbox.currentItem().text()
+                scan_number = scan_name[1:]
 
-            # Maps/interpolates data into reciprocal space
-            vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_file_path, \
-                self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
-                self.pixel_count_ny, self.pixel_count_nz)
+                # Maps/interpolates data into reciprocal space
+                vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_file_path, \
+                    self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
+                    self.pixel_count_ny, self.pixel_count_nz)
 
-            # Creates axis limits and dataset
-            axes, dataset = ConversionLogic.loadData(vti_file)
+                # Creates axis limits and dataset
+                axes, dataset = ConversionLogic.loadData(vti_file)
+            else:
+                axes, dataset = ConversionLogic.loadData(self.vti_path)
 
             # Bounds of dataset in HKL
             dataset_rect = [(axes[0][0], axes[0][-1]), (axes[1][0], axes[1][-1]), (axes[2][0], axes[2][-1])]
@@ -1585,10 +1658,178 @@ class ConversionParametersDialog(QtGui.QDialog):
 
 # ==============================================================================
 
+class VTICreationDialog(QtGui.QDialog):
+
+    def __init__ (self):
+        super().__init__()
+
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.detector_config_name = ""
+        self.instrument_config_name = ""
+        self.pixel_count_nx = 0
+        self.pixel_count_ny = 0
+        self.pixel_count_nz = 0
+
+        # Widget Creation ------------------------------------------------------
+        self.project_lbl = QtGui.QLabel("Project Directory:")
+        self.project_txtbox = QtGui.QLineEdit()
+        self.project_txtbox.setReadOnly(True)
+        self.project_btn = QtGui.QPushButton("Browse")
+        self.data_source_lbl = QtGui.QLabel("Data Source (SPEC):")
+        self.data_source_txtbox = QtGui.QLineEdit()
+        self.data_source_txtbox.setReadOnly(True)
+        self.data_source_btn = QtGui.QPushButton("Browse")
+        self.selected_scan_lbl = QtGui.QLabel("Selected Scan:")
+        self.selected_scan_cbox = QtGui.QComboBox()
+        self.pixel_count_lbl = QtGui.QLabel("Interpolation (HKL):")
+        self.h_count_sbox = QtGui.QSpinBox(maximum=1000, minimum=1)
+        self.h_count_sbox.setValue(200)
+        self.k_count_sbox = QtGui.QSpinBox(maximum=1000, minimum=1)
+        self.k_count_sbox.setValue(200)
+        self.l_count_sbox = QtGui.QSpinBox(maximum=1000, minimum=1)
+        self.l_count_sbox.setValue(200)
+        self.detector_lbl = QtGui.QLabel("Det. Config:")
+        self.detector_txtbox = QtGui.QLineEdit()
+        self.detector_txtbox.setReadOnly(True)
+        self.detector_btn = QtGui.QPushButton("Browse")
+        self.instrument_lbl = QtGui.QLabel("Instr. Config:")
+        self.instrument_txtbox = QtGui.QLineEdit()
+        self.instrument_txtbox.setReadOnly(True)
+        self.instrument_btn = QtGui.QPushButton("Browse")
+        self.dialog_btnbox = QtGui.QDialogButtonBox()
+        self.dialog_btnbox.addButton("Create", QtGui.QDialogButtonBox.AcceptRole)
+
+        # Layout ---------------------------------------------------------------
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
+
+        self.layout.addWidget(self.project_lbl, 0, 0, 1, 3)
+        self.layout.addWidget(self.project_txtbox, 0, 3, 1, 3)
+        self.layout.addWidget(self.project_btn, 0, 6, 1, 3)
+        self.layout.addWidget(self.data_source_lbl, 1, 0, 1, 3)
+        self.layout.addWidget(self.data_source_txtbox, 1, 3, 1, 3)
+        self.layout.addWidget(self.data_source_btn, 1, 6, 1, 3)
+        self.layout.addWidget(self.selected_scan_lbl, 2, 0, 1, 4)
+        self.layout.addWidget(self.selected_scan_cbox, 2, 4, 1, 5)
+        self.layout.addWidget(self.pixel_count_lbl, 3, 0, 1, 3)
+        self.layout.addWidget(self.h_count_sbox, 3, 3, 1, 1)
+        self.layout.addWidget(self.k_count_sbox, 3, 5, 1, 1)
+        self.layout.addWidget(self.l_count_sbox, 3, 7, 1, 1)
+        self.layout.addWidget(self.detector_lbl, 4, 0, 1, 3)
+        self.layout.addWidget(self.detector_txtbox, 4, 3, 1, 3)
+        self.layout.addWidget(self.detector_btn, 4, 6, 1, 3)
+        self.layout.addWidget(self.instrument_lbl, 5, 0, 1, 3)
+        self.layout.addWidget(self.instrument_txtbox, 5, 3, 1, 3)
+        self.layout.addWidget(self.instrument_btn, 5, 6, 1, 3)
+
+        self.layout.addWidget(self.dialog_btnbox, 6, 8)
+        self.layout.setColumnStretch(0,1)
+        self.layout.setColumnStretch(1,1)
+        self.layout.setColumnStretch(2,1)
+        self.layout.setColumnStretch(3,1)
+        self.layout.setColumnStretch(4,1)
+        self.layout.setColumnStretch(5,1)
+        self.layout.setColumnStretch(6,1)
+        self.layout.setColumnStretch(7,1)
+        self.layout.setColumnStretch(8,1)
+
+
+        # Signals --------------------------------------------------------------
+
+        self.project_btn.clicked.connect(self.selectProjectDirectory)
+        self.data_source_btn.clicked.connect(self.selectDataSource)
+        self.detector_btn.clicked.connect(self.selectDetectorConfigFile)
+        self.instrument_btn.clicked.connect(self.selectInstrumentConfigFile)
+        self.dialog_btnbox.accepted.connect(self.accept)
+
+    # --------------------------------------------------------------------------
+
+    def selectProjectDirectory(self):
+
+        """
+        - Opens directory dialog
+        - Sets project directory
+        """
+
+        # Selecting a Project Directory ----------------------------------------
+        project_path = QtGui.QFileDialog.getExistingDirectory(self,
+            "Open Project Directory")
+
+        # Adding SPEC Files to a ListBox ---------------------------------------
+        if project_path != "":
+            self.spec_files = []
+
+            # Adds SPEC file basenames in directory to list
+            for file in os.listdir(project_path):
+                if file.endswith(".spec"):
+                    self.project_path = project_path
+                    self.project_txtbox.setText(self.project_path)
+
+    # --------------------------------------------------------------------------
+
+    def selectDataSource(self):
+
+        """
+        Allows user to select a detector configuration .xml file.
+        """
+
+        self.data_source_path = QtGui.QFileDialog.getOpenFileName(self, "", "", "SPEC Files (*.spec)")[0]
+        self.data_source_txtbox.setText(self.data_source_path)
+
+        self.scan_list = []
+        file = open(self.data_source_path,"r")
+        for line in file:
+            if line.startswith("#S"):
+                scan = line.split()[1]
+                self.scan_list.append(scan)
+
+        self.selected_scan_cbox.clear()
+        self.selected_scan_cbox.addItems(self.scan_list)
+
+    # --------------------------------------------------------------------------
+
+    def selectDetectorConfigFile(self):
+
+        """
+        Allows user to select a detector configuration .xml file.
+        """
+
+        self.detector_path = QtGui.QFileDialog.getOpenFileName(self, "", "", "xml Files (*.xml)")[0]
+        self.detector_txtbox.setText(self.detector_path)
+
+    # --------------------------------------------------------------------------
+
+    def selectInstrumentConfigFile(self):
+
+        """
+        Allows user to select an instrument configuration .xml file.
+        """
+
+        self.instrument_path = QtGui.QFileDialog.getOpenFileName(self, "", "", "xml Files (*.xml)")[0]
+        self.instrument_txtbox.setText(self.instrument_path)
+
+    # --------------------------------------------------------------------------
+
+    def accept(self):
+
+        scan = self.selected_scan_cbox.currentText()
+        h_count = self.h_count_sbox.value()
+        k_count = self.k_count_sbox.value()
+        l_count = self.l_count_sbox.value()
+
+        file_name = QtGui.QFileDialog.getSaveFileName(self,"", "", "VTI Files (*.vti)")[0]
+
+        ConversionLogic.createVTIFile(self.project_path, self.data_source_path,
+            self.detector_path, self.instrument_path, scan, h_count, k_count, l_count, file_name)
+
+        self.close()
+
+# ==============================================================================
+
 class ConversionLogic():
 
     def createVTIFile(project_dir, spec_file, detector_config_name, instrument_config_name,
-        scan, nx, ny, nz):
+        scan, nx, ny, nz, file_name=None):
 
         # Necessary subfunctions for function to run smoothly
         # See rsMap3D source code
@@ -1607,7 +1848,10 @@ class ConversionLogic():
 
         spec_name, spec_ext = os.path.splitext(os.path.basename(spec_file))
         # Set destination file for gridmapper
-        output_file_name = os.path.join(project_dir, spec_name + "_" + scan + ".vti")
+        if file_name == None:
+            output_file_name = os.path.join(project_dir, spec_name + "_" + scan + ".vti")
+        else:
+            output_file_name = file_name
 
         if os.path.exists(output_file_name):
             return output_file_name
