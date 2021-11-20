@@ -11,6 +11,7 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import pandas as pd
 import pyqtgraph as pg
 from pyqtgraph.dockarea import *
 from pyqtgraph.Qt import QtGui, QtCore
@@ -146,27 +147,13 @@ class DataSelectionWidget(QtGui.QWidget):
 
         self.scan_directory_listbox = QtGui.QListWidget()
         self.conversion_btn = QtGui.QPushButton("Parameters")
-        self.process_btn = QtGui.QPushButton("Process")
+        self.process_btn = QtGui.QPushButton("Display")
+        self.export_qmap_btn = QtGui.QPushButton("Export q-Map")
         self.slice_direction_lbl = QtGui.QLabel("Slice Direction:")
         self.slice_direction_cbox = QtGui.QComboBox()
         self.slice_direction_cbox.addItems(["X(H)", "Y(K)", "Z(L)"])
 
         # Layout ---------------------------------------------------------------
-        """
-        # Current Layout
-        self.layout = QtGui.QGridLayout()
-        self.setLayout(self.layout)
-        self.layout.addWidget(self.project_btn, 0, 0)
-        self.layout.addWidget(self.project_txtbox, 0, 1)
-        self.layout.addWidget(self.spec_file_listbox, 1, 0, 1, 2)
-        self.layout.addWidget(self.scan_directory_listbox, 2, 0, 1, 2)
-        self.layout.addWidget(self.conversion_btn, 3, 0, 1, 2)
-        self.layout.addWidget(self.process_btn, 4, 0, 1, 2)
-        self.layout.addWidget(self.slice_direction_lbl, 5, 0)
-        self.layout.addWidget(self.slice_direction_cbox, 5, 1, 1, 2)
-
-        # Experimental Layout
-        """
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
@@ -177,9 +164,10 @@ class DataSelectionWidget(QtGui.QWidget):
         self.layout.addWidget(self.create_vti_btn, 0, 1)
         self.layout.addWidget(self.vti_txtbox, 1, 0, 1, 2)
         self.layout.addWidget(self.vti_info_gbox, 2, 0, 1, 2)
-        self.layout.addWidget(self.process_btn, 3, 0, 1, 2)
-        self.layout.addWidget(self.slice_direction_lbl, 4, 0)
-        self.layout.addWidget(self.slice_direction_cbox, 4, 1)
+        self.layout.addWidget(self.slice_direction_lbl, 3, 0)
+        self.layout.addWidget(self.slice_direction_cbox, 3, 1)
+        self.layout.addWidget(self.process_btn, 4, 0, 1, 2)
+        self.layout.addWidget(self.export_qmap_btn, 5, 0, 1, 2)
 
         self.vti_info_layout.addWidget(self.pixel_count_lbl, 0, 0, 1, 2)
         self.vti_info_layout.addWidget(self.pixel_count_txtbox, 0, 2, 1, 2)
@@ -195,6 +183,7 @@ class DataSelectionWidget(QtGui.QWidget):
         self.spec_file_listbox.itemClicked.connect(self.setScanList)
         self.conversion_btn.clicked.connect(self.showConversionDialog)
         self.process_btn.clicked.connect(self.loadData)
+        self.export_qmap_btn.clicked.connect(self.exportQMap)
         self.slice_direction_cbox.currentTextChanged.connect(self.changeSliceDirection)
 
         self.select_vti_btn.clicked.connect(self.selectVTI)
@@ -261,6 +250,11 @@ class DataSelectionWidget(QtGui.QWidget):
         k_min, k_max = origin[1], origin[1] + extent[3] * spacing[1]
         l_min, l_max = origin[2], origin[2] + extent[5] * spacing[2]
 
+        h_values = np.ndarray.tolist(np.linspace(h_min, h_max, h_count))
+        k_values = np.ndarray.tolist(np.linspace(k_min, k_max, k_count))
+        l_values = np.ndarray.tolist(np.linspace(l_min, l_max, l_count))
+        self.qmap = [h_values, k_values, l_values]
+
         self.pixel_count_txtbox.setText(f"({h_count}, {k_count}, {l_count})")
         self.h_txtbox.setText(f"({round(h_min, 5)},{round(h_max, 5)})")
         self.k_txtbox.setText(f"({round(k_min, 5)},{round(k_max, 5)})")
@@ -272,6 +266,17 @@ class DataSelectionWidget(QtGui.QWidget):
 
         # Displays dialog and calls functions to set parameters
         self.main_widget.vti_creation_dialog.show()
+
+    # --------------------------------------------------------------------------
+
+    # TEST||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+    def exportQMap(self):
+        qx_df = pd.DataFrame({"qx" : self.qmap[0]})
+        qy_df = pd.DataFrame({"qy" : self.qmap[1]})
+        qz_df = pd.DataFrame({"qz" : self.qmap[2]})
+        file_name = QtGui.QFileDialog.getSaveFileName(self, "", "", "Comma Separated Values file (*.csv)")[0]
+        pd.concat([qx_df, qy_df, qz_df], axis=1).to_csv(file_name, header=True, index=False)
+    #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
     # --------------------------------------------------------------------------
 
