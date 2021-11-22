@@ -5,6 +5,7 @@ See LICENSE file.
 
 # ==============================================================================
 
+import h5py
 import math
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
@@ -22,7 +23,7 @@ import xrayutilities as xu
 # ==============================================================================
 
 class LivePlottingWidget(QtGui.QWidget):
-    
+
     """
     Houses docked widgets components for Live Plotting widget
     """
@@ -191,6 +192,8 @@ class OptionsWidget(QtGui.QWidget):
         self.setLayout(self.layout)
 
         self.map_hkl_btn = QtGui.QPushButton("Map Pixels to HKL")
+        self.export_qmap_btn = QtGui.QPushButton("Export q-map")
+        self.export_qmap_btn.setEnabled(False)
         self.crosshair_chkbox = QtGui.QCheckBox("Crosshair")
         self.crosshair_colorbtn = pg.ColorButton()
         self.colormap_lbl = QtGui.QLabel("Colormap:")
@@ -212,19 +215,21 @@ class OptionsWidget(QtGui.QWidget):
         self.bkgrd_color_group.addButton(self.bkgrd_white_rbtn)
 
         self.layout.addWidget(self.map_hkl_btn, 0, 0, 1, 3)
-        self.layout.addWidget(self.crosshair_chkbox, 1, 0)
-        self.layout.addWidget(self.crosshair_colorbtn, 1, 1)
-        self.layout.addWidget(self.colormap_lbl, 2, 0)
-        self.layout.addWidget(self.colormap_cbox, 2, 1)
-        self.layout.addWidget(self.colormap_scale_lbl, 3, 0)
-        self.layout.addWidget(self.colormap_linear_rbtn, 3, 1)
-        self.layout.addWidget(self.colormap_log_rbtn, 3, 2)
-        self.layout.addWidget(self.bkgrd_color_lbl, 4, 0)
-        self.layout.addWidget(self.bkgrd_black_rbtn, 4, 1)
-        self.layout.addWidget(self.bkgrd_white_rbtn, 4, 2)
+        self.layout.addWidget(self.export_qmap_btn, 1, 0, 1, 3)
+        self.layout.addWidget(self.crosshair_chkbox, 2, 0)
+        self.layout.addWidget(self.crosshair_colorbtn, 2, 1)
+        self.layout.addWidget(self.colormap_lbl, 3, 0)
+        self.layout.addWidget(self.colormap_cbox, 3, 1)
+        self.layout.addWidget(self.colormap_scale_lbl, 4, 0)
+        self.layout.addWidget(self.colormap_linear_rbtn, 4, 1)
+        self.layout.addWidget(self.colormap_log_rbtn, 4, 2)
+        self.layout.addWidget(self.bkgrd_color_lbl, 5, 0)
+        self.layout.addWidget(self.bkgrd_black_rbtn, 5, 1)
+        self.layout.addWidget(self.bkgrd_white_rbtn, 5, 2)
 
         # Signals
         self.map_hkl_btn.clicked.connect(self.showMappingDialog)
+        self.export_qmap_btn.clicked.connect(self.exportQMap)
         self.crosshair_chkbox.stateChanged.connect(self.toggleCrosshair)
         self.crosshair_colorbtn .sigColorChanged.connect(self.changeCrosshairColor)
         self.colormap_cbox.currentTextChanged.connect(self.changeColormap)
@@ -267,16 +272,34 @@ class OptionsWidget(QtGui.QWidget):
             delta = dialog.delta
             energy = dialog.energy
 
-            qx, qy, qz = MappingLogic.createLiveScanArea(instr_config_path,
+            self.qx, self.qy, self.qz = MappingLogic.createLiveScanArea(instr_config_path,
                 det_config_path, mu=mu, eta=eta, chi=chi, phi=phi, nu=nu,
                 delta=delta, ub=ub, energy=energy)
 
-            self.main_widget.analysis_widget.updateHKLMap(qx, qy, qz)
+            self.main_widget.analysis_widget.updateHKLMap(self.qx, self.qy, self.qz)
+            self.export_qmap_btn.setEnabled(True)
 
         except AttributeError:
             pass
         except ValueError:
             pass
+
+    # --------------------------------------------------------------------------
+
+    def exportQMap(self):
+        try:
+            file_path = QtGui.QFileDialog.getSaveFileName(self, "", "", "(*.hdf)")[0]
+            file = h5py.File(file_path, 'a')
+            file.create_group("data")
+            file["data"].create_group("Maps")
+            file["data/Maps"].create_dataset("qx", data=self.qx)
+            file["data/Maps"].create_dataset("qy", data=self.qy)
+            file["data/Maps"].create_dataset("qz", data=self.qz)
+        except:
+            msg_box = QtGui.QMessageBox()
+            msg_box.setWindowTitle("Error")
+            msg_box.setText("Could Not Create File")
+            msg_box.exec_()
 
     # --------------------------------------------------------------------------
 
