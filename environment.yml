@@ -5,6 +5,7 @@ dependencies:
   - matplotlib=3.4.2
   - pip
   - pip:
+    - h5py==3.6.0
     - PyQt5==5.15.4
     - pyqtgraph==0.12.1
     - rsMap3D==1.2.1
