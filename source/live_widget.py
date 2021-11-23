@@ -263,7 +263,7 @@ class OptionsWidget(QtGui.QWidget):
         try:
             instr_config_path = dialog.instrument_config_name
             det_config_path = dialog.detector_config_name
-            ub = np.fromstring(dialog.ub, sep=" ").reshape((3,3))
+            self.ub = np.fromstring(dialog.ub, sep=" ").reshape((3,3))
             mu = dialog.mu
             eta = dialog.eta
             chi = dialog.chi
@@ -274,7 +274,7 @@ class OptionsWidget(QtGui.QWidget):
 
             self.qx, self.qy, self.qz = MappingLogic.createLiveScanArea(instr_config_path,
                 det_config_path, mu=mu, eta=eta, chi=chi, phi=phi, nu=nu,
-                delta=delta, ub=ub, energy=energy)
+                delta=delta, ub=self.ub, energy=energy)
 
             self.main_widget.analysis_widget.updateHKLMap(self.qx, self.qy, self.qz)
             self.export_qmap_btn.setEnabled(True)
@@ -295,6 +295,7 @@ class OptionsWidget(QtGui.QWidget):
             file["data/Maps"].create_dataset("qx", data=self.qx)
             file["data/Maps"].create_dataset("qy", data=self.qy)
             file["data/Maps"].create_dataset("qz", data=self.qz)
+            file["data/Maps"].create_dataset("UB", data=self.ub)
         except:
             msg_box = QtGui.QMessageBox()
             msg_box.setWindowTitle("Error")
