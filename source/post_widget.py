@@ -6,6 +6,7 @@ See LICENSE file.
 # ==============================================================================
 
 import csv
+import h5py
 import math
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
@@ -247,9 +248,9 @@ class DataSelectionWidget(QtGui.QWidget):
         l_min, l_max = origin[2], origin[2] + extent[5] * spacing[2]
 
         # TEST||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-        """h_values = np.linspace(h_min, h_max, h_count)
-        k_values = np.linspace(k_min, k_max, k_count)
-        l_values = np.linspace(l_min, l_max, l_count)"""
+        self.h_values = np.linspace(h_min, h_max, h_count)
+        self.k_values = np.linspace(k_min, k_max, k_count)
+        self.l_values = np.linspace(l_min, l_max, l_count)
         # ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
         self.pixel_count_txtbox.setText(f"({h_count}, {k_count}, {l_count})")
@@ -1150,6 +1151,7 @@ class LineROIWidget(QtGui.QWidget):
         self.mouse_l_lbl = QtGui.QLabel("L:")
         self.mouse_l_txtbox = QtGui.QLineEdit()
         self.mouse_l_txtbox.setReadOnly(True)
+        self.export_slice_btn = QtGui.QPushButton("Export Slice")
 
         # Line Cut info
         self.line_cut_visible_chkbox = QtGui.QCheckBox("Visible")
@@ -1164,6 +1166,7 @@ class LineROIWidget(QtGui.QWidget):
         self.line_cut_l_lbl = QtGui.QLabel("L:")
         self.line_cut_l_txtbox = QtGui.QLineEdit()
         self.line_cut_l_txtbox.setReadOnly(True)
+        self.export_line_cut_btn = QtGui.QPushButton("Export Line Cut")
 
         # Slice ROI
         self.roi = pg.LineSegmentROI([[0, 0], [0.5, 0.5]])
@@ -1199,7 +1202,7 @@ class LineROIWidget(QtGui.QWidget):
 
         # GroupBoxes -----------------------------------------------------------
         self.info_gbox = QtGui.QGroupBox()
-        self.info_gbox.setMinimumSize(100, 500)
+        self.info_gbox.setMinimumSize(100, 600)
         self.slice_info_gbox = QtGui.QGroupBox("Slice")
         self.line_cut_info_gbox = QtGui.QGroupBox("Line Cut")
 
@@ -1242,6 +1245,7 @@ class LineROIWidget(QtGui.QWidget):
         self.slice_info_layout.addWidget(self.mouse_k_txtbox, 4, 1, 1, 3)
         self.slice_info_layout.addWidget(self.mouse_l_lbl, 5, 0)
         self.slice_info_layout.addWidget(self.mouse_l_txtbox, 5, 1, 1, 3)
+        self.slice_info_layout.addWidget(self.export_slice_btn, 6, 0, 1, 4)
 
         # Line Cut Info
         self.line_cut_info_layout.addWidget(self.line_cut_visible_chkbox, 0, 0, 1, 2)
@@ -1253,6 +1257,7 @@ class LineROIWidget(QtGui.QWidget):
         self.line_cut_info_layout.addWidget(self.line_cut_k_txtbox, 3, 1, 1, 4)
         self.line_cut_info_layout.addWidget(self.line_cut_l_lbl, 4, 0)
         self.line_cut_info_layout.addWidget(self.line_cut_l_txtbox, 4, 1, 1, 4)
+        self.line_cut_info_layout.addWidget(self.export_line_cut_btn, 5, 0, 1, 5)
 
         # Signals --------------------------------------------------------------
         self.roi.sigRegionChanged.connect(self.update)
@@ -1264,6 +1269,8 @@ class LineROIWidget(QtGui.QWidget):
         self.center_btn.clicked.connect(self.center)
         self.line_cut_center_btn.clicked.connect(self.centerLineCut)
         self.view_box.scene().sigMouseMoved.connect(self.updateMouseInfo)
+        self.export_slice_btn.clicked.connect(self.exportSlice)
+        #self.export_line_cut_btn.clicked.connect(self.exportLineCut)
 
         self.updating = ""
 
@@ -1390,6 +1397,52 @@ class LineROIWidget(QtGui.QWidget):
 
         except Exception:
             self.line_cut_plot_widget.clear()
+
+    # --------------------------------------------------------------------------
+
+    def exportSlice(self):
+        h_values = self.main_widget.data_selection_widget.h_values
+        k_values = self.main_widget.data_selection_widget.k_values
+        l_values = self.main_widget.data_selection_widget.l_values
+        slice_direction = self.main_widget.data_widget.slice_direction
+
+        try:
+            if slice_direction == None or slice_direction == "X(H)":
+                h = np.take(h_values, np.ndarray.tolist(self.t_values))
+                k = np.take(k_values, np.ndarray.tolist(self.slice_coords[1]))
+                l = np.take(l_values, np.ndarray.tolist(self.slice_coords[0]))
+
+                h = np.reshape(np.repeat(h, k.shape[0]), (h.shape[0], k.shape[0]))
+                k = np.reshape(np.tile(k, h.shape[0]), (h.shape[0], k.shape[0]))
+                l = np.reshape(np.tile(l, h.shape[0]), (h.shape[0], l.shape[0]))
+
+                hkl = np.dstack((h, k, l))
+
+            """elif slice_direction == "Y(K)":
+                h = np.take(h_values, np.ndarray.tolist(self.slice_coords[1]))
+                k = np.take(k_values, np.ndarray.tolist(self.t_values))
+                l = np.take(l_values, np.ndarray.tolist(self.slice_coords[0]))
+                hkl = np.tile()
+            else:
+                h = np.take(h_values, np.ndarray.tolist(self.slice_coords[1]))
+                k = np.take(k_values, np.ndarray.tolist(self.slice_coords[0]))
+                l = np.take(l_values, np.ndarray.tolist(self.t_values))
+                hkl = np.tile()"""
+
+            file_path = QtGui.QFileDialog.getSaveFileName(self, "", "", "(*.hdf)")[0]
+            file = h5py.File(file_path, 'a')
+            file.create_group("data")
+            file["data"].create_dataset("HKL", data=hkl)
+            file["data"].create_dataset("Intensity", data=self.slice)
+        except:
+            msg_box = QtGui.QMessageBox()
+            msg_box.setWindowTitle("Error")
+            msg_box.setText("Could Not Create File")
+            msg_box.exec_()
+    # --------------------------------------------------------------------------
+
+    def exportLineCut(self):
+        ...
 
     # --------------------------------------------------------------------------
 
