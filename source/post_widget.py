@@ -127,9 +127,9 @@ class DataSelectionWidget(QtGui.QWidget):
         self.project_txtbox = QtGui.QLineEdit()
         self.project_txtbox.setReadOnly(True)
         self.spec_file_listbox = QtGui.QListWidget()
-        self.vti_file_listbox = QtGui.QListWidget() # Not in use yet
+        self.vti_file_listbox = QtGui.QListWidget()
         self.select_vti_btn = QtGui.QPushButton("Select VTI File")
-        self.create_vti_btn = QtGui.QPushButton("Create VTI File") # Not in use yet
+        self.create_vti_btn = QtGui.QPushButton("Create VTI File")
         self.vti_txtbox = QtGui.QLineEdit()
         self.vti_txtbox.setReadOnly(True)
         self.pixel_count_lbl = QtGui.QLabel("Pixel Count:")
@@ -149,7 +149,6 @@ class DataSelectionWidget(QtGui.QWidget):
         self.scan_directory_listbox = QtGui.QListWidget()
         self.conversion_btn = QtGui.QPushButton("Parameters")
         self.process_btn = QtGui.QPushButton("Display")
-        #self.export_qmap_btn = QtGui.QPushButton("Export q-Map")
         self.slice_direction_lbl = QtGui.QLabel("Slice Direction:")
         self.slice_direction_cbox = QtGui.QComboBox()
         self.slice_direction_cbox.addItems(["X(H)", "Y(K)", "Z(L)"])
@@ -168,7 +167,6 @@ class DataSelectionWidget(QtGui.QWidget):
         self.layout.addWidget(self.slice_direction_lbl, 3, 0)
         self.layout.addWidget(self.slice_direction_cbox, 3, 1)
         self.layout.addWidget(self.process_btn, 4, 0, 1, 2)
-        #self.layout.addWidget(self.export_qmap_btn, 5, 0, 1, 2)
 
         self.vti_info_layout.addWidget(self.pixel_count_lbl, 0, 0, 1, 2)
         self.vti_info_layout.addWidget(self.pixel_count_txtbox, 0, 2, 1, 2)
@@ -180,54 +178,18 @@ class DataSelectionWidget(QtGui.QWidget):
         self.vti_info_layout.addWidget(self.l_txtbox, 3, 1, 1, 3)
 
         # Signals --------------------------------------------------------------
-        self.project_btn.clicked.connect(self.setProjectDirectory)
-        self.spec_file_listbox.itemClicked.connect(self.setScanList)
-        self.conversion_btn.clicked.connect(self.showConversionDialog)
-        self.process_btn.clicked.connect(self.loadData)
-        #self.export_qmap_btn.clicked.connect(self.exportQMap)
-        self.slice_direction_cbox.currentTextChanged.connect(self.changeSliceDirection)
-
         self.select_vti_btn.clicked.connect(self.selectVTI)
         self.create_vti_btn.clicked.connect(self.showVTICreationDialog)
-
-    # --------------------------------------------------------------------------
-
-    def setProjectDirectory(self):
-
-        """
-        - Opens directory dialog
-        - Sets project directory
-        """
-
-        # Selecting a Project Directory ----------------------------------------
-        project_path = QtGui.QFileDialog.getExistingDirectory(self,
-            "Open Project Directory")
-
-        # Adding SPEC Files to a ListBox ---------------------------------------
-        if project_path != "":
-            self.spec_files = []
-
-            # Adds SPEC file basenames in directory to list
-            for file in os.listdir(project_path):
-                if file.endswith(".spec"):
-                    self.spec_files.append(os.path.splitext(file)[0])
-
-            # Checks if directory has a SPEC file
-            if self.spec_files != []:
-                self.project_path = project_path
-                self.project_txtbox.setText(os.path.basename(self.project_path))
-                self.spec_file_listbox.clear()
-                self.scan_directory_listbox.clear()
-                self.spec_file_listbox.addItems(self.spec_files)
-            else:
-                msg_box = QtGui.QMessageBox()
-                msg_box.setWindowTitle("Error")
-                msg_box.setText("Invalid Project Directory")
-                msg_box.exec_()
+        self.process_btn.clicked.connect(self.createDataset)
+        self.slice_direction_cbox.currentTextChanged.connect(self.changeSliceDirection)
 
     # --------------------------------------------------------------------------
 
     def selectVTI(self):
+
+        """
+        Selects VTI file from dialog and previews info about file.
+        """
 
         self.vti_path = QtGui.QFileDialog.getOpenFileName(self, "", "", "VTI Files (*.vti)")[0]
         self.vti_txtbox.setText(self.vti_path)
@@ -236,24 +198,17 @@ class DataSelectionWidget(QtGui.QWidget):
         reader.SetFileName(self.vti_path)
         reader.Update()
 
+        # Preview information for VTI file -------------------------------------
         data = reader.GetOutput()
-        dim = data.GetDimensions()
-        origin = data.GetOrigin()
-        spacing = data.GetSpacing()
-        extent = data.GetExtent()
+        dimensions = data.GetDimensions()
+        bounds = data.GetBounds()
 
-        h_count, k_count, l_count = extent[1] + 1, extent[3] + 1, extent[5] + 1
-        h_min, h_max = origin[0], origin[0] + extent[1] * spacing[0]
-        k_min, k_max = origin[1], origin[1] + extent[3] * spacing[1]
-        l_min, l_max = origin[2], origin[2] + extent[5] * spacing[2]
+        h_count, k_count, l_count = dimensions
+        h_min, h_max = bounds[0], bounds[1]
+        k_min, k_max = bounds[2], bounds[3]
+        l_min, l_max = bounds[4], bounds[5]
 
-        # TEST||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-        self.h_values = np.linspace(h_min, h_max, h_count)
-        self.k_values = np.linspace(k_min, k_max, k_count)
-        self.l_values = np.linspace(l_min, l_max, l_count)
-        # ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-        self.pixel_count_txtbox.setText(f"({h_count}, {k_count}, {l_count})")
+        self.pixel_count_txtbox.setText(f"{dimensions}")
         self.h_txtbox.setText(f"({round(h_min, 5)},{round(h_max, 5)})")
         self.k_txtbox.setText(f"({round(k_min, 5)},{round(k_max, 5)})")
         self.l_txtbox.setText(f"({round(l_min, 5)},{round(l_max, 5)})")
@@ -262,89 +217,18 @@ class DataSelectionWidget(QtGui.QWidget):
 
     def showVTICreationDialog(self):
 
-        # Displays dialog and calls functions to set parameters
+        """
+        Displays VTICreationDialog
+        """
+
         self.main_widget.vti_creation_dialog.show()
 
     # --------------------------------------------------------------------------
 
-    # TEST||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    """def exportQMap(self):
-        try:
-            file_name = QtGui.QFileDialog.getSaveFileName(self, "", "", "Comma Separated Values file (*.csv)")[0]
-            pd.concat([qx_df, qy_df, qz_df], axis=1).to_csv(file_name, header=True, index=False)
-        except:
-            return"""
-    #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-    # --------------------------------------------------------------------------
-
-    def setScanList(self, spec_base_list_item):
+    def createDataset(self):
 
         """
-        Adds scans to scans list widget
-        """
-
-        try:
-            # Base path for SPEC directory
-            self.spec_base_path = spec_base_list_item.text()
-
-            # Full path name for SPEC directory with scans (e.g. S001, S002, etc.)
-            self.spec_directory_path = f"{self.project_path}/images/{self.spec_base_path}"
-
-            # List of scans in SPEC directory
-            scans = sorted(os.listdir(self.spec_directory_path))
-
-            # Refreshes scans in ListBox
-            self.scan_directory_listbox.clear()
-            self.scan_directory_listbox.addItems(scans)
-
-        except:
-            return
-
-    # --------------------------------------------------------------------------
-
-    def showConversionDialog(self):
-
-        """
-        Displays modal conversion dialog widget
-        """
-
-        # Displays dialog and calls functions to set parameters
-        self.main_widget.conversion_dialog.show()
-        self.main_widget.conversion_dialog.finished.connect(self.setConversionParameters)
-
-    # --------------------------------------------------------------------------
-
-    def setConversionParameters(self):
-
-        """
-        Sets values given from dialog
-        """
-
-        # Creates instance of conversion param dialog
-        dialog = self.main_widget.conversion_dialog
-
-        # Checks if configuration files were selected in dialog
-        if "" not in [dialog.detector_config_name, dialog.instrument_config_name]:
-            self.spec_file_path = f"{self.project_path}/{self.spec_base_path}.spec"
-            self.detector_path = dialog.detector_config_name
-            self.instrument_path = dialog.instrument_config_name
-            self.pixel_count_nx = dialog.pixel_count_nx
-            self.pixel_count_ny = dialog.pixel_count_ny
-            self.pixel_count_nz = dialog.pixel_count_nz
-        else:
-            msg_box = QtGui.QMessageBox()
-            msg_box.setWindowTitle("Error")
-            msg_box.setText("Missing Parameters")
-            msg_box.exec_()
-            dialog.open()
-
-    # --------------------------------------------------------------------------
-
-    def loadData(self):
-
-        """
-        Creates dataset that is displayed in data widget
+        Creates HKL-converted dataset and bounds for dataset
         """
 
         try:
@@ -357,20 +241,46 @@ class DataSelectionWidget(QtGui.QWidget):
                 scan_number = scan_name[1:]
 
                 # Maps/interpolates data into reciprocal space
-                vti_file = ConversionLogic.createVTIFile(self.project_path, self.spec_file_path, \
-                    self.detector_path, self.instrument_path, scan_number, self.pixel_count_nx, \
-                    self.pixel_count_ny, self.pixel_count_nz)
+                self.vti_path = ConversionLogic.createVTIFile(self.project_path, \
+                    self.spec_file_path, self.detector_path, self.instrument_path, \
+                    scan_number, self.pixel_count_nx, self.pixel_count_ny, \
+                    self.pixel_count_nz)
 
-                # Creates axis limits and dataset
-                axes, dataset = ConversionLogic.loadData(vti_file)
-            else:
-                axes, dataset = ConversionLogic.loadData(self.vti_path)
+            # Creates axis limits and dataset ----------------------------------
+            axes, dataset = ConversionLogic.loadData(self.vti_path)
 
-            # Bounds of dataset in HKL
-            dataset_rect = [(axes[0][0], axes[0][-1]), (axes[1][0], axes[1][-1]), (axes[2][0], axes[2][-1])]
+            self.dataset = dataset
+            self.h_values = np.array(axes[0])
+            self.k_values = np.array(axes[1])
+            self.l_values = np.array(axes[2])
+
+            # IN PROGRESS ******************************************************
+            # Creates 4D array to map every pixel in dataset to an hkl position
+            h, k, l = self.h_values, self.k_values, self.l_values
+            h_map = np.reshape(np.tile(h, k.shape[0] * l.shape[0]), dataset.shape)
+            k_map = np.reshape(np.tile(np.repeat(k, h.shape[0]), l.shape[0]), dataset.shape)
+            l_map = np.reshape(np.repeat(l, h.shape[0] * k.shape[0]), dataset.shape)
+
+            hkl_map = np.stack((h_map, k_map, l_map), axis=-1)
+
+            max = np.unravel_index(np.argmax(dataset, axis=None), dataset.shape)
+            print(h_map[max[0]][max[1]][max[2]])
+            print(k_map[max[0]][max[1]][max[2]])
+            print(l_map[max[0]][max[1]][max[2]])
+            print(hkl_map[max[0]][max[1]][max[2]])
+            print(dataset[max[0]][max[1]][max[2]])
+
+
+
+            # ******************************************************************
+
+
+            self.hkl_values = [self.h_values, self.k_values, self.l_values]
+
+            dataset_rect = [self.h_values, self.k_values, self.l_values]
 
             # Loads dataset into datawidget image window
-            self.main_widget.data_widget.displayDataset(dataset, new_dataset=True, \
+            self.main_widget.data_widget.displayDataset(new_dataset=True, \
                 dataset_rect=dataset_rect)
 
         except Exception:
@@ -390,7 +300,7 @@ class DataSelectionWidget(QtGui.QWidget):
         """
 
         direction = self.sender().currentText()
-        self.main_widget.data_widget.displayDataset(self.main_widget.data_widget.dataset, direction)
+        self.main_widget.data_widget.displayDataset()
 
 # ==============================================================================
 
@@ -437,7 +347,8 @@ class DataWidget(pg.ImageView):
 
     # --------------------------------------------------------------------------
 
-    def displayDataset(self, dataset, slice_direction=None, new_dataset=False, dataset_rect=None):
+    def displayDataset(self, slice_direction=None, new_dataset=False,
+        dataset_rect=None):
 
         """
         Displays 3d dataset in plot
@@ -445,20 +356,20 @@ class DataWidget(pg.ImageView):
         TODO Fix colormap
         """
 
-        self.dataset = dataset
+        self.dataset = self.main_widget.data_selection_widget.dataset
+        self.hkl_values = self.main_widget.data_selection_widget.hkl_values
+        self.slice_direction = self.main_widget.data_selection_widget. \
+            slice_direction_cbox.currentText()
 
         if dataset_rect != None:
             self.dataset_rect = dataset_rect
-
-        if slice_direction != None:
-            self.slice_direction = slice_direction
 
         # Checking Slice Direction ---------------------------------------------
         # Decides how the dataset is oriented in the viewing window
         # x_dir: direction of x-axis
         # y_dir: direction of y-axis
         # t_dir: direction of timeline
-        if self.slice_direction == None or self.slice_direction == "X(H)":
+        if self.slice_direction == "X(H)":
             x_dir, y_dir, t_dir = 2, 1, 0
             self.view.setLabel(axis="left", text="K")
             self.view.setLabel(axis="bottom", text="L")
@@ -466,22 +377,12 @@ class DataWidget(pg.ImageView):
             x_dir, y_dir, t_dir = 2, 0, 1
             self.view.setLabel(axis="left", text="H")
             self.view.setLabel(axis="bottom", text="L")
-        else:
+        else: # "Z(L)"
             x_dir, y_dir, t_dir = 1, 0, 2
             self.view.setLabel(axis="left", text="H")
             self.view.setLabel(axis="bottom", text="K")
 
-        # Sets Scaling, Postion, and Orientation of Dataset --------------------
-        plot_axes = {"t":t_dir, "x":x_dir, "y":y_dir, "c":3}
-        x_bounds, y_bounds = self.dataset_rect[x_dir], self.dataset_rect[y_dir]
-        t_bounds = self.dataset_rect[t_dir]
-        position = (x_bounds[0], y_bounds[0])
-        x_scale = (x_bounds[-1] - x_bounds[0]) / self.dataset.shape[x_dir]
-        y_scale = (y_bounds[-1] - y_bounds[0]) / self.dataset.shape[y_dir]
-        scale = (x_scale, y_scale)
-        self.slider_ticks = np.linspace(t_bounds[0], t_bounds[-1], self.dataset.shape[t_dir])
-
-        # Sets colormap for new datasets
+        # Sets colormap for new datasets ---------------------------------------
         if new_dataset == True:
             # Normalize image with logarithmic colormap
             colormap_max = np.amax(self.dataset)
@@ -491,8 +392,16 @@ class DataWidget(pg.ImageView):
             norm_dataset = np.reshape(norm(temp_reshaped_dataset), shape)
             self.color_dataset = plt.cm.jet(norm_dataset)
 
-        self.setImage(self.color_dataset, axes=plot_axes, pos=position, scale=scale, \
-            xvals=self.slider_ticks)
+        # Sets Scaling, Postion, and Orientation of Dataset --------------------
+        axes = {"t":t_dir, "x":x_dir, "y":y_dir, "c":3}
+        pos = (self.hkl_values[x_dir][0], self.hkl_values[y_dir][0])
+        x_scale = (self.hkl_values[x_dir][1] - self.hkl_values[x_dir][0])
+        y_scale = (self.hkl_values[y_dir][1] - self.hkl_values[y_dir][0])
+        scale = (x_scale, y_scale)
+        t_values = self.hkl_values[t_dir]
+
+        self.setImage(self.color_dataset, axes=axes, pos=pos, scale=scale, \
+            xvals=t_values)
         self.setCurrentIndex(0)
 
         # Enables widgets
@@ -1406,39 +1315,46 @@ class LineROIWidget(QtGui.QWidget):
         l_values = self.main_widget.data_selection_widget.l_values
         slice_direction = self.main_widget.data_widget.slice_direction
 
-        try:
-            if slice_direction == None or slice_direction == "X(H)":
-                h = np.take(h_values, np.ndarray.tolist(self.t_values))
-                k = np.take(k_values, np.ndarray.tolist(self.slice_coords[1]))
-                l = np.take(l_values, np.ndarray.tolist(self.slice_coords[0]))
+        #try:
+        if slice_direction == None or slice_direction == "X(H)":
+            h = self.t_values
+            k = np.take(k_values, np.ndarray.tolist(self.slice_coords[1]))
+            l = np.take(l_values, np.ndarray.tolist(self.slice_coords[0]))
 
-                h = np.reshape(np.repeat(h, k.shape[0]), (h.shape[0], k.shape[0]))
-                k = np.reshape(np.tile(k, h.shape[0]), (h.shape[0], k.shape[0]))
-                l = np.reshape(np.tile(l, h.shape[0]), (h.shape[0], l.shape[0]))
+            h = np.reshape(np.repeat(h, k.shape[0]), (h.shape[0], k.shape[0]))
+            k = np.reshape(np.tile(k, h.shape[0]), (h.shape[0], k.shape[0]))
+            l = np.reshape(np.tile(l, h.shape[0]), (h.shape[0], l.shape[0]))
 
-                hkl = np.dstack((h, k, l))
+        elif slice_direction == "Y(K)":
+            h = np.take(h_values, np.ndarray.tolist(self.slice_coords[1]))
+            k = self.t_values
+            l = np.take(l_values, np.ndarray.tolist(self.slice_coords[0]))
 
-            """elif slice_direction == "Y(K)":
-                h = np.take(h_values, np.ndarray.tolist(self.slice_coords[1]))
-                k = np.take(k_values, np.ndarray.tolist(self.t_values))
-                l = np.take(l_values, np.ndarray.tolist(self.slice_coords[0]))
-                hkl = np.tile()
-            else:
-                h = np.take(h_values, np.ndarray.tolist(self.slice_coords[1]))
-                k = np.take(k_values, np.ndarray.tolist(self.slice_coords[0]))
-                l = np.take(l_values, np.ndarray.tolist(self.t_values))
-                hkl = np.tile()"""
+            k = np.reshape(np.repeat(k, h.shape[0]), (k.shape[0], h.shape[0]))
+            h = np.reshape(np.tile(h, k.shape[0]), (k.shape[0], h.shape[0]))
+            l = np.reshape(np.tile(l, k.shape[0]), (k.shape[0], l.shape[0]))
 
-            file_path = QtGui.QFileDialog.getSaveFileName(self, "", "", "(*.hdf)")[0]
-            file = h5py.File(file_path, 'a')
-            file.create_group("data")
-            file["data"].create_dataset("HKL", data=hkl)
-            file["data"].create_dataset("Intensity", data=self.slice)
-        except:
+        else:
+            h = np.take(h_values, np.ndarray.tolist(self.slice_coords[1]))
+            k = np.take(k_values, np.ndarray.tolist(self.slice_coords[0]))
+            l = self.t_values
+
+            l = np.reshape(np.repeat(l, h.shape[0]), (l.shape[0], h.shape[0]))
+            h = np.reshape(np.tile(h, l.shape[0]), (l.shape[0], h.shape[0]))
+            k = np.reshape(np.tile(k, l.shape[0]), (l.shape[0], k.shape[0]))
+
+        hkl = np.dstack((h, k, l))
+
+        file_path = QtGui.QFileDialog.getSaveFileName(self, "", "", "(*.hdf)")[0]
+        file = h5py.File(file_path, 'a')
+        file.create_group("data")
+        file["data"].create_dataset("HKL", data=hkl)
+        file["data"].create_dataset("Intensity", data=self.slice)
+        """except:
             msg_box = QtGui.QMessageBox()
             msg_box.setWindowTitle("Error")
             msg_box.setText("Could Not Create File")
-            msg_box.exec_()
+            msg_box.exec_()"""
     # --------------------------------------------------------------------------
 
     def exportLineCut(self):
