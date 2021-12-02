@@ -255,22 +255,31 @@ class DataSelectionWidget(QtGui.QWidget):
             self.l_values = np.array(axes[2])
 
             # IN PROGRESS ******************************************************
-            # Creates 4D array to map every pixel in dataset to an hkl position
+            # Creates 4D array to map pixels in dataset to HKL positions
             h, k, l = self.h_values, self.k_values, self.l_values
             h_map = np.reshape(np.tile(h, k.shape[0] * l.shape[0]), dataset.shape)
             k_map = np.reshape(np.tile(np.repeat(k, h.shape[0]), l.shape[0]), dataset.shape)
             l_map = np.reshape(np.repeat(l, h.shape[0] * k.shape[0]), dataset.shape)
 
             hkl_map = np.stack((h_map, k_map, l_map), axis=-1)
-
+            
+            axis_labels = ["H", "K", "L"]
+            # MINI DEMO: Locating max pixel intensity ||||||||||||||||||||||||||
             max = np.unravel_index(np.argmax(dataset, axis=None), dataset.shape)
-            print(h_map[max[0]][max[1]][max[2]])
-            print(k_map[max[0]][max[1]][max[2]])
-            print(l_map[max[0]][max[1]][max[2]])
-            print(hkl_map[max[0]][max[1]][max[2]])
-            print(dataset[max[0]][max[1]][max[2]])
-
-
+            print("\nLocating Max Intensity in Dataset")
+            print("=================================\n")
+            print(f"Axis Labels: {axis_labels}")
+            print(f"{axis_labels[0]} Index: {max[0]}")
+            print(f"{axis_labels[1]} Index: {max[1]}")
+            print(f"{axis_labels[2]} Index: {max[2]}\n")
+            print(f"{axis_labels[0]} Map[{max[0]}]: {h_map[max[0]][max[1]][max[2]]}")
+            print(f"{axis_labels[1]} Map[{max[1]}]: {k_map[max[0]][max[1]][max[2]]}")
+            print(f"{axis_labels[2]} Map[{max[2]}]: {l_map[max[0]][max[1]][max[2]]}\n")
+            print(f"HKL Map[{max[0]}][{max[1]}][{max[2]}]: {hkl_map[max[0]][max[1]][max[2]]}\n")
+            print(f"Max Intensity: {dataset[max[0]][max[1]][max[2]]}\n")
+            print(f"Dataset Shape: {dataset.shape}")
+            print(f"HKL Map Shape: {hkl_map.shape}")
+            # ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
             # ******************************************************************
 
