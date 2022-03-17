@@ -862,9 +862,6 @@ class ROIWidget(QtGui.QWidget):
         color_dataset = self.main_widget.data_widget.color_dataset
         rect = self.main_widget.data_widget.dataset_rect
         slice_direction = self.main_widget.data_widget.slice_direction
-        slider_ticks = self.main_widget.data_widget.slider_ticks
-        index, tick_value = self.main_widget.data_widget.timeIndex(
-            self.main_widget.data_widget.timeLine)
 
         # Sets x, y, and timeline (z) directions
         if slice_direction == None or slice_direction == "X(H)":
