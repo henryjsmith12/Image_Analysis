@@ -12,7 +12,6 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import pandas as pd
 import pyqtgraph as pg
 from pyqtgraph.dockarea import *
 from pyqtgraph.Qt import QtGui, QtCore
