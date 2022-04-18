@@ -1804,6 +1804,14 @@ class ConversionLogic():
         app_config = RSMap3DConfigParser()
         max_image_memory = app_config.getMaxImageMemory()
 
+        scan_dir = os.path.join(project_dir, "images", spec_name, f"S{scan}")
+        
+        for file in os.listdir(scan_dir):
+            old_scan_number = file.split("_")[-1]
+            new_scan_number = f"0000{old_scan_number}"[-9:]
+            os.rename(os.path.join(scan_dir, file), 
+                os.path.join(scan_dir, file.replace(old_scan_number, new_scan_number)))
+
         scan_range = srange(scan).list()
         data_source = Sector33SpecDataSource(project_dir, spec_name, spec_ext,
             instrument_config_name, detector_config_name, roi=roi, pixelsToAverage=bin,
