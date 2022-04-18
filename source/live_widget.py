@@ -154,7 +154,7 @@ class ImageSelectionWidget(QtGui.QWidget):
 
         image_basename = list_item.text()
         image_path = f"{self.scan_path}/{image_basename}"
-        image = np.rot90(tiff.imread(image_path), 1)
+        image = np.rot90(tiff.imread(image_path), 3)
 
         self.main_widget.image_widget.displayImage(image)
         self.current_image_txtbox.setText(image_basename)
