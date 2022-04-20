@@ -1726,6 +1726,8 @@ class VTICreationDialog(QtGui.QDialog):
         for line in file:
             if line.startswith("#S"):
                 scan = line.split()[1]
+                if len(scan) < 3:
+                    scan = ("00" + scan)[-3:]
                 self.scan_list.append(scan)
 
         self.selected_scan_cbox.clear()
@@ -1807,10 +1809,10 @@ class ConversionLogic():
         scan_dir = os.path.join(project_dir, "images", spec_name, f"S{scan}")
         
         for file in os.listdir(scan_dir):
-            old_scan_number = file.split("_")[-1]
-            new_scan_number = f"0000{old_scan_number}"[-9:]
+            old_point_number = file.split("_")[-1]
+            new_point_number = f"0000{old_point_number}"[-9:]
             os.rename(os.path.join(scan_dir, file), 
-                os.path.join(scan_dir, file.replace(old_scan_number, new_scan_number)))
+                os.path.join(scan_dir, file.replace(old_point_number, new_point_number)))
 
         scan_range = srange(scan).list()
         data_source = Sector33SpecDataSource(project_dir, spec_name, spec_ext,
