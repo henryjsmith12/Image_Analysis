@@ -7,7 +7,7 @@ See LICENSE file.
 
 from pyqtgraph.Qt import QtGui
 
-from source.live_widget import *
+from source.mapping_widget import *
 from source.post_widget import *
 
 # ==============================================================================
@@ -45,7 +45,7 @@ class MainWindow(QtGui.QMainWindow):
             self.tab_widget.removeTab(index)) # Remove tab
 
         # Tabs open on initial startup (default)
-        self.tab_widget.addTab(LivePlottingWidget(), "Live Plotting")
+        self.tab_widget.addTab(MappingWidget(), "Mapping")
         self.tab_widget.addTab(PostPlottingWidget(), "Post Plotting")
 
     # --------------------------------------------------------------------------
@@ -61,8 +61,8 @@ class MainWindow(QtGui.QMainWindow):
         tab = None
 
         if dialog.result() == 1:
-            if dialog.widget_type == "Live Plotting":
-                tab = LivePlottingWidget()
+            if dialog.widget_type == "Mapping":
+                tab = MappingWidget()
             elif dialog.widget_type == "Post Plotting":
                 tab = PostPlottingWidget()
 
