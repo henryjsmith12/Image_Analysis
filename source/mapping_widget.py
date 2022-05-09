@@ -75,7 +75,7 @@ class ScanControlWidget(QtGui.QWidget):
         # MappingWidget object
         self.parent = parent
 
-        # Parameters to create a RSM
+        '''# Parameters to create a RSM
         self.rsm_params = {
             "Chi": 0, 
             "Delta": 0, 
@@ -85,10 +85,18 @@ class ScanControlWidget(QtGui.QWidget):
             "Phi": 0,
             "Energy": 0,
             "UB_Matrix": None
+        }'''
+
+        # Parameters to create a RSM
+        self.rsm_params = {
+            "Energy": 0,
+            "UB_Matrix": None
         }
 
         # Reciprocal Space Map to be set later
         self.rsm = None
+
+        self.motor_list = None
 
         # Absolute path for current image in view
         self.current_image_path = ""
@@ -224,6 +232,13 @@ class ScanControlWidget(QtGui.QWidget):
             point = int(self.current_image_index)
 
             # Retrieves motor angles from .spec file
+            motor_list = list(scan.positioner.keys())[0:len(scan.P[0])]
+            if motor_list != self.motor_list:
+                self.rsm_params = {"Energy": 0, "UB_Matrix": None}     
+                for motor in motor_list:
+                    self.rsm_params.update({motor : 0})
+            self.motor_list = motor_list
+
             for param in self.rsm_params.keys():
                 if param in scan.positioner:
                     self.rsm_params[param] = scan.positioner[param]
@@ -237,7 +252,7 @@ class ScanControlWidget(QtGui.QWidget):
                 if line.startswith("#U"):
                     self.rsm_params["Energy"] = float(line.split(" ")[1]) * 1000
                     break
-            
+
             # Retrieves value of any point-dependent parameter
             for i in range(len(scan.L)):
                 label = scan.L[i]
@@ -435,9 +450,7 @@ class AnalysisWidget(QtGui.QWidget):
             txt.setReadOnly(True)
 
         self.rsm_params_gbx = QtGui.QGroupBox("RSM Parameters")
-        self.rsm_params_lbl_list = [
-            "Chi (deg):", "Delta (deg):", "Eta (deg):", "Mu (deg):", "Nu (deg):", "Phi (deg):", "Energy (eV):"
-        ]
+        self.rsm_params_lbl_list = list(self.parent.scan_control_widget.rsm_params.keys())
         self.rsm_params_lbls = [QtGui.QLabel(i) for i in self.rsm_params_lbl_list]
         self.rsm_params_txts = [QtGui.QLineEdit() for i in self.rsm_params_lbl_list]
         self.rsm_params_layout = QtGui.QGridLayout()
@@ -500,11 +513,24 @@ class AnalysisWidget(QtGui.QWidget):
     # --------------------------------------------------------------------------
 
     def updateRSMParameters(self):
+        if self.rsm_params_lbl_list != list(self.parent.scan_control_widget.rsm_params.keys()):
+            self.rsm_params_lbl_list = list(self.parent.scan_control_widget.rsm_params.keys())
+            self.rsm_params_lbls = [QtGui.QLabel(i) for i in self.rsm_params_lbl_list]
+            self.rsm_params_txts = [QtGui.QLineEdit() for i in self.rsm_params_lbl_list]
+
+            layout = self.rsm_params_layout
+            for i in reversed(range(layout.count())): 
+                layout.itemAt(i).widget().setParent(None)
+            for lbl, txt, i in zip(self.rsm_params_lbls, self.rsm_params_txts, range(len(self.rsm_params_lbls))):
+                self.rsm_params_layout.addWidget(lbl, i, 0)
+                self.rsm_params_layout.addWidget(txt, i, 1)
+                txt.setReadOnly(True)
+
         rsm_params = self.parent.scan_control_widget.rsm_params
-        for i in range(len(self.rsm_params_txts)):
+        for i in range(len(list(rsm_params.keys()))):
             param = self.rsm_params_lbl_list[i].split(" ")[0]
             self.rsm_params_txts[i].setText(str(rsm_params[param]))
-
+        
 # ==============================================================================
 
 class ImageWidget(pg.PlotWidget):
