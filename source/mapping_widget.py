@@ -169,8 +169,8 @@ class ScanControlWidget(QtGui.QWidget):
         self.current_image_txt.setText(current_image_basename)
         self.current_image_index = self.scan_images.index(current_image_basename)
 
-        # Rotated to match dimensions of RSM
-        image = np.rot90(tiff.imread(self.current_image_path), 1)
+        # Transposed to match dimensions of RSM
+        image = tiff.imread(self.current_image_path).T
         self.parent.image_widget.displayImage(image)
         self.createRSM()
         self.parent.analysis_widget.updateMaxInfo()
