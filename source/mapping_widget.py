@@ -236,7 +236,7 @@ class ScanControlWidget(QtGui.QWidget):
             #motor_list = list(scan.positioner.keys())[0:len(scan.P[0])]
 
             i_reader = instrReader(self.instrument_path)
-            motor_list = i_reader.getDetectorCircleNames() + i_reader.getSampleCircleNames()
+            motor_list = i_reader.getSampleCircleNames() + i_reader.getDetectorCircleNames() 
             
             if motor_list != self.motor_list:
                 self.rsm_params = {"Energy": 0, "UB_Matrix": None}     
@@ -674,6 +674,8 @@ class MappingLogic:
         hxrd.Ang2Q.init_area(pixel_dir_1, pixel_dir_2, cch1=c_ch_1, cch2=c_ch_2,
             Nch1=n_ch_1, Nch2=n_ch_2, pwidth1=pixel_width_1, pwidth2=pixel_width_2,
             distance=distance, roi=roi)
+        
+        print(motors)
         motor_params = [rsm_params[i] for i in motors]
         qx,qy,qz = hxrd.Ang2Q.area(*motor_params, UB=rsm_params["UB_Matrix"])
 
