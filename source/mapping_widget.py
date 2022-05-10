@@ -76,18 +76,6 @@ class ScanControlWidget(QtGui.QWidget):
         # MappingWidget object
         self.parent = parent
 
-        '''# Parameters to create a RSM
-        self.rsm_params = {
-            "Chi": 0, 
-            "Delta": 0, 
-            "Eta": 0, 
-            "Mu": 0, 
-            "Nu": 0, 
-            "Phi": 0,
-            "Energy": 0,
-            "UB_Matrix": None
-        }'''
-
         # Parameters to create a RSM
         self.rsm_params = {
             "Energy": 0,
@@ -97,6 +85,7 @@ class ScanControlWidget(QtGui.QWidget):
         # Reciprocal Space Map to be set later
         self.rsm = None
 
+        self.scan = None
         self.motor_list = None
 
         # Absolute path for current image in view
@@ -223,46 +212,46 @@ class ScanControlWidget(QtGui.QWidget):
             self.detector_path = rsm_dialog.detector_path
             self.instrument_path = rsm_dialog.instrument_path
 
-            # .spec file object
+            # Reads spec file and retrieves proper scan
             spec_file = spec.SpecDataFile(self.spec_path)
-
-            # Specific scan
             scan = spec_file.getScan(self.scan_number)
-
-            # Specific point (from current image)
             point = int(self.current_image_index)
 
-            # Retrieves motor angles from instrument .xml file
-            #motor_list = list(scan.positioner.keys())[0:len(scan.P[0])]
+            # Checks if scan has changed
+            if scan != self.scan:
+                # Retrieves motor angles from instrument .xml file
+                i_reader = instrReader(self.instrument_path)
+                motor_list = i_reader.getSampleCircleNames() + \
+                    i_reader.getDetectorCircleNames() 
 
-            i_reader = instrReader(self.instrument_path)
-            motor_list = i_reader.getSampleCircleNames() + i_reader.getDetectorCircleNames() 
-            
-            if motor_list != self.motor_list:
-                self.rsm_params = {"Energy": 0, "UB_Matrix": None}     
-                for motor in motor_list:
-                    self.rsm_params.update({motor : 0})
-            self.motor_list = motor_list
+                if motor_list != self.motor_list:
+                    self.rsm_params = {"Energy": 0, "UB_Matrix": None}     
+                    for motor in motor_list:
+                        self.rsm_params.update({motor : 0})
+                self.motor_list = motor_list
 
-            for param in self.rsm_params.keys():
-                if param in scan.positioner:
-                    self.rsm_params[param] = scan.positioner[param]
+                for param in self.rsm_params.keys():
+                    if param in scan.positioner:
+                        self.rsm_params[param] = scan.positioner[param]
 
-            # UB Matrix
-            ub_list = scan.G["G3"].split(" ")
-            self.rsm_params["UB_Matrix"] = np.reshape(ub_list, (3, 3)).astype(np.float64)
+                # Retrieves UB matrix from .spec file
+                ub_list = scan.G["G3"].split(" ")
+                self.rsm_params["UB_Matrix"] = np.reshape(ub_list, (3, 3)).astype(np.float64)
 
-            # Energy value (originally in keV, converted to eV)
-            for line in scan.raw.split("\n"):
-                if line.startswith("#U"):
-                    self.rsm_params["Energy"] = float(line.split(" ")[1]) * 1000
-                    break
+                # Energy value (originally in keV, converted to eV)
+                for line in scan.raw.split("\n"):
+                    if line.startswith("#U"):
+                        self.rsm_params["Energy"] = float(line.split(" ")[1]) * 1000
+                        break
+
+            self.scan = scan
 
             # Retrieves value of any point-dependent parameter
             for i in range(len(scan.L)):
                 label = scan.L[i]
                 if label in self.rsm_params.keys():
                     self.rsm_params[label] = scan.data[label][point]
+
             try:
                 self.rsm = MappingLogic.createLiveScanArea(
                     self.instrument_path,
