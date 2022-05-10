@@ -16,6 +16,7 @@ from rsMap3D.datasource.DetectorGeometryForXrayutilitiesReader import DetectorGe
 from rsMap3D.datasource.InstForXrayutilitiesReader import InstForXrayutilitiesReader as instrReader
 from spec2nexus import spec
 import tifffile as tiff
+import xml.etree.ElementTree as ET
 import xrayutilities as xu
 
 # ==============================================================================
@@ -231,8 +232,12 @@ class ScanControlWidget(QtGui.QWidget):
             # Specific point (from current image)
             point = int(self.current_image_index)
 
-            # Retrieves motor angles from .spec file
-            motor_list = list(scan.positioner.keys())[0:len(scan.P[0])]
+            # Retrieves motor angles from instrument .xml file
+            #motor_list = list(scan.positioner.keys())[0:len(scan.P[0])]
+
+            i_reader = instrReader(self.instrument_path)
+            motor_list = i_reader.getDetectorCircleNames() + i_reader.getSampleCircleNames()
+            
             if motor_list != self.motor_list:
                 self.rsm_params = {"Energy": 0, "UB_Matrix": None}     
                 for motor in motor_list:
@@ -262,14 +267,8 @@ class ScanControlWidget(QtGui.QWidget):
                 self.rsm = MappingLogic.createLiveScanArea(
                     self.instrument_path,
                     self.detector_path, 
-                    mu=self.rsm_params["Mu"], 
-                    eta=self.rsm_params["Eta"], 
-                    chi=self.rsm_params["Chi"], 
-                    phi=self.rsm_params["Phi"], 
-                    nu=self.rsm_params["Nu"],
-                    delta=self.rsm_params["Delta"], 
-                    ub=self.rsm_params["UB_Matrix"], 
-                    energy=self.rsm_params["Energy"]
+                    self.rsm_params,
+                    self.motor_list
                 )
 
                 self.parent.analysis_widget.updateRSMParameters()
@@ -627,8 +626,7 @@ class ImageWidget(pg.PlotWidget):
 
 class MappingLogic:
 
-    def createLiveScanArea(instrument_config_name, detector_config_name, mu, eta, \
-        chi, phi, nu, delta, ub, energy):
+    def createLiveScanArea(instrument_config_name, detector_config_name, rsm_params, motors):
 
         """
         Creates a scan area to map pixels to reciprocal space coordinates
@@ -659,7 +657,7 @@ class MappingLogic:
         measured data. (from xru docs)
         """
 
-        hxrd = xu.HXRD(inplane_ref_dir, sample_norm_dir, en=energy, qconv=q_conv)
+        hxrd = xu.HXRD(inplane_ref_dir, sample_norm_dir, en=rsm_params["Energy"], qconv=q_conv)
 
         detector = d_reader.getDetectors()[0]
         pixel_dir_1 = d_reader.getPixelDirection1(detector)
@@ -676,8 +674,8 @@ class MappingLogic:
         hxrd.Ang2Q.init_area(pixel_dir_1, pixel_dir_2, cch1=c_ch_1, cch2=c_ch_2,
             Nch1=n_ch_1, Nch2=n_ch_2, pwidth1=pixel_width_1, pwidth2=pixel_width_2,
             distance=distance, roi=roi)
-
-        qx,qy,qz = hxrd.Ang2Q.area(mu,eta,chi,phi,nu,delta,UB=ub)
+        motor_params = [rsm_params[i] for i in motors]
+        qx,qy,qz = hxrd.Ang2Q.area(*motor_params, UB=rsm_params["UB_Matrix"])
 
         return (qx, qy, qz)
 
