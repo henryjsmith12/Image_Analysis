@@ -86,7 +86,7 @@ class ScanControlWidget(QtGui.QWidget):
         self.rsm = None
 
         self.scan = None
-        self.motor_list = None
+        self.angle_list = None
 
         # Absolute path for current image in view
         self.current_image_path = ""
@@ -219,16 +219,16 @@ class ScanControlWidget(QtGui.QWidget):
 
             # Checks if scan has changed
             if scan != self.scan:
-                # Retrieves motor angles from instrument .xml file
+                # Retrieves angle angles from instrument .xml file
                 i_reader = instrReader(self.instrument_path)
-                motor_list = i_reader.getSampleCircleNames() + \
+                angle_list = i_reader.getSampleCircleNames() + \
                     i_reader.getDetectorCircleNames() 
 
-                if motor_list != self.motor_list:
+                if angle_list != self.angle_list:
                     self.rsm_params = {"Energy": 0, "UB_Matrix": None}     
-                    for motor in motor_list:
-                        self.rsm_params.update({motor : 0})
-                self.motor_list = motor_list
+                    for angle in angle_list:
+                        self.rsm_params.update({angle : 0})
+                self.angle_list = angle_list
 
                 for param in self.rsm_params.keys():
                     if param in scan.positioner:
@@ -257,7 +257,7 @@ class ScanControlWidget(QtGui.QWidget):
                     self.instrument_path,
                     self.detector_path, 
                     self.rsm_params,
-                    self.motor_list
+                    self.angle_list
                 )
 
                 self.parent.analysis_widget.updateRSMParameters()
@@ -615,7 +615,7 @@ class ImageWidget(pg.PlotWidget):
 
 class MappingLogic:
 
-    def createLiveScanArea(instrument_config_name, detector_config_name, rsm_params, motors):
+    def createLiveScanArea(instrument_config_name, detector_config_name, rsm_params, angles):
 
         """
         Creates a scan area to map pixels to reciprocal space coordinates
@@ -664,9 +664,9 @@ class MappingLogic:
             Nch1=n_ch_1, Nch2=n_ch_2, pwidth1=pixel_width_1, pwidth2=pixel_width_2,
             distance=distance, roi=roi)
         
-        print(motors)
-        motor_params = [rsm_params[i] for i in motors]
-        qx,qy,qz = hxrd.Ang2Q.area(*motor_params, UB=rsm_params["UB_Matrix"])
+        print(angles)
+        angle_params = [rsm_params[i] for i in angles]
+        qx,qy,qz = hxrd.Ang2Q.area(*angle_params, UB=rsm_params["UB_Matrix"])
 
         return (qx, qy, qz)
 
