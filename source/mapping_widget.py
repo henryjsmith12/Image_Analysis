@@ -664,7 +664,6 @@ class MappingLogic:
             Nch1=n_ch_1, Nch2=n_ch_2, pwidth1=pixel_width_1, pwidth2=pixel_width_2,
             distance=distance, roi=roi)
         
-        print(angles)
         angle_params = [rsm_params[i] for i in angles]
         qx,qy,qz = hxrd.Ang2Q.area(*angle_params, UB=rsm_params["UB_Matrix"])
 
