@@ -8,7 +8,7 @@ See LICENSE file.
 from pyqtgraph.Qt import QtGui
 
 from source.mapping_widget import *
-from source.post_widget import *
+from source.gridding_widget import *
 
 # ==============================================================================
 
@@ -46,7 +46,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Tabs open on initial startup (default)
         self.tab_widget.addTab(MappingWidget(), "Mapping")
-        self.tab_widget.addTab(PostPlottingWidget(), "Post Plotting")
+        self.tab_widget.addTab(GriddingWidget(), "Gridding")
 
     # --------------------------------------------------------------------------
 
@@ -63,8 +63,8 @@ class MainWindow(QtGui.QMainWindow):
         if dialog.result() == 1:
             if dialog.widget_type == "Mapping":
                 tab = MappingWidget()
-            elif dialog.widget_type == "Post Plotting":
-                tab = PostPlottingWidget()
+            elif dialog.widget_type == "Gridding":
+                tab = GriddingWidget()
 
             self.tab_widget.addTab(tab, dialog.widget_name)
 
@@ -84,7 +84,7 @@ class WidgetSelectionDialog(QtGui.QDialog):
 
         self.widget_type_lbl = QtGui.QLabel("Widget Type:")
         self.widget_type_cbox = QtGui.QComboBox()
-        self.widget_type_cbox.addItems(["", "Live Plotting", "Post Plotting"])
+        self.widget_type_cbox.addItems(["", "Mapping", "Gridding"])
         self.widget_name_lbl = QtGui.QLabel("Tab Name:")
         self.widget_name_txtbox = QtGui.QLineEdit()
         self.ok_btn = QtGui.QPushButton("OK")
