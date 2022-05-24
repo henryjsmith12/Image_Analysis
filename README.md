@@ -8,14 +8,14 @@ A lightweight option to view, map, and convert X-ray diffraction (XRD) scan data
 
 ![Examples of Gridding and Mapping Features](https://github.com/henryjsmith12/Image_Analysis/blob/base/screenshots/README_About.png)
 
-Image_Analysis provides users with two features for visualizing experiment data: mapping and gridding. The "Gridding" tab (left) gives users the ability to convert and analyze sets of scan images as 3D datasets in reciprocal space. The "Mapping" tab (right) allows users to view raw scan data and create reciprocal space maps for individual images. 
+Image_Analysis provides users with two features for visualizing experiment data: gridding and mapping. The "Gridding" tab (left) gives users the ability to convert and analyze sets of scan images as 3D datasets in reciprocal space. The "Mapping" tab (right) allows users to view raw scan data and create reciprocal space maps for individual images. 
 
 ### Built With
 
 * [`PyQt5`](https://github.com/baoboa/pyqt5) (General GUI Framework)
 * [`pyqtgraph`](https://github.com/pyqtgraph/pyqtgraph) (Plotting Framework)
 * [`xrayutilities`](https://github.com/dkriegner/xrayutilities) (RSM Conversions)
-* [`rsMap3D`](https://github.com/AdvancedPhotonSource/rsMap3D) (RSM Gridding)
+* [`rsMap3D`](https://github.com/AdvancedPhotonSource/rsMap3D) (RSM Gridding & SPEC/XML Data Aquisition)
 
 See [`environment.yml`](https://github.com/henryjsmith12/Image_Analysis/blob/master/environment.yml) for a full list of dependencies.
 
@@ -61,6 +61,12 @@ python image_analysis.py
 ```
 
 ## Usage
+
+### Mapping
+
+![Mapping Process](https://github.com/henryjsmith12/Image_Analysis/blob/base/screenshots/README_Mapping_Process.png)
+
+### Gridding
 
 ## Roadmap
 
