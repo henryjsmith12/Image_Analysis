@@ -68,6 +68,14 @@ python image_analysis.py
 
 ### Gridding
 
+#### Creating a VTI File
+
+![Gridding - Creating a VTI File](https://github.com/henryjsmith12/Image_Analysis/blob/base/screenshots/README_Gridding_Create.png)
+
+#### Loading a VTI File
+
+![Gridding - Loading a VTI File](https://github.com/henryjsmith12/Image_Analysis/blob/base/screenshots/README_Gridding_Load.png)
+
 ## Roadmap
 
 ## License
