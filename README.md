@@ -23,8 +23,8 @@ See [`environment.yml`](https://github.com/henryjsmith12/Image_Analysis/blob/mas
 
 ### Requirements
 
-* Python 3.7+
-* Anaconda
+* [Python 3.7+](https://www.python.org/downloads/)
+* [Anaconda 3](https://www.anaconda.com/products/individual)
 
 ### Installation
 
@@ -42,7 +42,7 @@ git clone https://github.com/henryjsmith12/Image_Analysis
 cd Image_Analysis
 ```
 
-3. Create the conda environment. This virtual environment will contain all of the necessary dependencies to run Image_Analysis. The name of the environment can be changed in the [`environment.yml`](https://github.com/henryjsmith12/Image_Analysis/blob/master/environment.yml) file.
+3. Create the conda virtual environment. This virtual environment will contain all of the necessary dependencies to run Image_Analysis. By default, the virtual environment is named `image_analysis_venv`.This can be changed in [`environment.yml`](https://github.com/henryjsmith12/Image_Analysis/blob/master/environment.yml).
 
 ```
 conda env create -f environment.yml
@@ -78,13 +78,18 @@ python image_analysis.py
 
 ## Roadmap
 
+* [X] Dynamic mapping parameters
+* [ ] Improvements to gridding GUI layout
+
 ## License
+
+See [`LICENSE.txt`](https://github.com/henryjsmith12/Image_Analysis/blob/main/LICENSE) for more information.
 
 ## Author
 
-Henry Smith - Co-op Student Technical at Argonne National Laboratory
+[Henry Smith](https://www.linkedin.com/in/henry-smith-5956a0189/) - Co-op Student Technical at Argonne National Laboratory
 
 ## Support
 
-* Report issues on the [Github issue tracker](https://github.com/henryjsmith12/Image_Analysis/issues).
+* Report issues on the [Github Issue Tracker](https://github.com/henryjsmith12/Image_Analysis/issues)
 * Email the author at smithh@anl.gov
