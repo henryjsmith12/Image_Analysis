@@ -5,9 +5,7 @@ See LICENSE file.
 
 # ==============================================================================
 
-import csv
 import h5py
-import math
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,13 +22,8 @@ from rsMap3D.mappers.gridmapper import QGridMapper
 from rsMap3D.mappers.output.vtigridwriter import VTIGridWriter
 from rsMap3D.transforms.unitytransform3d import UnityTransform3D
 from rsMap3D.utils.srange import srange
-from scipy import ndimage
-import tifffile as tiff
-import time
 import vtk
 from vtk.util import numpy_support as npSup
-import warnings
-import xrayutilities as xu
 
 # ==============================================================================
 
