@@ -25,7 +25,7 @@ class MappingWidget(QtGui.QWidget):
     """
     Revamped LivePlottingWidget. Allows users to:
     - View scan images
-    - Create cubic reciprocal space maps (RSM's) using .spec and config files
+    - Create cubic reciprocal space maps (RSM's) with SPEC and XML config files
     """
 
     def __init__ (self):
